@@ -129,6 +129,22 @@ Or: `npm run docker:prod` (uses `docker-compose.yml` → http://localhost:8080).
 
 Each Pokémon slot includes: `slotId`, species/form ids, base stats, level, optional `ivs`/`evs`/`nature`, nickname.
 
+## Releases
+
+Pushes and merges to `main` run [`.github/workflows/release-tag.yml`](.github/workflows/release-tag.yml):
+
+1. **First release** — tags `v` + `version` from `package.json` (currently `v0.1.0` if no prior `v*.*.*` tag exists).
+2. **Later releases** — bumps the **patch** segment of the latest `vMAJOR.MINOR.PATCH` tag (`v0.1.0` → `v0.1.1`).
+3. Creates a **GitHub Release** with auto-generated notes for that tag.
+
+Skipped when:
+
+- `HEAD` already has a git tag, or
+- The commit message contains `[skip release]`, or
+- The computed tag name already exists.
+
+To ship a **minor** or **major** bump, create the tag manually (e.g. `v0.2.0`); the workflow will continue from that tag on the next `main` push.
+
 ## Planned (Phase 2)
 
 - Full move matchup comparator with TM assignment
