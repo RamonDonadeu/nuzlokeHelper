@@ -5,8 +5,7 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
+# Install devDependencies too (typescript, vite) — do not set NODE_ENV=production here
 COPY package.json package-lock.json ./
 RUN npm ci
 
