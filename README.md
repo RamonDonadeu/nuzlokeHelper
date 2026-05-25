@@ -131,19 +131,21 @@ Each Pokémon slot includes: `slotId`, species/form ids, base stats, level, opti
 
 ## Releases
 
-Pushes and merges to `main` run [`.github/workflows/release-tag.yml`](.github/workflows/release-tag.yml):
+Pushes and merges to `main` run [semantic-release](https://semantic-release.gitbook.io/) via [`.github/workflows/release.yml`](.github/workflows/release.yml). Configuration lives in [`release.config.cjs`](release.config.cjs).
 
-1. **First release** — tags `v` + `version` from `package.json` (currently `v0.1.0` if no prior `v*.*.*` tag exists).
-2. **Later releases** — bumps the **patch** segment of the latest `vMAJOR.MINOR.PATCH` tag (`v0.1.0` → `v0.1.1`).
-3. Creates a **GitHub Release** with auto-generated notes for that tag.
+Version bumps follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-Skipped when:
+| Commit type | Version bump | Examples |
+|-------------|--------------|----------|
+| `fix:` | Patch | `fix: correct level cap on mobile` |
+| `feat:` | Minor | `feat: add PC base-stats toggle` |
+| `feat!:` or footer `BREAKING CHANGE:` | Major | `feat!: drop legacy storage format` |
 
-- `HEAD` already has a git tag, or
-- The commit message contains `[skip release]`, or
-- The computed tag name already exists.
+Other prefixes (`chore:`, `docs:`, `refactor:`, …) do **not** trigger a release by default.
 
-To ship a **minor** or **major** bump, create the tag manually (e.g. `v0.2.0`); the workflow will continue from that tag on the next `main` push.
+When a release is due, semantic-release creates a `vMAJOR.MINOR.PATCH` tag and a GitHub Release with generated notes. If nothing since the last tag is releasable, the workflow exits successfully without tagging.
+
+To skip a release for one push, use a non-releasable commit message (e.g. `chore: update README`) or add `[skip ci]` / `chore(release):` only changes as appropriate for your workflow.
 
 ## Planned (Phase 2)
 
