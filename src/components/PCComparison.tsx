@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import type { PokemonStats } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 import {
@@ -44,33 +45,51 @@ function formatSignedDiff(value: number): string {
   return `${value >= 0 ? '+' : ''}${value}`
 }
 
-function buildRows(box: PokemonSlot[], team: PokemonSlot[], levelCap: number): ComparisonRow[] {
+function statsForComparison(
+  member: PokemonSlot,
+  levelCap: number,
+  useBaseStats: boolean,
+): PokemonStats {
+  if (useBaseStats) return member.baseStats
+  return comparisonStatsForMember(member.baseStats, levelCap, member)
+}
+
+function buildRows(
+  box: PokemonSlot[],
+  team: PokemonSlot[],
+  levelCap: number,
+  useBaseStats: boolean,
+): ComparisonRow[] {
   const rows: ComparisonRow[] = [
     ...box.map((member) => {
-      const stats = comparisonStatsForMember(member.baseStats, levelCap, member)
+      const stats = statsForComparison(member, levelCap, useBaseStats)
       return { source: 'pc' as const, member, stats, total: totalStats(stats) }
     }),
     ...team.map((member) => {
-      const stats = comparisonStatsForMember(member.baseStats, levelCap, member)
+      const stats = statsForComparison(member, levelCap, useBaseStats)
       return { source: 'team' as const, member, stats, total: totalStats(stats) }
     }),
   ]
   return rows.sort((a, b) => b.total - a.total)
 }
 
-function findStrongest(members: PokemonSlot[], levelCap: number): StrongestMember | null {
+function findStrongest(
+  members: PokemonSlot[],
+  levelCap: number,
+  useBaseStats: boolean,
+): StrongestMember | null {
   if (members.length === 0) return null
 
   let strongest: StrongestMember = {
     member: members[0],
-    stats: comparisonStatsForMember(members[0].baseStats, levelCap, members[0]),
+    stats: statsForComparison(members[0], levelCap, useBaseStats),
     total: 0,
   }
   strongest.total = totalStats(strongest.stats)
 
   for (let i = 1; i < members.length; i++) {
     const member = members[i]
-    const stats = comparisonStatsForMember(member.baseStats, levelCap, member)
+    const stats = statsForComparison(member, levelCap, useBaseStats)
     const memberTotal = totalStats(stats)
     if (memberTotal > strongest.total) {
       strongest = { member, stats, total: memberTotal }
@@ -80,59 +99,43 @@ function findStrongest(members: PokemonSlot[], levelCap: number): StrongestMembe
   return strongest
 }
 
-function averageTotal(members: PokemonSlot[], levelCap: number): number | null {
-  if (members.length === 0) return null
-  const totals = members.map((member) =>
-    totalStats(comparisonStatsForMember(member.baseStats, levelCap, member)),
-  )
-  return Math.round(totals.reduce((sum, value) => sum + value, 0) / totals.length)
-}
-
 function hasCustomStat(member: PokemonSlot, key: keyof PokemonStats): boolean {
   return hasCustomIv(member, key) || hasCustomEv(member, key)
 }
 
 export function PCComparison({ box, team, levelCap }: PCComparisonProps) {
   const { t } = useI18n()
-  const rows = buildRows(box, team, levelCap)
-  const strongestTeam = findStrongest(team, levelCap)
-  const strongestPc = findStrongest(box, levelCap)
-  const pcAverage = averageTotal(box, levelCap)
-  const teamAverage = averageTotal(team, levelCap)
-  const scaledStatsHint = t('compare.scaledStatsHint', { level: levelCap })
+  const [showBaseStats, setShowBaseStats] = useState(false)
+  const rows = useMemo(
+    () => buildRows(box, team, levelCap, showBaseStats),
+    [box, team, levelCap, showBaseStats],
+  )
+  const strongestTeam = useMemo(
+    () => findStrongest(team, levelCap, showBaseStats),
+    [team, levelCap, showBaseStats],
+  )
+  const statsHint = showBaseStats
+    ? t('compare.baseStatsHint')
+    : t('compare.scaledStatsHint', { level: levelCap })
   const hasComparisonContent = box.length > 0 || team.length > 0
 
   return (
     <section className="card pc-comparison">
       <div className="pc-comparison-header">
         <h3>{t('compare.pcVsTeam')}</h3>
-        <InfoTooltip label={t('compare.scaledStatsHintLabel')} text={scaledStatsHint} />
-      </div>
-
-      <div className="comparison-summary pc-comparison-summary">
-        <div className="pc-comparison-summary-pc">
-          <span className="muted">
-            {strongestPc
-              ? t('compare.strongestInPc', { name: memberLabel(strongestPc.member) })
-              : t('compare.strongestInPc', { name: '—' })}
-          </span>
-          <strong>{strongestPc ? strongestPc.total : '—'}</strong>
-        </div>
-        <div className="pc-comparison-summary-pc">
-          <span className="muted">{t('compare.pcAverage')}</span>
-          <strong>{pcAverage !== null ? pcAverage : '—'}</strong>
-        </div>
-        <div className="comparison-summary-primary">
-          <span className="muted">
-            {strongestTeam
-              ? t('compare.strongestOnTeam', { name: memberLabel(strongestTeam.member) })
-              : t('compare.noTeam')}
-          </span>
-          <strong>{strongestTeam ? strongestTeam.total : '—'}</strong>
-        </div>
-        <div className="comparison-summary-secondary">
-          <span className="muted">{t('compare.teamAverage')}</span>
-          <strong>{teamAverage !== null ? teamAverage : '—'}</strong>
+        <div className="pc-comparison-header-actions">
+          <label className="toggle-switch">
+            <span className="toggle-switch-label">{t('editor.useBaseStats')}</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={showBaseStats}
+              onChange={(event) => setShowBaseStats(event.target.checked)}
+              aria-label={t('editor.useBaseStats')}
+            />
+            <span className="toggle-switch-track" aria-hidden="true" />
+          </label>
+          <InfoTooltip label={t('compare.scaledStatsHintLabel')} text={statsHint} />
         </div>
       </div>
 
@@ -190,7 +193,7 @@ export function PCComparison({ box, team, levelCap }: PCComparisonProps) {
                             className={diff !== null ? diffClass(diff) : undefined}
                           >
                             {stats[key]}
-                            {hasCustomStat(member, key) && (
+                            {!showBaseStats && hasCustomStat(member, key) && (
                               <CustomStatMarker label={t('compare.customStatLegend')} />
                             )}
                           </td>

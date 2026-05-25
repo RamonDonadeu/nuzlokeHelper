@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import type { PokemonSlot } from '@/types/profile'
 import { MAX_LEVEL_CAP, MAX_TEAM_SIZE, MIN_LEVEL_CAP, MIN_POKEMON_LEVEL } from '@/types/profile'
 import { calculateAllStats } from '@/lib/stats'
@@ -48,7 +49,12 @@ export function TeamPanel({
 }: TeamPanelProps) {
   const { t } = useI18n()
   const [capDraft, setCapDraft] = useState<string | null>(null)
+  const [pendingEvolveSlotId, setPendingEvolveSlotId] = useState<string | null>(null)
   const evolvableSlotIds = useEvolutionBadges(team)
+
+  const pendingEvolveMember = pendingEvolveSlotId
+    ? team.find((member) => member.slotId === pendingEvolveSlotId)
+    : null
 
   useEffect(() => {
     setCapDraft(null)
@@ -74,48 +80,46 @@ export function TeamPanel({
       </div>
 
       <div className="team-options">
-        <div className="level-cap-control control-group">
-          <span className="control-label">{t('team.levelCap')}</span>
-          <div className="number-stepper" role="group" aria-label={t('team.levelCap')}>
-            <button
-              type="button"
-              className="number-stepper-btn"
-              disabled={levelCap <= MIN_LEVEL_CAP}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => onUpdateLevelCap(levelCap - 1)}
-              aria-label={t('team.decreaseCap')}
-            >
-              −
-            </button>
-            <input
-              type="number"
-              className="number-stepper-input"
-              min={MIN_LEVEL_CAP}
-              max={MAX_LEVEL_CAP}
-              value={capInputValue}
-              onChange={(e) => setCapDraft(e.target.value)}
-              onBlur={() => {
-                commitLevelCapInput(capDraft ?? String(levelCap), levelCap, onUpdateLevelCap)
-                setCapDraft(null)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.currentTarget.blur()
-                }
-              }}
-              aria-label={t('team.levelCap')}
-            />
-            <button
-              type="button"
-              className="number-stepper-btn"
-              disabled={levelCap >= MAX_LEVEL_CAP}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => onUpdateLevelCap(levelCap + 1)}
-              aria-label={t('team.increaseCap')}
-            >
-              +
-            </button>
-          </div>
+        <span className="control-label">{t('team.levelCap')}</span>
+        <div className="number-stepper" role="group" aria-label={t('team.levelCap')}>
+          <button
+            type="button"
+            className="number-stepper-btn"
+            disabled={levelCap <= MIN_LEVEL_CAP}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onUpdateLevelCap(levelCap - 1)}
+            aria-label={t('team.decreaseCap')}
+          >
+            −
+          </button>
+          <input
+            type="number"
+            className="number-stepper-input"
+            min={MIN_LEVEL_CAP}
+            max={MAX_LEVEL_CAP}
+            value={capInputValue}
+            onChange={(e) => setCapDraft(e.target.value)}
+            onBlur={() => {
+              commitLevelCapInput(capDraft ?? String(levelCap), levelCap, onUpdateLevelCap)
+              setCapDraft(null)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur()
+              }
+            }}
+            aria-label={t('team.levelCap')}
+          />
+          <button
+            type="button"
+            className="number-stepper-btn"
+            disabled={levelCap >= MAX_LEVEL_CAP}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onUpdateLevelCap(levelCap + 1)}
+            aria-label={t('team.increaseCap')}
+          >
+            +
+          </button>
         </div>
         <button type="button" className="btn btn-ghost btn-sm" onClick={onMoveAllToCap}>
           {t('team.moveAllToCap')}
@@ -175,6 +179,15 @@ export function TeamPanel({
                     >
                       −
                     </button>
+                    {evolvableSlotIds.has(member.slotId) && (
+                      <button
+                        type="button"
+                        className="btn btn-sm team-evolve-btn team-evolve-level-btn"
+                        onClick={() => setPendingEvolveSlotId(member.slotId)}
+                      >
+                        {t('team.evolve')}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
@@ -187,29 +200,22 @@ export function TeamPanel({
                     </button>
                   </div>
                   <div className="team-slot-actions">
-                    {evolvableSlotIds.has(member.slotId) && (
+                    <div className="team-slot-actions-row">
                       <button
                         type="button"
-                        className="btn btn-sm team-evolve-btn"
-                        onClick={() => onEvolve(member.slotId)}
+                        className="btn btn-ghost btn-sm team-send-pc-btn"
+                        onClick={() => onMoveToBox(member.slotId)}
                       >
-                        {t('team.evolve')}
+                        {t('team.sendToPC')}
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => onMoveToBox(member.slotId)}
-                    >
-                      {t('team.sendToPC')}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => onMarkDead(member.slotId)}
-                    >
-                      {t('team.markDead')}
-                    </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm team-mark-dead-btn"
+                        onClick={() => onMarkDead(member.slotId)}
+                      >
+                        {t('team.markDead')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -242,6 +248,22 @@ export function TeamPanel({
           {t('team.sendAllToPC')}
         </button>
       </div>
+
+      {pendingEvolveMember && (
+        <ConfirmDialog
+          title={t('team.evolveConfirmTitle')}
+          message={t('team.evolveConfirmMessage', {
+            name: pendingEvolveMember.nickname ?? pendingEvolveMember.displayName,
+          })}
+          confirmLabel={t('team.evolve')}
+          confirmClassName="btn btn-sm team-evolve-btn"
+          onConfirm={() => {
+            onEvolve(pendingEvolveMember.slotId)
+            setPendingEvolveSlotId(null)
+          }}
+          onCancel={() => setPendingEvolveSlotId(null)}
+        />
+      )}
     </aside>
   )
 }

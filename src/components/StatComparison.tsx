@@ -128,13 +128,6 @@ export function StatComparison({
       ? teamForComparison(team, candidate.id)
       : team
   const strongest = findStrongestMember(comparisonTeam, levelCap)
-  const teamTotals = comparisonTeam.map((member) =>
-    totalStats(comparisonStatsForMember(member.baseStats, levelCap, member)),
-  )
-  const teamAverage = comparisonTeam.length
-    ? Math.round(teamTotals.reduce((sum, value) => sum + value, 0) / comparisonTeam.length)
-    : null
-
   const candidateStats =
     candidate !== undefined ? comparisonStatsForCandidate(candidate.stats, levelCap) : null
   const candidateTotal = candidateStats ? totalStats(candidateStats) : 0
@@ -163,57 +156,44 @@ export function StatComparison({
 
   return (
     <section className="card">
-      <div className="section-header">
-        <div>
-          {teamOnly && onBack ? (
-            <div className="section-header-with-back">
-              <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>
-                ← {t('compare.teamStatsBack')}
-              </button>
-              <h3>{t('compare.teamStats')}</h3>
+      <div
+        className={
+          teamOnly && onBack ? 'section-header section-header-toolbar' : 'section-header'
+        }
+      >
+        {teamOnly && onBack ? (
+          <>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm section-header-back"
+              onClick={onBack}
+            >
+              ← {t('compare.teamStatsBack')}
+            </button>
+            <h3 className="section-header-title">{t('compare.teamStats')}</h3>
+            <InfoTooltip label={t('compare.scaledStatsHintLabel')} text={scaledStatsHint} />
+          </>
+        ) : (
+          <>
+            <div className="section-header-title-block">
+              <h3>{t('compare.vsTeam')}</h3>
+              {comparisonTeam.length === 0 && <p className="muted">{t('compare.addTeamFirst')}</p>}
             </div>
-          ) : (
-            <h3>{t('compare.vsTeam')}</h3>
-          )}
-          {comparisonTeam.length === 0 && <p className="muted">{t('compare.addTeamFirst')}</p>}
-        </div>
-        <InfoTooltip label={t('compare.scaledStatsHintLabel')} text={scaledStatsHint} />
+            <InfoTooltip label={t('compare.scaledStatsHintLabel')} text={scaledStatsHint} />
+          </>
+        )}
       </div>
 
       {comparisonTeam.length > 0 && (
         <>
-          <div className="comparison-summary">
-            {!teamOnly && candidateStats !== null && (
+          {!teamOnly && candidateStats !== null && (
+            <div className="comparison-summary">
               <div>
                 <span className="muted">{t('compare.candidateTotal')}</span>
                 <strong>{candidateTotal}</strong>
               </div>
-            )}
-            {teamOnly && strongest && (
-              <div>
-                <span className="muted">
-                  {t('compare.strongestOnTeam', { name: memberLabel(strongest.member) })}
-                </span>
-                <strong>{strongest.total}</strong>
-              </div>
-            )}
-            {!teamOnly && strongest && (
-              <div className="comparison-summary-primary">
-                <span className="muted">
-                  {t('compare.strongestOnTeam', { name: memberLabel(strongest.member) })}
-                </span>
-                <strong className={diffClass(totalDiffVsStrongest)}>
-                  {strongest.total} ({formatSignedDiff(totalDiffVsStrongest)})
-                </strong>
-              </div>
-            )}
-            {teamAverage !== null && (
-              <div className={teamOnly ? undefined : 'comparison-summary-secondary'}>
-                <span className="muted">{t('compare.teamAverage')}</span>
-                <strong>{teamAverage}</strong>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="table-wrap">
             <table>

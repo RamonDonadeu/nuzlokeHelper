@@ -8,7 +8,6 @@ import { PokemonEditor } from '@/components/PokemonEditor'
 import { IconNavRail } from '@/components/IconNavRail'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { ProfileSettingsModal } from '@/components/ProfileSettingsModal'
-import { ShowdownPanel } from '@/components/ShowdownPanel'
 import { SidebarDrawer } from '@/components/SidebarDrawer'
 import { StatComparison } from '@/components/StatComparison'
 import { TeamPanel } from '@/components/TeamPanel'
@@ -26,7 +25,7 @@ import {
 } from '@/lib/localizedNames'
 import { findSlotInProfile } from '@/types/profile'
 
-type Tab = 'search' | 'types' | 'showdown' | 'pc'
+type Tab = 'types' | 'pc'
 
 export default function App() {
   const profiles = useProfiles()
@@ -55,7 +54,6 @@ function AppContent({
   team,
   box,
   deathBox,
-  opponentTeam,
   addToTeam,
   addToBox,
   sendAllTeamToBox,
@@ -75,7 +73,6 @@ function AppContent({
   applyEvolution,
   dismissEvolution,
   requestEvolution,
-  importShowdown,
   isFull,
   hasMember,
 }: ReturnType<typeof useProfiles>) {
@@ -83,11 +80,12 @@ function AppContent({
   const { showToast, showErrorToast } = useToast()
   const [query, setQuery] = useState('')
   const [searchOverrideName, setSearchOverrideName] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('search')
+  const [activeTab, setActiveTab] = useState<Tab>('pc')
   const [showTeamStats, setShowTeamStats] = useState(false)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [confirmSendAllToPC, setConfirmSendAllToPC] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [teamDrawerOpen, setTeamDrawerOpen] = useState(false)
   const searchSectionRef = useRef<HTMLElement>(null)
 
   const scrollSearchToTop = useCallback(() => {
@@ -124,25 +122,32 @@ function AppContent({
     }
   }, [activeProfile, selectedSlotId])
 
-  const handleSelectSlot = (slotId: string, tab: Tab = 'search') => {
+  const handleSelectSlot = (slotId: string, tab?: Tab) => {
     setShowTeamStats(false)
     setSelectedSlotId(slotId)
-    setActiveTab(tab)
+    if (tab) setActiveTab(tab)
   }
 
   const handleTabClick = (tab: Tab) => {
     setShowTeamStats(false)
-    if (tab === 'search' || tab === 'pc') {
-      setSelectedSlotId(null)
-    }
+    setSelectedSlotId(null)
     setActiveTab(tab)
   }
 
   const handleShowTeamStats = () => {
     if (team.length === 0) return
     setSelectedSlotId(null)
+    setTeamDrawerOpen(false)
     setShowTeamStats(true)
-    setActiveTab('search')
+  }
+
+  const handleMobileTeamNav = () => {
+    if (showTeamStats) {
+      setShowTeamStats(false)
+      setTeamDrawerOpen(true)
+      return
+    }
+    setTeamDrawerOpen(true)
   }
 
   const otherMatches =
@@ -231,6 +236,9 @@ function AppContent({
       ? t('search.teamFull')
       : t('search.addToTeam')
 
+  const showSearchResults =
+    !showTeamStats && !selectedSlotInfo && query.trim().length >= 2
+
   const sidebar = (
     <>
       <TeamPanel
@@ -282,13 +290,29 @@ function AppContent({
       </header>
 
       <div className="app-body">
-        <IconNavRail activeTab={activeTab} onTabClick={handleTabClick} />
-
         <div className="app-main-area">
           <div className="app-layout">
-            <SidebarDrawer>{sidebar}</SidebarDrawer>
+            <SidebarDrawer
+              open={teamDrawerOpen && !showTeamStats}
+              onOpenChange={(open) => {
+                if (!showTeamStats) setTeamDrawerOpen(open)
+              }}
+            >
+              {sidebar}
+            </SidebarDrawer>
 
             <main className="main-content">
+          <div className="main-search-bar">
+            <input
+              type="search"
+              className="search-input"
+              placeholder={t('search.placeholder')}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label={t('search.title')}
+            />
+          </div>
+
           {showTeamStats && (
             <TeamStatsComparison
               team={team}
@@ -297,32 +321,25 @@ function AppContent({
             />
           )}
 
-          {!showTeamStats && (activeTab === 'search' || activeTab === 'pc') && selectedSlotInfo && (
+          {!showTeamStats && selectedSlotInfo && (
             <PokemonEditor
               slot={selectedSlotInfo.slot}
               list={selectedSlotInfo.list}
               levelCap={activeProfile.settings.levelCap}
               profileVersionGroup={versionGroup}
-              backLabel={activeTab === 'pc' ? t('editor.backToPC') : undefined}
+              backLabel={
+                selectedSlotInfo.list === 'box' || selectedSlotInfo.list === 'deathBox'
+                  ? t('editor.backToPC')
+                  : undefined
+              }
               onBack={() => setSelectedSlotId(null)}
               onSave={(patch) => updateSlot(selectedSlotId!, patch, selectedSlotInfo.list)}
               onEvolve={(id) => void requestEvolution(id)}
             />
           )}
 
-          {!showTeamStats && activeTab === 'search' && !selectedSlotInfo && (
+          {showSearchResults && (
             <section ref={searchSectionRef} className="card search-section">
-              <h2>{t('search.title')}</h2>
-              <p className="muted">{t('search.hint')}</p>
-              <input
-                type="search"
-                className="search-input"
-                placeholder={t('search.placeholder')}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                autoFocus
-              />
-
               {query.trim().length >= 2 && searchPending && (
                 <p className="muted search-status">{t('search.searching')}</p>
               )}
@@ -410,11 +427,27 @@ function AppContent({
 
           {!showTeamStats && activeTab === 'types' && <TypeAnalysis team={team} />}
 
-          {!showTeamStats && activeTab === 'showdown' && (
-            <ShowdownPanel team={team} opponentTeam={opponentTeam} onImport={importShowdown} />
-          )}
             </main>
           </div>
+        </div>
+
+        <div className="mobile-bottom-dock">
+          <button
+            type="button"
+            className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !showTeamStats ? ' active' : ''}`}
+            onClick={handleMobileTeamNav}
+            aria-label={t('mobile.openTeam')}
+          >
+            <span className="icon-nav-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+              </svg>
+            </span>
+            <span className="icon-nav-label">{t('mobile.teamNav')}</span>
+          </button>
+          <IconNavRail activeTab={activeTab} onTabClick={handleTabClick} />
         </div>
       </div>
 

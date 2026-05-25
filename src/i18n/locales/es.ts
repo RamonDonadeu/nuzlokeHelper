@@ -8,9 +8,7 @@ export const es: TranslationKey = {
     cancel: 'Cancelar',
   },
   tabs: {
-    search: 'Buscar',
     types: 'Tipología del equipo',
-    showdown: 'Showdown',
     pc: 'PC',
   },
   team: {
@@ -38,6 +36,8 @@ export const es: TranslationKey = {
     revive: 'Revivir',
     moveToTeam: 'Al equipo',
     evolve: 'Evolucionar',
+    evolveConfirmTitle: 'Confirmar evolución',
+    evolveConfirmMessage: '¿Evolucionar a {{name}}?',
   },
   box: {
     title: 'Caja PC',
@@ -105,6 +105,7 @@ export const es: TranslationKey = {
     insightBelowStrongest: ' — aún por debajo de {{name}} ({{total}}).',
     scaledStatsHint:
       'Todos los Pokémon se escalan al tope de nivel ({{level}}). IVs, EVs y naturaleza no neutra solo si los has configurado. El buscado y evoluciones usan 31 IVs y 0 EVs salvo importación Showdown.',
+    baseStatsHint: 'Stats base de la especie (BST), sin escalar al nivel.',
     scaledStatsHintLabel: 'Cómo se calculan las stats de comparación',
     candidateTotal: 'Total del candidato',
     searched: 'Buscado',
@@ -171,14 +172,13 @@ export const es: TranslationKey = {
     memberOne: '{{count}} miembro',
     memberMany: '{{count}} miembros',
     defQuadTitle: 'Doble debilidad ×4',
-    defQuadHint:
-      'Estos Pokémon reciben ×4 de los tipos listados (acumulación de dos tipos).',
     defQuadEmpty: 'Sin dobles debilidades en el equipo.',
     defImmunitiesTitle: 'Inmunidades (×0)',
     defImmunitiesHint: 'Cada miembro y los tipos atacantes de los que no recibe daño.',
     defImmunitiesEmpty: 'Sin inmunidades de tipo en el equipo.',
     defMemberMatrix: 'Debilidades por miembro',
-    defMatrixAttackCol: 'Tipo atacante',
+    defMatrixAttackCol: 'Tipo',
+    defMatrixLegendLabel: 'Cómo leer la matriz de debilidades',
     defMatrixLegend:
       'Filas = tipos atacantes. 4× / 2× = débil (rojo/naranja). 1× = neutral. ½× = resiste (azul claro). ¼× ✓✓ = doble resistencia (azul oscuro). — = inmune.',
     defMemberWeak: 'Recibe {{mult}} de {{type}}',
@@ -188,17 +188,6 @@ export const es: TranslationKey = {
     defMemberImmune: 'Inmune a {{type}}',
     defMemberUnknown: 'Tipo desconocido — no se puede calcular vs {{type}}',
     defMemberSafe: 'Neutral a {{type}} ({{mult}})',
-  },
-  showdown: {
-    title: 'Importar / exportar PokePaste',
-    importTeam: 'Importar a mi equipo',
-    importOpponent: 'Importar rival',
-    exportTeam: 'Exportar mi equipo',
-    exportOpponent: 'Exportar rival',
-    pastePlaceholder: 'Pega aquí el export de Showdown...',
-    import: 'Importar',
-    opponentTitle: 'Equipo rival',
-    opponentEmpty: 'Sin Pokémon rival importados.',
   },
   evolution: {
     prompt: '¿{{name}} evolucionó?',
@@ -214,6 +203,7 @@ export const es: TranslationKey = {
   },
   mobile: {
     openTeam: 'Equipo y cajas',
+    teamNav: 'Equipo',
     close: 'Cerrar',
   },
   toast: {

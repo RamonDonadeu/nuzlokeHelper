@@ -63,6 +63,29 @@ npm run build
 npm run preview
 ```
 
+## Docker / Dockploy
+
+Production image: multi-stage **Node 22 build** → **nginx** serving `dist/` (SPA routing + `/health`).
+
+| Setting | Value |
+|--------|--------|
+| Build type | Dockerfile |
+| Dockerfile path | `Dockerfile` |
+| Docker context | `.` |
+| Container port | `80` |
+
+In Dockploy, add a domain pointing at port **80** on the container (Traefik handles external HTTPS). No runtime environment variables are required; the app is fully client-side.
+
+**Local test:**
+
+```bash
+docker build -t nuzloke-helper .
+docker run --rm -p 8080:80 nuzloke-helper
+# open http://localhost:8080
+```
+
+Or: `npm run docker:prod` (uses `docker-compose.yml` → http://localhost:8080).
+
 ## How to test locally
 
 1. `npm run dev` and open the app.

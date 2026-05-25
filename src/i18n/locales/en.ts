@@ -2,7 +2,7 @@ export type TranslationKey = {
   appTitle: string
   appSubtitle: string
   common: Record<'confirm' | 'cancel', string>
-  tabs: Record<'search' | 'types' | 'showdown' | 'pc', string>
+  tabs: Record<'types' | 'pc', string>
   team: Record<string, string>
   box: Record<string, string>
   profile: Record<string, string>
@@ -11,7 +11,6 @@ export type TranslationKey = {
   pokemon: Record<string, string>
   editor: Record<string, string>
   types: Record<string, string>
-  showdown: Record<string, string>
   evolution: Record<string, string>
   locale: string
   nav: Record<'main', string>
@@ -27,9 +26,7 @@ export const en: TranslationKey = {
     cancel: 'Cancel',
   },
   tabs: {
-    search: 'Search',
     types: 'Team Typing',
-    showdown: 'Showdown',
     pc: 'PC',
   },
   team: {
@@ -57,6 +54,8 @@ export const en: TranslationKey = {
     revive: 'Revive',
     moveToTeam: 'To team',
     evolve: 'Evolve',
+    evolveConfirmTitle: 'Confirm evolution',
+    evolveConfirmMessage: 'Evolve {{name}}?',
   },
   box: {
     title: 'PC Box',
@@ -124,6 +123,7 @@ export const en: TranslationKey = {
     insightBelowStrongest: ' — still below {{name}} ({{total}}).',
     scaledStatsHint:
       'All Pokémon are scaled to the level cap ({{level}}). Custom IVs, EVs, and non-neutral nature apply only when you set them. Searched Pokémon and evolutions use 31 IVs and 0 EVs unless imported via Showdown.',
+    baseStatsHint: 'Species base stats (BST), not scaled to level.',
     scaledStatsHintLabel: 'How comparison stats are calculated',
     candidateTotal: 'Candidate total',
     searched: 'Searched',
@@ -189,14 +189,13 @@ export const en: TranslationKey = {
     memberOne: '{{count}} member',
     memberMany: '{{count}} members',
     defQuadTitle: '×4 double weakness',
-    defQuadHint:
-      'These Pokémon take 4× damage from the listed attacking types (dual-type stacking).',
     defQuadEmpty: 'No double weaknesses on the team.',
     defImmunitiesTitle: 'Immunities (0×)',
     defImmunitiesHint: 'Each member and the attacking types they take no damage from.',
     defImmunitiesEmpty: 'No type immunities on the team.',
     defMemberMatrix: 'Weaknesses by member',
-    defMatrixAttackCol: 'Attacking type',
+    defMatrixAttackCol: 'Type',
+    defMatrixLegendLabel: 'How to read the weakness matrix',
     defMatrixLegend:
       'Rows = attacking types. 4× / 2× = weak (red/orange). 1× = neutral. ½× = resist (light blue). ¼× ✓✓ = double resist (dark blue). — = immune.',
     defMemberWeak: 'Takes {{mult}} from {{type}}',
@@ -206,17 +205,6 @@ export const en: TranslationKey = {
     defMemberImmune: 'Immune to {{type}}',
     defMemberUnknown: 'Type data unknown — cannot calculate vs {{type}}',
     defMemberSafe: 'Neutral to {{type}} ({{mult}})',
-  },
-  showdown: {
-    title: 'PokePaste import / export',
-    importTeam: 'Import to my team',
-    importOpponent: 'Import opponent team',
-    exportTeam: 'Export my team',
-    exportOpponent: 'Export opponent team',
-    pastePlaceholder: 'Paste Showdown team export here...',
-    import: 'Import',
-    opponentTitle: 'Opponent team',
-    opponentEmpty: 'No opponent Pokémon imported yet.',
   },
   evolution: {
     prompt: 'Did {{name}} evolve?',
@@ -232,6 +220,7 @@ export const en: TranslationKey = {
   },
   mobile: {
     openTeam: 'Team & boxes',
+    teamNav: 'Team',
     close: 'Close',
   },
   toast: {

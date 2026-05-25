@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { InfoTooltip } from '@/components/InfoTooltip'
 import { useI18n } from '@/i18n'
 import { resolveTeamSpeciesTypes } from '@/lib/pokeapi'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'
@@ -121,7 +122,6 @@ function DefenseCoverageView({
       <div className="defense-details">
         <section className="defense-summary-section defense-quad-warning">
           <h4>{t('types.defQuadTitle')}</h4>
-          <p className="muted defense-summary-hint">{t('types.defQuadHint')}</p>
           {!hasDoubleWeakness ? (
             <p className="empty-note">{t('types.defQuadEmpty')}</p>
           ) : (
@@ -183,7 +183,8 @@ function DefenseCoverageView({
 
       <CoverageMatrix
         title={t('types.defMemberMatrix')}
-        legend={t('types.defMatrixLegend')}
+        hintLabel={t('types.defMatrixLegendLabel')}
+        hintText={t('types.defMatrixLegend')}
         rowHeader={t('types.defMatrixAttackCol')}
         members={members}
         rows={coverage.memberMatrix.map((row) => ({
@@ -223,14 +224,16 @@ function DefenseCoverageView({
 
 function CoverageMatrix<M extends { slotId: string; name: string }>({
   title,
-  legend,
+  hintLabel,
+  hintText,
   rowHeader,
   members,
   rows,
   getMemberCell,
 }: {
   title: string
-  legend: string
+  hintLabel: string
+  hintText: string
   rowHeader: string
   members: M[]
   rows: Array<{ type: PokemonType; memberMultipliers: Array<number | null> }>
@@ -242,8 +245,10 @@ function CoverageMatrix<M extends { slotId: string; name: string }>({
 }) {
   return (
     <div className="member-matrix">
-      <h4>{title}</h4>
-      <p className="muted matrix-legend">{legend}</p>
+      <div className="matrix-header">
+        <h4>{title}</h4>
+        <InfoTooltip label={hintLabel} text={hintText} />
+      </div>
       <div className="table-wrap">
         <table className="matrix-table coverage-matrix">
           <thead>
