@@ -39,6 +39,27 @@ let speciesLoadPromise: Promise<void> | null = null
 let moveLoadPromise: Promise<void> | null = null
 let abilityLoadPromise: Promise<void> | null = null
 let pokemonMapLoadPromise: Promise<void> | null = null
+let storageHydrated = false
+
+function speciesSlugForPokemon(pokemonSlug: string): string {
+  return pokemonSpeciesMap?.get(pokemonSlug) ?? pokemonSlug
+}
+
+/** Load cached name indexes from localStorage only (no network). */
+export function hydrateIndexesFromStorage(): void {
+  if (storageHydrated) return
+  storageHydrated = true
+
+  const cache = readCache()
+  if (!cache) return
+
+  if (cache.species.length) speciesIndex = buildIndex(cache.species)
+  if (cache.moves.length) moveIndex = buildIndex(cache.moves)
+  if (cache.abilities.length) abilityIndex = buildIndex(cache.abilities)
+  if (cache.pokemonSpeciesMap && Object.keys(cache.pokemonSpeciesMap).length > 0) {
+    pokemonSpeciesMap = new Map(Object.entries(cache.pokemonSpeciesMap))
+  }
+}
 
 export function normalizeForMatch(value: string): string {
   const text = typeof value === 'string' ? value : value == null ? '' : String(value)
@@ -285,15 +306,9 @@ export async function ensurePokemonSpeciesMap(pokemonSlugs: string[]): Promise<v
   return pokemonMapLoadPromise
 }
 
+/** Prepare Pokémon search indexes from cache only. Does not download from PokeAPI. */
 export async function ensureSearchIndexes(): Promise<void> {
-  await Promise.all([ensureSpeciesIndex(), ensurePokemonSpeciesMapFromList()])
-}
-
-async function ensurePokemonSpeciesMapFromList(): Promise<void> {
-  const firstPage = await fetchJson<{ results: Array<{ name: string }> }>(
-    `${POKEAPI_BASE}/pokemon?limit=2000`,
-  )
-  await ensurePokemonSpeciesMap(firstPage.results.map((entry) => entry.name))
+  hydrateIndexesFromStorage()
 }
 
 export function getLocalizedPokemonName(
@@ -358,10 +373,9 @@ export function pokemonMatchesQuery(pokemonSlug: string, query: string): boolean
     return true
   }
 
-  const speciesSlug = pokemonSpeciesMap?.get(pokemonSlug)
-  if (!speciesSlug || !speciesIndex) return false
+  if (!speciesIndex) return false
 
-  const entry = speciesIndex.bySlug.get(speciesSlug)
+  const entry = speciesIndex.bySlug.get(speciesSlugForPokemon(pokemonSlug))
   if (!entry) return false
 
   return (
@@ -477,8 +491,7 @@ export function pokemonMatchScore(pokemonSlug: string, query: string): number {
 
   let best = Math.min(scoreAlias(pokemonSlug), scoreAlias(formatPokemonName(pokemonSlug)))
 
-  const speciesSlug = pokemonSpeciesMap?.get(pokemonSlug)
-  const entry = speciesSlug ? speciesIndex?.bySlug.get(speciesSlug) : undefined
+  const entry = speciesIndex?.bySlug.get(speciesSlugForPokemon(pokemonSlug))
   if (entry) {
     best = Math.min(best, scoreAlias(entry.en), scoreAlias(entry.es), scoreAlias(entry.slug))
   }
@@ -487,7 +500,6 @@ export function pokemonMatchScore(pokemonSlug: string, query: string): number {
 }
 
 export function getLocalizedPokemonNameBySlug(pokemonSlug: string, locale: Locale): string {
-  const speciesSlug = pokemonSpeciesMap?.get(pokemonSlug) ?? pokemonSlug
-  const entry = speciesIndex?.bySlug.get(speciesSlug)
+  const entry = speciesIndex?.bySlug.get(speciesSlugForPokemon(pokemonSlug))
   return getDisplayName(entry, locale, formatPokemonName(pokemonSlug))
 }

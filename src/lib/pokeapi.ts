@@ -8,7 +8,11 @@ import type {
   TeamMember,
 } from '@/types/pokemon'
 import { formatPokemonName, totalStats } from '@/types/pokemon'
-import { ensureSearchIndexes, pokemonMatchScore as localizedPokemonMatchScore, pokemonMatchesQuery } from '@/lib/localizedNames'
+import {
+  hydrateIndexesFromStorage,
+  pokemonMatchScore as localizedPokemonMatchScore,
+  pokemonMatchesQuery,
+} from '@/lib/localizedNames'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2'
@@ -205,7 +209,7 @@ export async function searchPokemon(query: string, limit = 12): Promise<NamedPok
   const normalized = query.trim()
   if (!normalized) return []
 
-  await ensureSearchIndexes()
+  hydrateIndexesFromStorage()
   const list = await fetchPokemonList()
   return sortPokemonByMatch(
     list.filter((entry) => pokemonMatchesQuery(entry.name, normalized)),
