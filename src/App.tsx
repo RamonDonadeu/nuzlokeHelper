@@ -80,7 +80,7 @@ function AppContent({
   const { showToast, showErrorToast } = useToast()
   const [query, setQuery] = useState('')
   const [searchOverrideName, setSearchOverrideName] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('pc')
+  const [activeTab, setActiveTab] = useState<Tab>('types')
   const [showTeamStats, setShowTeamStats] = useState(false)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [confirmSendAllToPC, setConfirmSendAllToPC] = useState(false)
