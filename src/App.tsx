@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EvolutionPrompt } from '@/components/EvolutionPrompt'
-import { MoveComparison } from '@/components/MoveComparison'
 import { PCView } from '@/components/PCView'
 import { PokemonCard } from '@/components/PokemonCard'
 import { PokemonEditor } from '@/components/PokemonEditor'
@@ -9,6 +8,7 @@ import { IconNavRail } from '@/components/IconNavRail'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { ProfileSettingsModal } from '@/components/ProfileSettingsModal'
 import { SidebarDrawer } from '@/components/SidebarDrawer'
+import { SearchMatchup } from '@/components/SearchMatchup'
 import { StatComparison } from '@/components/StatComparison'
 import { TeamPanel } from '@/components/TeamPanel'
 import { TeamStatsComparison } from '@/components/TeamStatsComparison'
@@ -17,6 +17,7 @@ import { TypeAnalysis } from '@/components/TypeAnalysis'
 import { I18nProvider, useI18n } from '@/i18n'
 import { usePokemonDetails } from '@/hooks/usePokemonDetails'
 import { usePokemonSearch } from '@/hooks/usePokemonSearch'
+import { useSearchMatchup } from '@/hooks/useSearchMatchup'
 import { useProfiles } from '@/hooks/useProfiles'
 import {
   getLocalizedPokemonName,
@@ -43,7 +44,6 @@ function AppContent({
   setLocale,
   profiles,
   activeProfile,
-  generation,
   versionGroup,
   switchProfile,
   createNewProfile,
@@ -111,6 +111,8 @@ function AppContent({
     loading: searchDetailsLoading,
     error: searchDetailsError,
   } = usePokemonDetails(searchDisplayName)
+
+  const searchMatchup = useSearchMatchup(team, searchPokemon)
 
   useEffect(() => {
     setSearchOverrideName(null)
@@ -395,12 +397,17 @@ function AppContent({
                 <>
                   <StatComparison
                     candidate={searchPokemon}
-                    evolutions={searchEvolutions}
                     team={team}
                     levelCap={activeProfile.settings.levelCap}
-                    onEvolutionSelect={handleSearchResultClick}
+                    threatenedSlotIds={searchMatchup.threatenedSlotIds}
                   />
-                  <MoveComparison generation={generation} />
+                  <SearchMatchup
+                    team={team}
+                    candidate={searchPokemon}
+                    loading={searchMatchup.loading}
+                    offenses={searchMatchup.offenses}
+                    threats={searchMatchup.threats}
+                  />
                 </>
               )}
             </section>

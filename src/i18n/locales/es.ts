@@ -95,7 +95,6 @@ export const es: TranslationKey = {
     teamStatsBack: 'Volver',
     addTeamFirst: 'Añade Pokémon al equipo para comparar.',
     evolutionLine: 'Línea evolutiva',
-    moveRules: 'Categoría de daño de movimientos',
     strongestOnTeam: 'Más fuerte del equipo ({{name}})',
     teamAverage: 'Promedio del equipo',
     evolutionVsStrongest: '{{diff}} vs {{name}}',
@@ -121,6 +120,19 @@ export const es: TranslationKey = {
     noTeam: 'Sin equipo',
     pcAverage: 'Promedio del PC',
     strongestInPc: 'Más fuerte del PC ({{name}})',
+  },
+  matchup: {
+    title: 'Tipos vs tu equipo',
+    loading: 'Comprobando tipos de movimientos…',
+    emptyTeam: 'Añade Pokémon al equipo para ver el matchup de tipos.',
+    effectiveMoves: 'Movimientos supereficaces vs {{name}}',
+    noEffectiveMoves:
+      'Ningún movimiento de tu equipo es supereficaz. Prueba otro moveset o Pokémon.',
+    noMovesOnTeam: 'Configura movimientos en el editor para ver qué ataques funcionan aquí.',
+    threatened: '{{name}} amenaza a tu equipo',
+    threatenedDetail: 'Débil a {{types}} ({{mult}})',
+    noThreats: 'Ningún Pokémon de tu equipo es débil a los tipos de este rival.',
+    threatWarning: 'En riesgo',
   },
   pokemon: {
     abilities: 'Habilidades',

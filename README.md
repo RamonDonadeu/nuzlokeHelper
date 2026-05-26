@@ -26,7 +26,6 @@ All data stays in your browser (`localStorage`). Pokémon data is fetched live f
 - Pokémon search, stat comparison vs team (level-aware BST when levels differ)
 - Evolution line preview, type analysis
 - Optional IVs/EVs/nature on imported Showdown sets; neutral nature default otherwise
-- **Gen 1–3 physical/special split** explained in Compare tab (type-based vs move category)
 
 ### Showdown
 

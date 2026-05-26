@@ -1,4 +1,4 @@
-import type { EvolutionStage, PokemonStats, PokemonSummary } from '@/types/pokemon'
+import type { PokemonStats, PokemonSummary } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 import {
   comparisonNatureForMember,
@@ -18,8 +18,7 @@ interface StatComparisonProps {
   team: PokemonSlot[]
   levelCap: number
   candidate?: PokemonSummary
-  evolutions?: EvolutionStage[]
-  onEvolutionSelect?: (name: string) => void
+  threatenedSlotIds?: ReadonlySet<string>
   teamOnly?: boolean
   onBack?: () => void
 }
@@ -92,10 +91,6 @@ function diffClass(value: number): string {
   return 'neutral'
 }
 
-function formatSignedDiff(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value}`
-}
-
 function memberLabel(member: PokemonSlot): string {
   return member.nickname ?? member.displayName
 }
@@ -114,10 +109,9 @@ function natureCellClass(member: PokemonSlot, key: keyof PokemonStats): string |
 
 export function StatComparison({
   candidate,
-  evolutions = [],
   team,
   levelCap,
-  onEvolutionSelect,
+  threatenedSlotIds,
   teamOnly = false,
   onBack,
 }: StatComparisonProps) {
@@ -136,20 +130,6 @@ export function StatComparison({
     : candidateStats !== null
       ? buildComparisonRows(candidateStats, candidateTotal, comparisonTeam, levelCap)
       : []
-
-  const finalEvolution = evolutions[evolutions.length - 1]
-  const finalEvolutionStats =
-    finalEvolution !== undefined
-      ? comparisonStatsForCandidate(finalEvolution.stats, levelCap)
-      : null
-  const finalEvolutionTotal = finalEvolutionStats ? totalStats(finalEvolutionStats) : 0
-
-  const showEvolutionInsight =
-    !teamOnly &&
-    candidate !== undefined &&
-    finalEvolution &&
-    finalEvolution.name !== candidate.name &&
-    strongest !== null
 
   const totalDiffVsStrongest = strongest ? candidateTotal - strongest.total : 0
   const scaledStatsHint = t('compare.scaledStatsHint', { level: levelCap })
@@ -186,15 +166,6 @@ export function StatComparison({
 
       {comparisonTeam.length > 0 && (
         <>
-          {!teamOnly && candidateStats !== null && (
-            <div className="comparison-summary">
-              <div>
-                <span className="muted">{t('compare.candidateTotal')}</span>
-                <strong>{candidateTotal}</strong>
-              </div>
-            </div>
-          )}
-
           <div className="table-wrap">
             <table>
               <thead>
@@ -238,14 +209,24 @@ export function StatComparison({
 
                   const { member, stats, total: memberTotal } = row
                   const isStrongest = strongest !== null && member.slotId === strongest.member.slotId
+                  const isThreatened = threatenedSlotIds?.has(member.slotId) ?? false
                   const hasCustomBuild = memberHasCustomBuild(member)
+                  const rowClass = [
+                    isStrongest ? 'strongest-row' : '',
+                    isThreatened ? 'threatened-row' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
                   return (
-                    <tr key={member.slotId} className={isStrongest ? 'strongest-row' : undefined}>
+                    <tr key={member.slotId} className={rowClass || undefined}>
                       <td>
                         <div className="table-pokemon">
                           <img src={member.sprite} alt="" />
                           <span>
                             {memberLabel(member)}
+                            {isThreatened && (
+                              <span className="tag tag-warning">{t('matchup.threatWarning')}</span>
+                            )}
                             {hasCustomBuild && (
                               <span className="tag custom-build-tag">{t('compare.customBuild')}</span>
                             )}
@@ -271,91 +252,6 @@ export function StatComparison({
             </table>
           </div>
         </>
-      )}
-
-      {!teamOnly && evolutions.length > 0 && candidate !== undefined && (
-        <div className="evolution-section">
-          <h4>{t('compare.evolutionLine')}</h4>
-          <div className="evolution-grid">
-            {evolutions.map((stage) => {
-              const stageStats = comparisonStatsForCandidate(stage.stats, levelCap)
-              const stageTotal = totalStats(stageStats)
-              const diffFromCandidate = stageTotal - candidateTotal
-              const diffFromStrongest =
-                strongest !== null ? stageTotal - strongest.total : null
-              const strongestName = strongest ? memberLabel(strongest.member) : ''
-
-              const isCurrent = stage.name === candidate.name
-              const cardClassName = `evolution-card${onEvolutionSelect ? ' evolution-card-interactive' : ''}${isCurrent ? ' evolution-card-current' : ''}`
-              const cardContent = (
-                <>
-                  <img src={stage.sprite} alt={stage.displayName} />
-                  <strong>{stage.displayName}</strong>
-                  <div className="type-row">
-                    {stage.types.map((type) => (
-                      <span key={type} className={`type-badge type-${type}`}>
-                        {type}
-                      </span>
-                    ))}
-                  </div>
-                  <p>
-                    {t('compare.total')} {stageTotal}
-                  </p>
-                  {stage.name !== candidate.name && (
-                    <p className={`evolution-diff ${diffClass(diffFromCandidate)}`}>
-                      {formatSignedDiff(diffFromCandidate)} vs {candidate.displayName}
-                    </p>
-                  )}
-                  {diffFromStrongest !== null && stage.name !== candidate.name && (
-                    <p className={`evolution-diff ${diffClass(diffFromStrongest)}`}>
-                      {t('compare.evolutionVsStrongest', {
-                        diff: formatSignedDiff(diffFromStrongest),
-                        name: strongestName,
-                      })}
-                    </p>
-                  )}
-                </>
-              )
-
-              return onEvolutionSelect ? (
-                <button
-                  key={stage.id}
-                  type="button"
-                  className={cardClassName}
-                  onClick={() => onEvolutionSelect(stage.name)}
-                >
-                  {cardContent}
-                </button>
-              ) : (
-                <article key={stage.id} className={cardClassName}>
-                  {cardContent}
-                </article>
-              )
-            })}
-          </div>
-
-          {showEvolutionInsight && finalEvolution && strongest && finalEvolutionStats && candidate && (
-            <p className="insight-box">
-              {t('compare.insightWeaker', {
-                candidate: candidate.displayName,
-                candidateTotal,
-                final: finalEvolution.displayName,
-                finalTotal: finalEvolutionTotal,
-              })}
-              {finalEvolutionTotal > strongest.total
-                ? t('compare.insightAboveStrongest', {
-                    name: memberLabel(strongest.member),
-                    total: strongest.total,
-                  })
-                : finalEvolutionTotal < strongest.total
-                  ? t('compare.insightBelowStrongest', {
-                      name: memberLabel(strongest.member),
-                      total: strongest.total,
-                    })
-                  : '.'}
-            </p>
-          )}
-        </div>
       )}
     </section>
   )

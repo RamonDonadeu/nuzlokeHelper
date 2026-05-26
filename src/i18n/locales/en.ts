@@ -8,6 +8,7 @@ export type TranslationKey = {
   profile: Record<string, string>
   search: Record<string, string>
   compare: Record<string, string>
+  matchup: Record<string, string>
   pokemon: Record<string, string>
   editor: Record<string, string>
   types: Record<string, string>
@@ -113,7 +114,6 @@ export const en: TranslationKey = {
     teamStatsBack: 'Back',
     addTeamFirst: 'Add Pokémon to your team to compare.',
     evolutionLine: 'Evolution line',
-    moveRules: 'Move damage category',
     strongestOnTeam: 'Strongest on team ({{name}})',
     teamAverage: 'Team average',
     evolutionVsStrongest: '{{diff}} vs {{name}}',
@@ -139,6 +139,18 @@ export const en: TranslationKey = {
     noTeam: 'No team',
     pcAverage: 'PC average',
     strongestInPc: 'Strongest in PC ({{name}})',
+  },
+  matchup: {
+    title: 'Type matchup vs your team',
+    loading: 'Checking move types…',
+    emptyTeam: 'Add Pokémon to your team to see type matchup.',
+    effectiveMoves: 'Super-effective moves vs {{name}}',
+    noEffectiveMoves: 'None of your team’s moves are super-effective. Try another moveset or Pokémon.',
+    noMovesOnTeam: 'Set moves on team Pokémon in the editor to see which attacks work here.',
+    threatened: '{{name}} threatens your team',
+    threatenedDetail: 'Weak to {{types}} ({{mult}})',
+    noThreats: 'None of your team is weak to this Pokémon’s typing.',
+    threatWarning: 'At risk',
   },
   pokemon: {
     abilities: 'Abilities',
