@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { EvolutionStage, PokemonAbility, PokemonStats } from '@/types/pokemon'
+import type { EvolutionStage, PokemonAbility, PokemonStats, PokemonType } from '@/types/pokemon'
 import { STAT_KEYS, STAT_LABELS } from '@/types/pokemon'
 import type { PokemonSlot, SlotListName } from '@/types/profile'
 import { EvolutionLine } from '@/components/EvolutionLine'
@@ -21,9 +21,11 @@ import { useI18n } from '@/i18n'
 import { MoveInput } from '@/components/MoveInput'
 import { useAbilityDescriptions } from '@/hooks/useAbilityDescriptions'
 import { useEvolutionBadges } from '@/hooks/useBoxEvolutionBadges'
+import { resolveMoveTypes } from '@/lib/moveTypes'
 import {
   canonicalAbilityName,
   canonicalMoveName,
+  displayMoveName,
   ensureEditorIndexes,
   getLocalizedAbilityName,
   getLocalizedPokemonNameBySlug,
@@ -168,6 +170,7 @@ export function PokemonEditor({
   const [abilitySlugs, setAbilitySlugs] = useState<string[]>([])
   const [loadingAbilities, setLoadingAbilities] = useState(true)
   const [moveIndexReady, setMoveIndexReady] = useState(false)
+  const [moveTypesByName, setMoveTypesByName] = useState<Record<string, PokemonType | null>>({})
   const [previewEvolutionName, setPreviewEvolutionName] = useState<string | null>(null)
 
   const {
@@ -263,6 +266,10 @@ export function PokemonEditor({
   }, [previewEvolutionName, slot.name, evolutions])
 
   const natureOptions = useMemo(() => sortedNaturesForDisplay(locale), [locale])
+  const configuredMoves = useMemo(
+    () => moves.map((move) => canonicalMoveName(move.trim())).filter(Boolean).slice(0, 4),
+    [moves],
+  )
 
   const listLabel =
     list === 'team'
@@ -330,6 +337,38 @@ export function PokemonEditor({
   }
 
   const selectedAbilityCanonical = canonicalAbilityName(ability)
+
+  useEffect(() => {
+    let cancelled = false
+    if (configuredMoves.length === 0) {
+      setMoveTypesByName({})
+      return () => {
+        cancelled = true
+      }
+    }
+
+    void resolveMoveTypes(configuredMoves)
+      .then((resolvedTypes) => {
+        if (cancelled) return
+        const next: Record<string, PokemonType | null> = {}
+        for (const moveName of configuredMoves) {
+          next[moveName] = resolvedTypes.get(moveName) ?? null
+        }
+        setMoveTypesByName(next)
+      })
+      .catch(() => {
+        if (cancelled) return
+        const next: Record<string, PokemonType | null> = {}
+        for (const moveName of configuredMoves) {
+          next[moveName] = null
+        }
+        setMoveTypesByName(next)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [configuredMoves])
 
   return (
     <section className="card pokemon-editor">
@@ -407,6 +446,39 @@ export function PokemonEditor({
           />
         )}
 
+        <div className="editor-move-summary">
+          <h4>{t('editor.moves')}</h4>
+          {configuredMoves.length > 0 ? (
+            <ul className="editor-move-summary-list">
+              {configuredMoves.map((moveName, index) => {
+                const moveType = moveTypesByName[moveName]
+                return (
+                  <li key={`${moveName}-${index}`} className="editor-move-summary-item">
+                    <span className="editor-move-summary-name">{displayMoveName(moveName, locale)}</span>
+                    <span className={`type-badge ${moveType ? `type-${moveType}` : 'type-unknown'}`}>
+                      {moveType ?? t('editor.moveTypeUnknown')}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="muted">{t('editor.noMovesConfigured')}</p>
+          )}
+        </div>
+
+        {!detailsLoading && evolutions.length > 0 && (
+          <EvolutionLine
+            evolutions={evolutions}
+            currentName={slot.name}
+            title={t('compare.evolutionLine')}
+            highlightedName={previewEvolutionName ?? slot.name}
+            onStageSelect={(name) =>
+              setPreviewEvolutionName(name === slot.name ? null : name)
+            }
+          />
+        )}
+
         {previewStage && (
           <div className="editor-evolution-preview">
             <p className="muted">
@@ -423,18 +495,6 @@ export function PokemonEditor({
               {t('editor.clearEvolutionPreview')}
             </button>
           </div>
-        )}
-
-        {!detailsLoading && evolutions.length > 0 && (
-          <EvolutionLine
-            evolutions={evolutions}
-            currentName={slot.name}
-            title={t('compare.evolutionLine')}
-            highlightedName={previewEvolutionName ?? slot.name}
-            onStageSelect={(name) =>
-              setPreviewEvolutionName(name === slot.name ? null : name)
-            }
-          />
         )}
 
         {loadingAbilities ? (

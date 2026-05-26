@@ -171,6 +171,8 @@ export const es: TranslationKey = {
     buildSection: 'Build',
     previewingEvolution: 'Vista previa: {{name}}',
     clearEvolutionPreview: 'Volver a la forma actual',
+    noMovesConfigured: 'Aun no hay movimientos configurados.',
+    moveTypeUnknown: 'Desconocido',
     resetStats: 'Restablecer IVs/EVs',
     canEvolve: 'Puede evolucionar',
     evolve: 'Evolucionar',

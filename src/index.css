@@ -2346,6 +2346,45 @@ button.evolution-card {
   border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
+.editor-move-summary {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+}
+
+.editor-move-summary h4 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.editor-move-summary-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.editor-move-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.editor-move-summary-name {
+  font-size: 0.88rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.type-badge.type-unknown {
+  background: #334155;
+  color: #cbd5e1;
+}
+
 .editor-form-divider {
   display: flex;
   align-items: center;
