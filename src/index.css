@@ -742,6 +742,18 @@ ul {
   scroll-margin-top: 3.5rem;
 }
 
+.search-result-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.search-result-filters .tab-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
 .search-input {
   width: 100%;
   margin-top: 0.75rem;

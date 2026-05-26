@@ -31,6 +31,7 @@ import {
 import { findSlotInProfile } from '@/types/profile'
 
 type Tab = 'types' | 'pc'
+type SearchResultFilter = 'all' | 'pokemon' | 'moves'
 
 export default function App() {
   const profiles = useProfiles()
@@ -83,6 +84,7 @@ function AppContent({
   const { t, locale } = useI18n()
   const { showToast, showErrorToast } = useToast()
   const [query, setQuery] = useState('')
+  const [searchResultFilter, setSearchResultFilter] = useState<SearchResultFilter>('all')
   const [searchOverrideName, setSearchOverrideName] = useState<string | null>(null)
   const [searchOverrideMove, setSearchOverrideMove] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('types')
@@ -127,6 +129,7 @@ function AppContent({
   const searchMatchup = useSearchMatchup(team, searchPokemon)
 
   useEffect(() => {
+    setSearchResultFilter('all')
     setSearchOverrideName(null)
     setSearchOverrideMove(null)
   }, [query])
@@ -259,6 +262,27 @@ function AppContent({
   const showSearchResults =
     !showTeamStats && !selectedSlotInfo && query.trim().length >= 2
 
+  const hasPokemonResults = results.length > 0
+  const hasMoveResults = moveSearch.results.length > 0
+  const showSearchFilters =
+    showSearchResults &&
+    hasPokemonResults &&
+    hasMoveResults &&
+    !searchPending &&
+    !moveSearch.isPending
+
+  const showPokemonResults =
+    searchResultFilter === 'all' || searchResultFilter === 'pokemon'
+  const showMoveResults = searchResultFilter === 'all' || searchResultFilter === 'moves'
+
+  const togglePokemonFilter = () => {
+    setSearchResultFilter((prev) => (prev === 'pokemon' ? 'all' : 'pokemon'))
+  }
+
+  const toggleMoveFilter = () => {
+    setSearchResultFilter((prev) => (prev === 'moves' ? 'all' : 'moves'))
+  }
+
   const otherMoveMatches =
     searchOverrideMove && selectedMoveName
       ? moveSearch.results.filter((result) => result.canonicalName !== selectedMoveName)
@@ -365,21 +389,50 @@ function AppContent({
 
           {showSearchResults && (
             <section ref={searchSectionRef} className="card search-section">
-              {query.trim().length >= 2 && searchPending && (
+              {showSearchFilters && (
+                <div
+                  className="search-result-filters"
+                  role="group"
+                  aria-label={t('search.filterLabel')}
+                >
+                  <button
+                    type="button"
+                    className={`tab-btn ${showPokemonResults ? 'active' : ''}`}
+                    aria-pressed={showPokemonResults}
+                    onClick={togglePokemonFilter}
+                  >
+                    {t('search.filterPokemon')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`tab-btn ${showMoveResults ? 'active' : ''}`}
+                    aria-pressed={showMoveResults}
+                    onClick={toggleMoveFilter}
+                  >
+                    {t('search.filterMoves')}
+                  </button>
+                </div>
+              )}
+
+              {showPokemonResults && query.trim().length >= 2 && searchPending && (
                 <p className="muted search-status">{t('search.searching')}</p>
               )}
-              {query.trim().length >= 2 && moveSearch.isPending && (
+              {showMoveResults && query.trim().length >= 2 && moveSearch.isPending && (
                 <p className="muted search-status">{t('search.searchingMoves')}</p>
               )}
 
-              {searchDisplayName && searchDetailsLoading && (
+              {showPokemonResults && searchDisplayName && searchDetailsLoading && (
                 <p className="muted search-status">{t('compare.loading')}</p>
               )}
 
-              {searchDetailsError && <p className="error-note">{searchDetailsError}</p>}
-              {searchMoveError && <p className="error-note">{searchMoveError}</p>}
+              {showPokemonResults && searchDetailsError && (
+                <p className="error-note">{searchDetailsError}</p>
+              )}
+              {showMoveResults && searchMoveError && (
+                <p className="error-note">{searchMoveError}</p>
+              )}
 
-              {searchPokemon && !searchDetailsLoading && (
+              {showPokemonResults && searchPokemon && !searchDetailsLoading && (
                 <div className="search-best-match">
                   <h3 className="search-best-match-label">{t('search.bestMatch')}</h3>
                   <PokemonCard
@@ -397,7 +450,7 @@ function AppContent({
                 </div>
               )}
 
-              {otherMatches.length > 0 && !searchPending && (
+              {showPokemonResults && otherMatches.length > 0 && !searchPending && (
                 <div className="search-other-matches">
                   <h3 className="search-other-matches-label">{t('search.otherMatches')}</h3>
                   <ul className="search-results">
@@ -416,14 +469,14 @@ function AppContent({
                 </div>
               )}
 
-              {searchMove && !searchMoveLoading && (
+              {showMoveResults && searchMove && !searchMoveLoading && (
                 <div className="search-best-match">
                   <h3 className="search-best-match-label">{t('search.bestMoveMatch')}</h3>
                   <MoveSearchPanel move={searchMove} team={team} />
                 </div>
               )}
 
-              {otherMoveMatches.length > 0 && !moveSearch.isPending && (
+              {showMoveResults && otherMoveMatches.length > 0 && !moveSearch.isPending && (
                 <div className="search-other-matches">
                   <h3 className="search-other-matches-label">{t('search.otherMoveMatches')}</h3>
                   <ul className="search-results">
@@ -442,11 +495,17 @@ function AppContent({
                 </div>
               )}
 
-              {searchedQuery.length >= 2 && !searchPending && !moveSearch.isPending && results.length === 0 && moveSearch.results.length === 0 && (
+              {searchedQuery.length >= 2 &&
+                !searchPending &&
+                !moveSearch.isPending &&
+                (showPokemonResults && showMoveResults
+                  ? results.length === 0 && moveSearch.results.length === 0
+                  : (showPokemonResults && results.length === 0) ||
+                    (showMoveResults && moveSearch.results.length === 0)) && (
                 <p className="muted">{t('search.noResults')}</p>
               )}
 
-              {searchPokemon && !searchDetailsLoading && (
+              {showPokemonResults && searchPokemon && !searchDetailsLoading && (
                 <>
                   <StatComparison
                     candidate={searchPokemon}
