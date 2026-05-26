@@ -97,6 +97,7 @@ export const es: TranslationKey = {
     movePower: 'Potencia',
     moveAccuracy: 'Precisión',
     movePp: 'PP',
+    moveDescription: 'Descripción',
     moveUnknown: 'Desconocido',
     moveTeamEffectiveness: 'Efectividad vs tu equipo',
     moveEffectivenessLoading: 'Comprobando efectividad del equipo...',

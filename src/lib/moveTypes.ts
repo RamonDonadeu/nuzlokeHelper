@@ -1,14 +1,22 @@
+import type { Locale } from '@/i18n'
 import type { PokemonType } from '@/types/pokemon'
 import { resolveMoveSlug } from '@/lib/localizedNames'
+import { compareVersionGroups } from '@/lib/versionGroups'
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2'
 const CACHE_KEY = 'nuzlokeHelper:moveTypes:v1'
-const DETAILS_CACHE_KEY = 'nuzlokeHelper:moveDetails:v1'
+const DETAILS_CACHE_KEY = 'nuzlokeHelper:moveDetails:v2'
 
 const memoryCache = new Map<string, PokemonType | null>()
 const detailsMemoryCache = new Map<string, MoveDetails | null>()
 let storageLoaded = false
 let detailsStorageLoaded = false
+
+export interface MoveFlavorEntry {
+  versionGroup: string
+  language: string
+  text: string
+}
 
 export interface MoveDetails {
   slug: string
@@ -18,6 +26,34 @@ export interface MoveDetails {
   accuracy: number | null
   pp: number | null
   damageClass: 'physical' | 'special' | 'status' | null
+  shortEffectEn: string
+  flavorEntries: MoveFlavorEntry[]
+}
+
+function cleanFlavorText(text: string): string {
+  return text.replace(/\f/g, ' ').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function flavorLanguageForLocale(locale: Locale): string {
+  return locale === 'es' ? 'es' : 'en'
+}
+
+function pickLatestFlavorEntry(entries: MoveFlavorEntry[]): MoveFlavorEntry | undefined {
+  if (entries.length === 0) return undefined
+  return [...entries].sort((a, b) => compareVersionGroups(a.versionGroup, b.versionGroup))[0]
+}
+
+/** In-game flavor for the locale, then English short_effect, then latest English flavor. */
+export function getMoveDescription(move: MoveDetails, locale: Locale): string {
+  const language = flavorLanguageForLocale(locale)
+  const localized = move.flavorEntries.filter((entry) => entry.language === language)
+  const latestLocalized = pickLatestFlavorEntry(localized)
+  if (latestLocalized?.text) return latestLocalized.text
+  if (move.shortEffectEn) return move.shortEffectEn
+  const latestEnglish = pickLatestFlavorEntry(
+    move.flavorEntries.filter((entry) => entry.language === 'en'),
+  )
+  return latestEnglish?.text ?? ''
 }
 
 function toMoveSlug(input: string): string {
@@ -87,9 +123,26 @@ async function fetchMoveDetailsBySlug(slug: string): Promise<MoveDetails | null>
     accuracy?: number | null
     pp?: number | null
     damage_class?: { name: string }
+    effect_entries?: Array<{
+      short_effect: string
+      language: { name: string }
+    }>
+    flavor_text_entries?: Array<{
+      flavor_text: string
+      language: { name: string }
+      version_group: { name: string }
+    }>
   }
   const damageClass = data.damage_class?.name
   const typeName = data.type?.name
+  const shortEffectEn =
+    data.effect_entries?.find((entry) => entry.language.name === 'en')?.short_effect.trim() ?? ''
+  const flavorEntries =
+    data.flavor_text_entries?.map((entry) => ({
+      versionGroup: entry.version_group.name,
+      language: entry.language.name,
+      text: cleanFlavorText(entry.flavor_text),
+    })) ?? []
   return {
     slug,
     name: data.name ?? slug,
@@ -101,6 +154,8 @@ async function fetchMoveDetailsBySlug(slug: string): Promise<MoveDetails | null>
       damageClass === 'physical' || damageClass === 'special' || damageClass === 'status'
         ? damageClass
         : null,
+    shortEffectEn,
+    flavorEntries,
   }
 }
 

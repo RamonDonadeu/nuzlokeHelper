@@ -1,6 +1,7 @@
 import { useI18n } from '@/i18n'
 import { useMoveEffectiveness } from '@/hooks/useMoveEffectiveness'
 import { displayMoveName } from '@/lib/localizedNames'
+import { getMoveDescription } from '@/lib/moveTypes'
 import { formatMultiplier, multiplierTier } from '@/lib/typeChart'
 import type { MoveDetails } from '@/lib/moveTypes'
 import type { PokemonSlot } from '@/types/profile'
@@ -40,6 +41,7 @@ export function MoveSearchPanel({ move, team }: MoveSearchPanelProps) {
   const { t, locale } = useI18n()
   const { rows, loading } = useMoveEffectiveness(team, move.type)
   const moveName = displayMoveName(move.name, locale)
+  const description = getMoveDescription(move, locale)
 
   return (
     <section className="card move-search-panel">
@@ -71,6 +73,12 @@ export function MoveSearchPanel({ move, team }: MoveSearchPanelProps) {
             <strong>{statLabel(move.pp, t)}</strong>
           </div>
         </div>
+        {description ? (
+          <div className="move-description-block">
+            <span className="muted">{t('search.moveDescription')}</span>
+            <p className="ability-description">{description}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="matchup-block">

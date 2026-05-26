@@ -840,6 +840,11 @@ ul {
   font-size: 0.9rem;
 }
 
+.move-description-block {
+  display: grid;
+  gap: 0.35rem;
+}
+
 .move-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
