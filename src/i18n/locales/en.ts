@@ -205,6 +205,8 @@ export const en: TranslationKey = {
     defImmunitiesTitle: 'Immunities (0×)',
     defImmunitiesHint: 'Each member and the attacking types they take no damage from.',
     defImmunitiesEmpty: 'No type immunities on the team.',
+    defUncoveredTitle: 'Uncovered attack types',
+    defUncoveredEmpty: 'All attacking types are covered by at least one resist/immunity.',
     defMemberMatrix: 'Weaknesses by member',
     defMatrixAttackCol: 'Type',
     defMatrixLegendLabel: 'How to read the weakness matrix',

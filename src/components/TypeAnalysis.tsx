@@ -7,6 +7,7 @@ import {
   defenseTierClass,
   formatMultiplier,
   getDefensiveCoverage,
+  getUncoveredAttackTypes,
   getPerMemberDoubleWeaknesses,
   getPerMemberImmunities,
 } from '@/lib/typeChart'
@@ -113,9 +114,14 @@ function DefenseCoverageView({
     () => getPerMemberImmunities(coverage.memberMatrix),
     [coverage.memberMatrix],
   )
+  const uncoveredAttackTypes = useMemo(
+    () => getUncoveredAttackTypes(coverage.memberMatrix),
+    [coverage.memberMatrix],
+  )
 
   const hasDoubleWeakness = perMemberDoubleWeak.some((entries) => entries.length > 0)
   const hasImmunities = perMemberImmunities.some((entries) => entries.length > 0)
+  const hasUncoveredAttackTypes = uncoveredAttackTypes.length > 0
 
   return (
     <>
@@ -176,6 +182,21 @@ function DefenseCoverageView({
                   </li>
                 )
               })}
+            </ul>
+          )}
+        </section>
+
+        <section className="defense-summary-section">
+          <h4>{t('types.defUncoveredTitle')}</h4>
+          {!hasUncoveredAttackTypes ? (
+            <p className="empty-note">{t('types.defUncoveredEmpty')}</p>
+          ) : (
+            <ul className="coverage-type-badges">
+              {uncoveredAttackTypes.map((attackType) => (
+                <li key={attackType}>
+                  <span className={`type-badge type-${attackType}`}>{attackType}</span>
+                </li>
+              ))}
             </ul>
           )}
         </section>

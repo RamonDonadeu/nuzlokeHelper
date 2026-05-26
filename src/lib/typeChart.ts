@@ -274,6 +274,20 @@ export function getPerMemberImmunities(
   return result
 }
 
+/** Attacking types with no known team resist (<=0.5×) or immunity (0×). */
+export function getUncoveredAttackTypes(
+  memberMatrix: DefensiveCoverage['memberMatrix'],
+): PokemonType[] {
+  return memberMatrix
+    .filter((row) => {
+      const knownMultipliers = row.memberMultipliers.filter(
+        (multiplier): multiplier is number => multiplier !== null,
+      )
+      return !knownMultipliers.some((multiplier) => multiplier <= 0.5)
+    })
+    .map((row) => row.attackType)
+}
+
 export function formatMultiplier(value: number): string {
   if (value === 0) return '0×'
   if (value === 0.25) return '¼×'
