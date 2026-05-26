@@ -802,6 +802,50 @@ ul {
   color: var(--muted);
 }
 
+.move-search-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.move-detail-grid {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+}
+
+.move-detail-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.move-detail-line {
+  font-size: 0.9rem;
+}
+
+.move-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.move-stat-grid > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.move-team-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .type-row {
   display: flex;
   flex-wrap: wrap;

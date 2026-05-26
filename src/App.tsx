@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EvolutionPrompt } from '@/components/EvolutionPrompt'
+import { MoveSearchPanel } from '@/components/MoveSearchPanel'
 import { PCView } from '@/components/PCView'
 import { PokemonCard } from '@/components/PokemonCard'
 import { PokemonEditor } from '@/components/PokemonEditor'
@@ -16,6 +17,8 @@ import { ToastProvider, useToast } from '@/components/Toast'
 import { TypeAnalysis } from '@/components/TypeAnalysis'
 import { I18nProvider, useI18n } from '@/i18n'
 import { usePokemonDetails } from '@/hooks/usePokemonDetails'
+import { useMoveDetails } from '@/hooks/useMoveDetails'
+import { useMoveSearch } from '@/hooks/useMoveSearch'
 import { usePokemonSearch } from '@/hooks/usePokemonSearch'
 import { useSearchMatchup } from '@/hooks/useSearchMatchup'
 import { useProfiles } from '@/hooks/useProfiles'
@@ -23,6 +26,7 @@ import {
   getLocalizedPokemonName,
   getLocalizedPokemonNameBySlug,
   getSpeciesSlugFromUrl,
+  displayMoveName,
 } from '@/lib/localizedNames'
 import { findSlotInProfile } from '@/types/profile'
 
@@ -80,6 +84,7 @@ function AppContent({
   const { showToast, showErrorToast } = useToast()
   const [query, setQuery] = useState('')
   const [searchOverrideName, setSearchOverrideName] = useState<string | null>(null)
+  const [searchOverrideMove, setSearchOverrideMove] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('types')
   const [showTeamStats, setShowTeamStats] = useState(false)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
@@ -102,8 +107,10 @@ function AppContent({
     isPending: searchPending,
     searchedQuery,
   } = usePokemonSearch(query)
+  const moveSearch = useMoveSearch(query, locale, query.trim().length >= 2)
 
   const searchDisplayName = searchOverrideName ?? bestMatch?.name ?? null
+  const selectedMoveName = searchOverrideMove ?? moveSearch.results[0]?.canonicalName ?? null
 
   const {
     pokemon: searchPokemon,
@@ -111,11 +118,17 @@ function AppContent({
     loading: searchDetailsLoading,
     error: searchDetailsError,
   } = usePokemonDetails(searchDisplayName)
+  const {
+    move: searchMove,
+    loading: searchMoveLoading,
+    error: searchMoveError,
+  } = useMoveDetails(selectedMoveName)
 
   const searchMatchup = useSearchMatchup(team, searchPokemon)
 
   useEffect(() => {
     setSearchOverrideName(null)
+    setSearchOverrideMove(null)
   }, [query])
 
   useEffect(() => {
@@ -159,6 +172,11 @@ function AppContent({
 
   const handleSearchResultClick = (name: string) => {
     setSearchOverrideName(name)
+    requestAnimationFrame(scrollSearchToTop)
+  }
+
+  const handleMoveResultClick = (canonicalName: string) => {
+    setSearchOverrideMove(canonicalName)
     requestAnimationFrame(scrollSearchToTop)
   }
 
@@ -240,6 +258,11 @@ function AppContent({
 
   const showSearchResults =
     !showTeamStats && !selectedSlotInfo && query.trim().length >= 2
+
+  const otherMoveMatches =
+    searchOverrideMove && selectedMoveName
+      ? moveSearch.results.filter((result) => result.canonicalName !== selectedMoveName)
+      : moveSearch.results.slice(1)
 
   const sidebar = (
     <>
@@ -345,12 +368,16 @@ function AppContent({
               {query.trim().length >= 2 && searchPending && (
                 <p className="muted search-status">{t('search.searching')}</p>
               )}
+              {query.trim().length >= 2 && moveSearch.isPending && (
+                <p className="muted search-status">{t('search.searchingMoves')}</p>
+              )}
 
               {searchDisplayName && searchDetailsLoading && (
                 <p className="muted search-status">{t('compare.loading')}</p>
               )}
 
               {searchDetailsError && <p className="error-note">{searchDetailsError}</p>}
+              {searchMoveError && <p className="error-note">{searchMoveError}</p>}
 
               {searchPokemon && !searchDetailsLoading && (
                 <div className="search-best-match">
@@ -389,7 +416,33 @@ function AppContent({
                 </div>
               )}
 
-              {searchedQuery.length >= 2 && !searchPending && results.length === 0 && (
+              {searchMove && !searchMoveLoading && (
+                <div className="search-best-match">
+                  <h3 className="search-best-match-label">{t('search.bestMoveMatch')}</h3>
+                  <MoveSearchPanel move={searchMove} team={team} />
+                </div>
+              )}
+
+              {otherMoveMatches.length > 0 && !moveSearch.isPending && (
+                <div className="search-other-matches">
+                  <h3 className="search-other-matches-label">{t('search.otherMoveMatches')}</h3>
+                  <ul className="search-results">
+                    {otherMoveMatches.map((result) => (
+                      <li key={result.slug}>
+                        <button
+                          type="button"
+                          className={selectedMoveName === result.canonicalName ? 'active' : ''}
+                          onClick={() => handleMoveResultClick(result.canonicalName)}
+                        >
+                          {displayMoveName(result.canonicalName, locale)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {searchedQuery.length >= 2 && !searchPending && !moveSearch.isPending && results.length === 0 && moveSearch.results.length === 0 && (
                 <p className="muted">{t('search.noResults')}</p>
               )}
 

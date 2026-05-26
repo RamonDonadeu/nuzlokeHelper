@@ -3,9 +3,22 @@ import { resolveMoveSlug } from '@/lib/localizedNames'
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2'
 const CACHE_KEY = 'nuzlokeHelper:moveTypes:v1'
+const DETAILS_CACHE_KEY = 'nuzlokeHelper:moveDetails:v1'
 
 const memoryCache = new Map<string, PokemonType | null>()
+const detailsMemoryCache = new Map<string, MoveDetails | null>()
 let storageLoaded = false
+let detailsStorageLoaded = false
+
+export interface MoveDetails {
+  slug: string
+  name: string
+  type: PokemonType | null
+  power: number | null
+  accuracy: number | null
+  pp: number | null
+  damageClass: 'physical' | 'special' | 'status' | null
+}
 
 function toMoveSlug(input: string): string {
   return input
@@ -30,6 +43,24 @@ function loadStorageCache(): void {
   }
 }
 
+function loadDetailsStorageCache(): void {
+  if (detailsStorageLoaded) return
+  detailsStorageLoaded = true
+  try {
+    const raw = localStorage.getItem(DETAILS_CACHE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as Record<string, MoveDetails | null>
+    for (const [slug, details] of Object.entries(parsed)) {
+      detailsMemoryCache.set(slug, details)
+      if (details?.type) {
+        memoryCache.set(slug, details.type)
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function persistCache(): void {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(Object.fromEntries(memoryCache)))
@@ -38,13 +69,39 @@ function persistCache(): void {
   }
 }
 
-async function fetchMoveTypeBySlug(slug: string): Promise<PokemonType | null> {
+function persistDetailsCache(): void {
+  try {
+    localStorage.setItem(DETAILS_CACHE_KEY, JSON.stringify(Object.fromEntries(detailsMemoryCache)))
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+async function fetchMoveDetailsBySlug(slug: string): Promise<MoveDetails | null> {
   const response = await fetch(`${POKEAPI_BASE}/move/${slug}`)
   if (!response.ok) return null
-  const data = (await response.json()) as { type?: { name: string } }
+  const data = (await response.json()) as {
+    name?: string
+    type?: { name: string }
+    power?: number | null
+    accuracy?: number | null
+    pp?: number | null
+    damage_class?: { name: string }
+  }
+  const damageClass = data.damage_class?.name
   const typeName = data.type?.name
-  if (!typeName) return null
-  return typeName as PokemonType
+  return {
+    slug,
+    name: data.name ?? slug,
+    type: (typeName as PokemonType | undefined) ?? null,
+    power: typeof data.power === 'number' ? data.power : null,
+    accuracy: typeof data.accuracy === 'number' ? data.accuracy : null,
+    pp: typeof data.pp === 'number' ? data.pp : null,
+    damageClass:
+      damageClass === 'physical' || damageClass === 'special' || damageClass === 'status'
+        ? damageClass
+        : null,
+  }
 }
 
 function slugForMoveName(name: string): string {
@@ -54,6 +111,7 @@ function slugForMoveName(name: string): string {
 /** Resolve move display names to types (cached in memory + localStorage). */
 export async function resolveMoveTypes(moveNames: string[]): Promise<Map<string, PokemonType | null>> {
   loadStorageCache()
+  loadDetailsStorageCache()
 
   const unique = [...new Set(moveNames.map((name) => name.trim()).filter(Boolean))]
   const result = new Map<string, PokemonType | null>()
@@ -71,12 +129,31 @@ export async function resolveMoveTypes(moveNames: string[]): Promise<Map<string,
   await Promise.all(
     toFetch.map(async (name) => {
       const slug = slugForMoveName(name)
-      const type = await fetchMoveTypeBySlug(slug)
+      const details =
+        detailsMemoryCache.has(slug) ? detailsMemoryCache.get(slug) ?? null : await fetchMoveDetailsBySlug(slug)
+      const type = details?.type ?? null
+      detailsMemoryCache.set(slug, details)
       memoryCache.set(slug, type)
       result.set(name, type)
     }),
   )
 
   if (toFetch.length > 0) persistCache()
+  if (toFetch.length > 0) persistDetailsCache()
   return result
+}
+
+/** Resolve a move name to full details (cached in memory + localStorage). */
+export async function fetchMoveDetails(moveName: string): Promise<MoveDetails | null> {
+  loadStorageCache()
+  loadDetailsStorageCache()
+  const slug = slugForMoveName(moveName)
+  if (detailsMemoryCache.has(slug)) return detailsMemoryCache.get(slug) ?? null
+
+  const details = await fetchMoveDetailsBySlug(slug)
+  detailsMemoryCache.set(slug, details)
+  memoryCache.set(slug, details?.type ?? null)
+  persistDetailsCache()
+  persistCache()
+  return details
 }
