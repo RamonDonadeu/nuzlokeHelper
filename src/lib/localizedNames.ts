@@ -2,8 +2,8 @@ import { formatPokemonName } from '@/types/pokemon'
 import type { Locale } from '@/i18n'
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2'
-const CACHE_VERSION = 1
-const STORAGE_KEY = 'nuzlokeHelper:localizedNames:v1'
+const CACHE_VERSION = 2
+const STORAGE_KEY = 'nuzlokeHelper:localizedNames:v2'
 const BATCH_SIZE = 25
 
 export interface LocalizedEntry {
@@ -22,6 +22,7 @@ interface CachedPayload {
   species: LocalizedEntry[]
   moves: LocalizedEntry[]
   abilities: LocalizedEntry[]
+  items: LocalizedEntry[]
   pokemonSpeciesMap: Record<string, string>
 }
 
@@ -33,11 +34,13 @@ interface PokeApiNamedResource {
 let speciesIndex: NameIndex | null = null
 let moveIndex: NameIndex | null = null
 let abilityIndex: NameIndex | null = null
+let itemIndex: NameIndex | null = null
 let pokemonSpeciesMap: Map<string, string> | null = null
 
 let speciesLoadPromise: Promise<void> | null = null
 let moveLoadPromise: Promise<void> | null = null
 let abilityLoadPromise: Promise<void> | null = null
+let itemLoadPromise: Promise<void> | null = null
 let pokemonMapLoadPromise: Promise<void> | null = null
 let storageHydrated = false
 
@@ -56,6 +59,7 @@ export function hydrateIndexesFromStorage(): void {
   if (cache.species.length) speciesIndex = buildIndex(cache.species)
   if (cache.moves.length) moveIndex = buildIndex(cache.moves)
   if (cache.abilities.length) abilityIndex = buildIndex(cache.abilities)
+  if (cache.items.length) itemIndex = buildIndex(cache.items)
   if (cache.pokemonSpeciesMap && Object.keys(cache.pokemonSpeciesMap).length > 0) {
     pokemonSpeciesMap = new Map(Object.entries(cache.pokemonSpeciesMap))
   }
@@ -99,9 +103,16 @@ function readCache(): CachedPayload | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as CachedPayload
+    const parsed = JSON.parse(raw) as Partial<CachedPayload>
     if (parsed.version !== CACHE_VERSION) return null
-    return parsed
+    return {
+      version: CACHE_VERSION,
+      species: parsed.species ?? [],
+      moves: parsed.moves ?? [],
+      abilities: parsed.abilities ?? [],
+      items: parsed.items ?? [],
+      pokemonSpeciesMap: parsed.pokemonSpeciesMap ?? {},
+    }
   } catch {
     return null
   }
@@ -204,6 +215,7 @@ export async function ensureSpeciesIndex(): Promise<void> {
       species: entries,
       moves: existing?.moves ?? [],
       abilities: existing?.abilities ?? [],
+      items: existing?.items ?? [],
       pokemonSpeciesMap: existing?.pokemonSpeciesMap ?? {},
     })
   })()
@@ -232,6 +244,7 @@ export async function ensureMoveIndex(): Promise<void> {
       species: existing?.species ?? [],
       moves: entries,
       abilities: existing?.abilities ?? [],
+      items: existing?.items ?? [],
       pokemonSpeciesMap: existing?.pokemonSpeciesMap ?? {},
     })
   })()
@@ -260,6 +273,7 @@ export async function ensureAbilityIndex(): Promise<void> {
       species: existing?.species ?? [],
       moves: existing?.moves ?? [],
       abilities: entries,
+      items: existing?.items ?? [],
       pokemonSpeciesMap: existing?.pokemonSpeciesMap ?? {},
     })
   })()
@@ -299,6 +313,7 @@ export async function ensurePokemonSpeciesMap(pokemonSlugs: string[]): Promise<v
       species: existing?.species ?? [],
       moves: existing?.moves ?? [],
       abilities: existing?.abilities ?? [],
+      items: existing?.items ?? [],
       pokemonSpeciesMap: Object.fromEntries(map.entries()),
     })
   })()
@@ -309,6 +324,35 @@ export async function ensurePokemonSpeciesMap(pokemonSlugs: string[]): Promise<v
 /** Prepare Pokémon search indexes from cache only. Does not download from PokeAPI. */
 export async function ensureSearchIndexes(): Promise<void> {
   hydrateIndexesFromStorage()
+}
+
+export async function ensureItemIndex(): Promise<void> {
+  if (itemIndex) return
+  if (itemLoadPromise) return itemLoadPromise
+
+  itemLoadPromise = (async () => {
+    const cache = readCache()
+    if (cache?.items.length) {
+      itemIndex = buildIndex(cache.items)
+      return
+    }
+
+    const urls = await fetchAllResourceUrls('item')
+    const entries = await fetchLocalizedEntries(urls)
+    itemIndex = buildIndex(entries)
+
+    const existing = readCache()
+    writeCache({
+      version: CACHE_VERSION,
+      species: existing?.species ?? [],
+      moves: existing?.moves ?? [],
+      abilities: existing?.abilities ?? [],
+      items: entries,
+      pokemonSpeciesMap: existing?.pokemonSpeciesMap ?? {},
+    })
+  })()
+
+  return itemLoadPromise
 }
 
 export function getLocalizedPokemonName(
@@ -332,12 +376,21 @@ export function getLocalizedMoveName(slug: string, locale: Locale, fallback?: st
   return getDisplayName(entry, locale, fallback ?? formatPokemonName(slug))
 }
 
+export function getLocalizedItemName(slug: string, locale: Locale, fallback?: string): string {
+  const entry = itemIndex?.bySlug.get(slug)
+  return getDisplayName(entry, locale, fallback ?? formatPokemonName(slug))
+}
+
 export function resolveAbilitySlug(input: string): string | null {
   return resolveSlug(abilityIndex, input)
 }
 
 export function resolveMoveSlug(input: string): string | null {
   return resolveSlug(moveIndex, input)
+}
+
+export function resolveItemSlug(input: string): string | null {
+  return resolveSlug(itemIndex, input)
 }
 
 export function resolveSpeciesSlug(input: string): string | null {
@@ -410,6 +463,18 @@ export interface MoveSearchResult {
   canonicalName: string
 }
 
+export interface AbilitySearchResult {
+  slug: string
+  displayName: string
+  canonicalName: string
+}
+
+export interface ItemSearchResult {
+  slug: string
+  displayName: string
+  canonicalName: string
+}
+
 function moveMatchScore(entry: LocalizedEntry, query: string): number {
   const normalizedQuery = normalizeForMatch(query)
   const candidates = [
@@ -458,9 +523,94 @@ export async function searchMoves(
     .slice(0, limit)
 }
 
+function localizedEntryScore(entry: LocalizedEntry, query: string): number {
+  const normalizedQuery = normalizeForMatch(query)
+  const candidates = [
+    normalizeForMatch(entry.en),
+    normalizeForMatch(entry.es),
+    normalizeForMatch(entry.slug),
+  ]
+
+  let best = 99
+  for (const candidate of candidates) {
+    if (candidate === normalizedQuery) best = Math.min(best, 0)
+    else if (candidate.startsWith(normalizedQuery)) best = Math.min(best, 1)
+    else if (candidate.includes(normalizedQuery)) best = Math.min(best, 2)
+  }
+  return best
+}
+
+function localizedEntryMatches(entry: LocalizedEntry, query: string): boolean {
+  const normalizedQuery = normalizeForMatch(query)
+  if (!normalizedQuery) return false
+  return (
+    normalizeForMatch(entry.en).includes(normalizedQuery) ||
+    normalizeForMatch(entry.es).includes(normalizedQuery) ||
+    normalizeForMatch(entry.slug).includes(normalizedQuery)
+  )
+}
+
+export async function searchAbilities(
+  query: string,
+  locale: Locale,
+  limit = 10,
+): Promise<AbilitySearchResult[]> {
+  await ensureAbilityIndex()
+  if (!abilityIndex) return []
+
+  const normalized = query.trim()
+  if (normalized.length < 2) return []
+
+  const matches: AbilitySearchResult[] = []
+  for (const entry of abilityIndex.bySlug.values()) {
+    if (!localizedEntryMatches(entry, normalized)) continue
+    matches.push({
+      slug: entry.slug,
+      displayName: locale === 'es' ? entry.es : entry.en,
+      canonicalName: entry.en,
+    })
+  }
+
+  return matches
+    .sort((a, b) => {
+      const entryA = abilityIndex!.bySlug.get(a.slug)!
+      const entryB = abilityIndex!.bySlug.get(b.slug)!
+      const scoreDiff = localizedEntryScore(entryA, normalized) - localizedEntryScore(entryB, normalized)
+      return scoreDiff !== 0 ? scoreDiff : a.displayName.localeCompare(b.displayName)
+    })
+    .slice(0, limit)
+}
+
+export async function searchItems(query: string, locale: Locale, limit = 10): Promise<ItemSearchResult[]> {
+  await ensureItemIndex()
+  if (!itemIndex) return []
+
+  const normalized = query.trim()
+  if (normalized.length < 2) return []
+
+  const matches: ItemSearchResult[] = []
+  for (const entry of itemIndex.bySlug.values()) {
+    if (!localizedEntryMatches(entry, normalized)) continue
+    matches.push({
+      slug: entry.slug,
+      displayName: locale === 'es' ? entry.es : entry.en,
+      canonicalName: entry.en,
+    })
+  }
+
+  return matches
+    .sort((a, b) => {
+      const entryA = itemIndex!.bySlug.get(a.slug)!
+      const entryB = itemIndex!.bySlug.get(b.slug)!
+      const scoreDiff = localizedEntryScore(entryA, normalized) - localizedEntryScore(entryB, normalized)
+      return scoreDiff !== 0 ? scoreDiff : a.displayName.localeCompare(b.displayName)
+    })
+    .slice(0, limit)
+}
+
 /** Preload move/ability indexes for editor localization. */
 export async function ensureEditorIndexes(): Promise<void> {
-  await Promise.all([ensureMoveIndex(), ensureAbilityIndex()])
+  await Promise.all([ensureMoveIndex(), ensureAbilityIndex(), ensureItemIndex()])
 }
 
 /** Display a stored move name (English or localized input) in the current locale. */
@@ -474,6 +624,12 @@ export function displayMoveName(storedName: string, locale: Locale): string {
 export function displayAbilityName(storedName: string, locale: Locale): string {
   const slug = resolveAbilitySlug(storedName)
   if (slug) return getLocalizedAbilityName(slug, locale, storedName)
+  return storedName
+}
+
+export function displayItemName(storedName: string, locale: Locale): string {
+  const slug = resolveItemSlug(storedName)
+  if (slug) return getLocalizedItemName(slug, locale, storedName)
   return storedName
 }
 

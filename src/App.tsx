@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EvolutionPrompt } from '@/components/EvolutionPrompt'
+import { AbilitySearchPanel } from '@/components/AbilitySearchPanel'
+import { ItemSearchPanel } from '@/components/ItemSearchPanel'
 import { MoveSearchPanel } from '@/components/MoveSearchPanel'
 import { PCView } from '@/components/PCView'
 import { PokemonCard } from '@/components/PokemonCard'
@@ -19,6 +21,10 @@ import { I18nProvider, useI18n } from '@/i18n'
 import { usePokemonDetails } from '@/hooks/usePokemonDetails'
 import { useMoveDetails } from '@/hooks/useMoveDetails'
 import { useMoveSearch } from '@/hooks/useMoveSearch'
+import { useAbilityDetails } from '@/hooks/useAbilityDetails'
+import { useAbilitySearch } from '@/hooks/useAbilitySearch'
+import { useItemDetails } from '@/hooks/useItemDetails'
+import { useItemSearch } from '@/hooks/useItemSearch'
 import { usePokemonSearch } from '@/hooks/usePokemonSearch'
 import { useSearchMatchup } from '@/hooks/useSearchMatchup'
 import { useProfiles } from '@/hooks/useProfiles'
@@ -27,11 +33,13 @@ import {
   getLocalizedPokemonNameBySlug,
   getSpeciesSlugFromUrl,
   displayMoveName,
+  displayAbilityName,
+  displayItemName,
 } from '@/lib/localizedNames'
 import { findSlotInProfile } from '@/types/profile'
 
 type Tab = 'types' | 'pc'
-type SearchResultFilter = 'all' | 'pokemon' | 'moves'
+type SearchResultFilter = 'all' | 'pokemon' | 'moves' | 'abilities' | 'items'
 
 export default function App() {
   const profiles = useProfiles()
@@ -87,6 +95,8 @@ function AppContent({
   const [searchResultFilter, setSearchResultFilter] = useState<SearchResultFilter>('all')
   const [searchOverrideName, setSearchOverrideName] = useState<string | null>(null)
   const [searchOverrideMove, setSearchOverrideMove] = useState<string | null>(null)
+  const [searchOverrideAbility, setSearchOverrideAbility] = useState<string | null>(null)
+  const [searchOverrideItem, setSearchOverrideItem] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('types')
   const [showTeamStats, setShowTeamStats] = useState(false)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
@@ -110,9 +120,13 @@ function AppContent({
     searchedQuery,
   } = usePokemonSearch(query)
   const moveSearch = useMoveSearch(query, locale, query.trim().length >= 2)
+  const abilitySearch = useAbilitySearch(query, locale, query.trim().length >= 2)
+  const itemSearch = useItemSearch(query, locale, query.trim().length >= 2)
 
   const searchDisplayName = searchOverrideName ?? bestMatch?.name ?? null
   const selectedMoveName = searchOverrideMove ?? moveSearch.results[0]?.canonicalName ?? null
+  const selectedAbilityName = searchOverrideAbility ?? abilitySearch.results[0]?.canonicalName ?? null
+  const selectedItemName = searchOverrideItem ?? itemSearch.results[0]?.canonicalName ?? null
 
   const {
     pokemon: searchPokemon,
@@ -125,6 +139,10 @@ function AppContent({
     loading: searchMoveLoading,
     error: searchMoveError,
   } = useMoveDetails(selectedMoveName)
+  const { ability: searchAbility, loading: searchAbilityLoading, error: searchAbilityError } =
+    useAbilityDetails(selectedAbilityName)
+  const { item: searchItem, loading: searchItemLoading, error: searchItemError } =
+    useItemDetails(selectedItemName)
 
   const searchMatchup = useSearchMatchup(team, searchPokemon)
 
@@ -132,6 +150,8 @@ function AppContent({
     setSearchResultFilter('all')
     setSearchOverrideName(null)
     setSearchOverrideMove(null)
+    setSearchOverrideAbility(null)
+    setSearchOverrideItem(null)
   }, [query])
 
   useEffect(() => {
@@ -180,6 +200,16 @@ function AppContent({
 
   const handleMoveResultClick = (canonicalName: string) => {
     setSearchOverrideMove(canonicalName)
+    requestAnimationFrame(scrollSearchToTop)
+  }
+
+  const handleAbilityResultClick = (canonicalName: string) => {
+    setSearchOverrideAbility(canonicalName)
+    requestAnimationFrame(scrollSearchToTop)
+  }
+
+  const handleItemResultClick = (canonicalName: string) => {
+    setSearchOverrideItem(canonicalName)
     requestAnimationFrame(scrollSearchToTop)
   }
 
@@ -264,16 +294,21 @@ function AppContent({
 
   const hasPokemonResults = results.length > 0
   const hasMoveResults = moveSearch.results.length > 0
+  const hasAbilityResults = abilitySearch.results.length > 0
+  const hasItemResults = itemSearch.results.length > 0
   const showSearchFilters =
     showSearchResults &&
-    hasPokemonResults &&
-    hasMoveResults &&
+    (hasPokemonResults || hasMoveResults || hasAbilityResults || hasItemResults) &&
     !searchPending &&
-    !moveSearch.isPending
+    !moveSearch.isPending &&
+    !abilitySearch.isPending &&
+    !itemSearch.isPending
 
   const showPokemonResults =
     searchResultFilter === 'all' || searchResultFilter === 'pokemon'
   const showMoveResults = searchResultFilter === 'all' || searchResultFilter === 'moves'
+  const showAbilityResults = searchResultFilter === 'all' || searchResultFilter === 'abilities'
+  const showItemResults = searchResultFilter === 'all' || searchResultFilter === 'items'
 
   const togglePokemonFilter = () => {
     setSearchResultFilter((prev) => (prev === 'pokemon' ? 'all' : 'pokemon'))
@@ -283,10 +318,26 @@ function AppContent({
     setSearchResultFilter((prev) => (prev === 'moves' ? 'all' : 'moves'))
   }
 
+  const toggleAbilityFilter = () => {
+    setSearchResultFilter((prev) => (prev === 'abilities' ? 'all' : 'abilities'))
+  }
+
+  const toggleItemFilter = () => {
+    setSearchResultFilter((prev) => (prev === 'items' ? 'all' : 'items'))
+  }
+
   const otherMoveMatches =
     searchOverrideMove && selectedMoveName
       ? moveSearch.results.filter((result) => result.canonicalName !== selectedMoveName)
       : moveSearch.results.slice(1)
+  const otherAbilityMatches =
+    searchOverrideAbility && selectedAbilityName
+      ? abilitySearch.results.filter((result) => result.canonicalName !== selectedAbilityName)
+      : abilitySearch.results.slice(1)
+  const otherItemMatches =
+    searchOverrideItem && selectedItemName
+      ? itemSearch.results.filter((result) => result.canonicalName !== selectedItemName)
+      : itemSearch.results.slice(1)
 
   const sidebar = (
     <>
@@ -411,6 +462,22 @@ function AppContent({
                   >
                     {t('search.filterMoves')}
                   </button>
+                  <button
+                    type="button"
+                    className={`tab-btn ${showAbilityResults ? 'active' : ''}`}
+                    aria-pressed={showAbilityResults}
+                    onClick={toggleAbilityFilter}
+                  >
+                    {t('search.filterAbilities')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`tab-btn ${showItemResults ? 'active' : ''}`}
+                    aria-pressed={showItemResults}
+                    onClick={toggleItemFilter}
+                  >
+                    {t('search.filterItems')}
+                  </button>
                 </div>
               )}
 
@@ -419,6 +486,12 @@ function AppContent({
               )}
               {showMoveResults && query.trim().length >= 2 && moveSearch.isPending && (
                 <p className="muted search-status">{t('search.searchingMoves')}</p>
+              )}
+              {showAbilityResults && query.trim().length >= 2 && abilitySearch.isPending && (
+                <p className="muted search-status">{t('search.searchingAbilities')}</p>
+              )}
+              {showItemResults && query.trim().length >= 2 && itemSearch.isPending && (
+                <p className="muted search-status">{t('search.searchingItems')}</p>
               )}
 
               {showPokemonResults && searchDisplayName && searchDetailsLoading && (
@@ -431,6 +504,10 @@ function AppContent({
               {showMoveResults && searchMoveError && (
                 <p className="error-note">{searchMoveError}</p>
               )}
+              {showAbilityResults && searchAbilityError && (
+                <p className="error-note">{searchAbilityError}</p>
+              )}
+              {showItemResults && searchItemError && <p className="error-note">{searchItemError}</p>}
 
               {showPokemonResults && searchPokemon && !searchDetailsLoading && (
                 <div className="search-best-match">
@@ -475,6 +552,21 @@ function AppContent({
                   <MoveSearchPanel move={searchMove} team={team} />
                 </div>
               )}
+              {showAbilityResults && searchAbility && !searchAbilityLoading && (
+                <div className="search-best-match">
+                  <h3 className="search-best-match-label">{t('search.bestAbilityMatch')}</h3>
+                  <AbilitySearchPanel
+                    ability={searchAbility}
+                    profileVersionGroup={versionGroup}
+                  />
+                </div>
+              )}
+              {showItemResults && searchItem && !searchItemLoading && (
+                <div className="search-best-match">
+                  <h3 className="search-best-match-label">{t('search.bestItemMatch')}</h3>
+                  <ItemSearchPanel item={searchItem} />
+                </div>
+              )}
 
               {showMoveResults && otherMoveMatches.length > 0 && !moveSearch.isPending && (
                 <div className="search-other-matches">
@@ -494,14 +586,52 @@ function AppContent({
                   </ul>
                 </div>
               )}
+              {showAbilityResults && otherAbilityMatches.length > 0 && !abilitySearch.isPending && (
+                <div className="search-other-matches">
+                  <h3 className="search-other-matches-label">{t('search.otherAbilityMatches')}</h3>
+                  <ul className="search-results">
+                    {otherAbilityMatches.map((result) => (
+                      <li key={result.slug}>
+                        <button
+                          type="button"
+                          className={selectedAbilityName === result.canonicalName ? 'active' : ''}
+                          onClick={() => handleAbilityResultClick(result.canonicalName)}
+                        >
+                          {displayAbilityName(result.canonicalName, locale)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {showItemResults && otherItemMatches.length > 0 && !itemSearch.isPending && (
+                <div className="search-other-matches">
+                  <h3 className="search-other-matches-label">{t('search.otherItemMatches')}</h3>
+                  <ul className="search-results">
+                    {otherItemMatches.map((result) => (
+                      <li key={result.slug}>
+                        <button
+                          type="button"
+                          className={selectedItemName === result.canonicalName ? 'active' : ''}
+                          onClick={() => handleItemResultClick(result.canonicalName)}
+                        >
+                          {displayItemName(result.canonicalName, locale)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {searchedQuery.length >= 2 &&
                 !searchPending &&
                 !moveSearch.isPending &&
-                (showPokemonResults && showMoveResults
-                  ? results.length === 0 && moveSearch.results.length === 0
-                  : (showPokemonResults && results.length === 0) ||
-                    (showMoveResults && moveSearch.results.length === 0)) && (
+                !abilitySearch.isPending &&
+                !itemSearch.isPending &&
+                (showPokemonResults && results.length === 0) &&
+                (showMoveResults && moveSearch.results.length === 0) &&
+                (showAbilityResults && abilitySearch.results.length === 0) &&
+                (showItemResults && itemSearch.results.length === 0) && (
                 <p className="muted">{t('search.noResults')}</p>
               )}
 

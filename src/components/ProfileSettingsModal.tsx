@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import type { ProfileConfig, ProfileSettings, RunProfile } from '@/types/profile'
 import { createDefaultSettings } from '@/types/profile'
 import { useI18n } from '@/i18n'
@@ -33,13 +34,18 @@ export function ProfileSettingsModal({
   const [showNew, setShowNew] = useState(false)
   const [newName, setNewName] = useState('')
   const [newKind, setNewKind] = useState<'official' | 'hackrom'>('hackrom')
+  const [pendingDeleteProfileId, setPendingDeleteProfileId] = useState<string | null>(null)
 
   const config = activeProfile.settings.config
+  const pendingDeleteProfile = pendingDeleteProfileId
+    ? profiles.find((profile) => profile.id === pendingDeleteProfileId) ?? null
+    : null
 
   useEffect(() => {
     if (!open) {
       setShowNew(false)
       setNewName('')
+      setPendingDeleteProfileId(null)
       return
     }
     closeRef.current?.focus()
@@ -117,7 +123,7 @@ export function ProfileSettingsModal({
                 <button
                   type="button"
                   className="btn btn-danger"
-                  onClick={() => onDelete(activeProfile.id)}
+                  onClick={() => setPendingDeleteProfileId(activeProfile.id)}
                 >
                   {t('profile.delete')}
                 </button>
@@ -232,6 +238,19 @@ export function ProfileSettingsModal({
           </section>
         </div>
       </div>
+      {pendingDeleteProfile && (
+        <ConfirmDialog
+          title={t('profile.deleteConfirmTitle')}
+          message={t('profile.deleteConfirmMessage', { name: pendingDeleteProfile.name })}
+          confirmLabel={t('profile.delete')}
+          confirmClassName="btn btn-danger"
+          onConfirm={() => {
+            onDelete(pendingDeleteProfile.id)
+            setPendingDeleteProfileId(null)
+          }}
+          onCancel={() => setPendingDeleteProfileId(null)}
+        />
+      )}
     </div>
   )
 }
