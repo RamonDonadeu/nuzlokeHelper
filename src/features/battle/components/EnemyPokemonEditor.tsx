@@ -180,13 +180,13 @@ export function EnemyPokemonEditor({
   })
 
   useEffect(() => {
-    if (!open) return
+    if (!open || existingSlot) return
     const timer = window.setTimeout(() => {
       speciesInputRef.current?.focus()
       setSpeciesFocused(true)
     }, 0)
     return () => window.clearTimeout(timer)
-  }, [open, existingSlot?.slotId])
+  }, [open, existingSlot])
 
   if (!open) return null
 
