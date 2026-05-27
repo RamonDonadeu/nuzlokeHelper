@@ -337,13 +337,25 @@ export const en: TranslationKey = {
     importNoResolvedPokemon: 'No valid enemy Pokémon could be imported from that paste.',
     importFailed: 'Could not import enemy team.',
     prepTitle: 'Battle prep',
-    prepThreatsTitle: 'Your team vulnerability',
-    prepCoverageTitle: 'Your offensive coverage',
-    prepThreatenedBy: 'Threatened by: {{names}}',
-    prepNoMajorThreats: 'No enemy shows a 2x+ threat here.',
-    prepCoverageMissing: 'No super-effective answer found yet.',
-    prepCoverageFound: 'Super-effective answer available.',
-    prepCoverageNoMoves: 'No moves are configured on your team, so coverage cannot be established.',
+    prepThreatsTitle: 'Defense vs enemy attacks',
+    prepThreatsHintLabel: 'How defensive vulnerability works',
+    prepThreatsHint:
+      'Each team member’s species types vs damaging move types on the enemy team. Uses configured enemy moves; if an enemy has no moves, estimates STAB from their species types (marked as STAB estimate).',
+    prepCoverageTitle: 'Coverage vs enemy typings',
+    prepCoverageHintLabel: 'How offensive coverage works',
+    prepCoverageHint:
+      'Your team’s damaging moves vs each enemy’s defensive typing (species types). Only moves set in the editor count—species types alone are not used as attacks.',
+    prepStabFallbackNote:
+      'No moves on {{names}}—using STAB estimate from species types until moves are configured.',
+    prepStabFallbackTag: 'STAB est.',
+    prepEnemyConfigureMoves:
+      '{{names}} have moves listed but no damaging attacks could be resolved—check move names.',
+    prepNoMajorThreats: 'No configured enemy attack hits this Pokémon for 2× or more.',
+    prepCoverageMissing: 'No super-effective move from your team against this enemy.',
+    prepCoverageFound: 'Super-effective answers from your moves:',
+    prepCoverageNoMoves: 'No moves are configured on your team, so offensive coverage cannot be analyzed.',
+    prepCoverageNoDamagingMoves:
+      'Your team has moves configured, but none resolved as damaging attacks—coverage cannot be analyzed.',
     prepSeverityimmune: 'Immune',
     prepSeverityquadResist: 'Resist',
     prepSeverityresist: 'Resist',

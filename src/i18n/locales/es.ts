@@ -319,14 +319,26 @@ export const es: TranslationKey = {
     importNoResolvedPokemon: 'No se pudo importar ningún Pokémon rival válido de ese texto.',
     importFailed: 'No se pudo importar el equipo rival.',
     prepTitle: 'Preparación de batalla',
-    prepThreatsTitle: 'Vulnerabilidad de tu equipo',
-    prepCoverageTitle: 'Cobertura ofensiva de tu equipo',
-    prepThreatenedBy: 'Amenazado por: {{names}}',
-    prepNoMajorThreats: 'Ningún rival muestra amenaza de 2x+ aquí.',
-    prepCoverageMissing: 'Aún no hay respuesta supereficaz.',
-    prepCoverageFound: 'Hay respuesta supereficaz disponible.',
+    prepThreatsTitle: 'Defensa frente a ataques rivales',
+    prepThreatsHintLabel: 'Cómo funciona la vulnerabilidad defensiva',
+    prepThreatsHint:
+      'Los tipos de especie de cada miembro del equipo frente a los tipos de movimientos dañinos del rival. Usa los movimientos configurados del rival; si no tiene movimientos, estima STAB desde sus tipos de especie (marcado como estimación STAB).',
+    prepCoverageTitle: 'Cobertura frente a tipos rivales',
+    prepCoverageHintLabel: 'Cómo funciona la cobertura ofensiva',
+    prepCoverageHint:
+      'Los movimientos dañinos de tu equipo frente a la tipificación defensiva de cada rival (tipos de especie). Solo cuentan los movimientos del editor—los tipos de especie no se usan como ataques.',
+    prepStabFallbackNote:
+      'Sin movimientos en {{names}}—se usa estimación STAB desde tipos de especie hasta configurar movimientos.',
+    prepStabFallbackTag: 'STAB est.',
+    prepEnemyConfigureMoves:
+      '{{names}} tienen movimientos pero no se resolvió ningún ataque dañino—revisa los nombres.',
+    prepNoMajorThreats: 'Ningún ataque rival configurado hace 2× o más a este Pokémon.',
+    prepCoverageMissing: 'Ningún movimiento de tu equipo es supereficaz contra este rival.',
+    prepCoverageFound: 'Respuestas supereficaces de tus movimientos:',
     prepCoverageNoMoves:
-      'No hay movimientos configurados en tu equipo, así que no se puede establecer la cobertura.',
+      'No hay movimientos configurados en tu equipo; no se puede analizar la cobertura ofensiva.',
+    prepCoverageNoDamagingMoves:
+      'Hay movimientos en tu equipo, pero ninguno se resolvió como ataque dañino—no se puede analizar la cobertura.',
     prepSeverityimmune: 'Inmune',
     prepSeverityquadResist: 'Resiste',
     prepSeverityresist: 'Resiste',

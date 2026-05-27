@@ -1220,6 +1220,36 @@ ul {
   margin: 0;
 }
 
+.battle-prep-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.battle-prep-note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.battle-prep-threats {
+  margin: 0;
+}
+
+.battle-prep-threats li {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.battle-prep-threat-enemy {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.battle-prep-threat-move {
+  font-size: 0.85rem;
+  color: var(--text-muted, #94a3b8);
+}
+
 .battle-prep-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
