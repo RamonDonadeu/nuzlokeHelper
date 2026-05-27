@@ -1,0 +1,44 @@
+---
+description: Atomic functions, size limits, and feature-module structure for TypeScript/React
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Code quality (nuzlokeHelper)
+
+## Single purpose (atomic functions)
+
+- Each function does **one job** with a name that states that job. One reason to change.
+- If you cannot name it without "and", or it mixes unrelated steps (fetch + transform + persist + UI), split it.
+- **Split by concept/domain**, not by hitting a line number. Keep code that belongs together together.
+- Prefer **early returns** over deep nesting; extract nested branches into named helpers.
+
+## Function length (soft limits)
+
+| Range | Action |
+|-------|--------|
+| **~20–40 lines** | Target for most functions |
+| **40–50** | OK if cohesive; consider extracting helpers |
+| **50+** | Treat as smell in review; refactor unless one clear algorithm |
+| **100–200** | Rare; only for a single complex, well-named algorithm (McConnell) |
+
+Line count is a **signal**, not a law. Cohesion and naming matter more than exact LOC.
+
+## File length (~400 lines)
+
+- **Soft limit ~400 LOC** per `.ts`/`.tsx` file. Above that, plan a split on the next meaningful touch.
+- **Hard smell ~500+** — do not grow further without extracting a module in the same change.
+- Split by **concern** (profile persistence, battle state, editor form, API adapter), not arbitrary chunks.
+- Prefer `src/features/<feature>/{hooks,components,lib}/` and `src/lib/` for shared pure logic. Avoid cross-feature imports; use feature `index` barrels when needed.
+- **React**: UI in components; data/state/effects in hooks or `lib/`; pages orchestrate, they do not hoard logic.
+
+### Large files to split over time (examples)
+
+`useProfiles.ts`, `App.tsx`, `PokemonEditor.tsx`, `localizedNames.ts`, `abilityDetails.ts`, `EnemyPokemonEditor.tsx` — extract hooks, subcomponents, or `lib/` helpers incrementally; do not rewrite entire files unless asked.
+
+## When adding or changing code
+
+1. New logic in a file **near 350+ lines** → put it in a new file in the right feature folder.
+2. Reused across 2+ features → `src/shared/` or `src/lib/`; otherwise keep inside the feature.
+3. Section comments (`// --- storage ---`) → candidate for a named function or file.
+4. Match existing naming, imports, and folder layout in the touched area.
