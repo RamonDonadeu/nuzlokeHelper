@@ -1,8 +1,22 @@
+import { useMemo } from 'react'
 import { useI18n } from '@/i18n'
-import { natureStatModifiers } from '@/lib/stats'
+import { calculateAllStats, comparisonNatureForMember, natureStatModifiers } from '@/lib/stats'
 import type { PokemonStats } from '@/types/pokemon'
 import { STAT_KEYS, STAT_LABELS } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
+
+const BATTLE_STAT_DEFAULTS = { ivWhenUnset: 0, evWhenUnset: 0 } as const
+
+function calculatedStatsForSlot(slot: PokemonSlot): PokemonStats {
+  return calculateAllStats(
+    slot.baseStats,
+    slot.level,
+    slot.ivs,
+    slot.evs,
+    comparisonNatureForMember(slot),
+    BATTLE_STAT_DEFAULTS,
+  )
+}
 
 interface BattlegroundStatsProps {
   left: PokemonSlot | null
@@ -26,10 +40,10 @@ function winnerClass(leftValue: number, rightValue: number, side: 'left' | 'righ
 export function BattlegroundStats({ left, right }: BattlegroundStatsProps) {
   const { t } = useI18n()
 
-  if (!left && !right) return null
+  const leftStats = useMemo(() => (left ? calculatedStatsForSlot(left) : undefined), [left])
+  const rightStats = useMemo(() => (right ? calculatedStatsForSlot(right) : undefined), [right])
 
-  const leftStats = left?.baseStats
-  const rightStats = right?.baseStats
+  if (!left && !right) return null
 
   return (
     <div className="battleground-stats" aria-label={t('battle.statsCompare')}>

@@ -12,6 +12,7 @@ import { BattlePrepPanel } from '@/features/battle/components/BattlePrepPanel'
 interface BattleViewProps {
   team: PokemonSlot[]
   enemyTeam: PokemonSlot[]
+  levelCap: number
   onEnemyTeamChange: (team: PokemonSlot[]) => void
   onAllySlotPatch: (slotId: string, patch: Partial<PokemonSlot>) => void
 }
@@ -20,7 +21,7 @@ type BattleLocationState = {
   startFight?: boolean
 }
 
-export function BattleView({ team, enemyTeam, onEnemyTeamChange, onAllySlotPatch }: BattleViewProps) {
+export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAllySlotPatch }: BattleViewProps) {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
@@ -117,6 +118,7 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange, onAllySlotPatch
         open={battle.editorOpen}
         title={t('battle.enemyEditorTitle')}
         existingSlot={editingSlot}
+        levelCap={levelCap}
         onClose={battle.closeEnemyEditor}
         onSubmit={(slot) => {
           if (battle.editorIndex === null) return
@@ -127,6 +129,7 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange, onAllySlotPatch
         open={allyEditorIndex !== null}
         title={t('battle.allyEditorTitle')}
         existingSlot={editingAllySlot}
+        levelCap={levelCap}
         allowSpeciesEdit={false}
         onClose={() => setAllyEditorIndex(null)}
         onSubmit={(slot) => {

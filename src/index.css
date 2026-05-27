@@ -1129,12 +1129,70 @@ ul {
 
 .battle-editor-modal {
   width: min(100%, 480px);
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+}
+
+.battle-editor-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.battle-editor-scroll {
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  gap: 0.65rem;
+  padding-right: 0.15rem;
+}
+
+.battle-editor-nav-btn {
+  justify-self: start;
+}
+
+.battle-editor-stats-panel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.battle-editor-back-btn {
+  justify-self: start;
+}
+
+.battle-move-input-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.battle-move-input-row {
+  gap: 0.35rem;
+}
+
+.battle-move-input-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.battle-move-input-label .type-badge {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  padding: 0.12rem 0.45rem;
 }
 
 .battle-editor-meta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.6rem;
+}
+
+.battle-editor-meta-grid .number-stepper {
+  width: 100%;
 }
 
 .battle-switch-modal {
@@ -1175,40 +1233,6 @@ ul {
 
 .battle-editor-suggestions {
   max-height: 180px;
-}
-
-.battle-editor-expand {
-  display: grid;
-  gap: 0.6rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.65rem;
-}
-
-.battle-editor-expand-trigger {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-soft);
-  color: var(--text);
-  padding: 0.45rem 0.65rem;
-  font-size: 0.9rem;
-}
-
-.battle-editor-chevron {
-  transition: transform 0.15s ease;
-}
-
-.battle-editor-chevron.open {
-  transform: rotate(180deg);
-}
-
-.battle-editor-stat-sections {
-  display: grid;
-  gap: 0.65rem;
 }
 
 .battle-import-modal {

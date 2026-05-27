@@ -107,6 +107,13 @@ export function clampLevelCap(value: number): number {
   return Math.max(MIN_LEVEL_CAP, Math.min(MAX_LEVEL_CAP, Math.round(value)))
 }
 
+/** Clamp a Pokémon level to [1, min(100, profile level cap)]. */
+export function clampPokemonLevel(value: number, levelCap: number = MAX_LEVEL_CAP): number {
+  const max = Math.min(MAX_LEVEL_CAP, clampLevelCap(levelCap))
+  if (!Number.isFinite(value)) return max
+  return Math.max(MIN_POKEMON_LEVEL, Math.min(max, Math.round(value)))
+}
+
 export function createDefaultSettings(config?: Partial<ProfileConfig>): ProfileSettings {
   const profileConfig: ProfileConfig = config?.kind === 'hackrom'
     ? {

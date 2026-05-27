@@ -752,6 +752,7 @@ function AppContent({
                 <BattleView
                   team={team}
                   enemyTeam={opponentTeam}
+                  levelCap={activeProfile.settings.levelCap}
                   onEnemyTeamChange={setOpponentTeam}
                   onAllySlotPatch={(slotId, patch) => updateSlot(slotId, patch, 'team')}
                 />

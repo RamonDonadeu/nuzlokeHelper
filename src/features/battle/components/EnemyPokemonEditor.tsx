@@ -15,11 +15,13 @@ import {
 import { defaultNature } from '@/lib/stats'
 import { useI18n } from '@/i18n'
 import { formatPokemonName, type PokemonAbility } from '@/types/pokemon'
+import { clampPokemonLevel, MAX_LEVEL_CAP, MIN_POKEMON_LEVEL } from '@/types/profile'
 import type { PokemonSlot } from '@/types/profile'
 
 interface EnemyPokemonEditorProps {
   open: boolean
   existingSlot: PokemonSlot | null
+  levelCap: number
   onClose: () => void
   onSubmit: (slot: PokemonSlot) => void
 }
@@ -29,11 +31,16 @@ const EMPTY_MOVES = ['', '', '', '']
 export function EnemyPokemonEditor({
   open,
   existingSlot,
+  levelCap,
   onClose,
   onSubmit,
 }: EnemyPokemonEditorProps) {
   const { t, locale } = useI18n()
+  const maxLevel = Math.min(MAX_LEVEL_CAP, levelCap)
+  const defaultLevel = existingSlot?.level ?? levelCap
   const [species, setSpecies] = useState(existingSlot?.name ?? '')
+  const [level, setLevel] = useState(String(defaultLevel))
+  const [levelDraft, setLevelDraft] = useState<string | null>(null)
   const [ability, setAbility] = useState(existingSlot?.ability ?? '')
   const [item, setItem] = useState(existingSlot?.item ?? '')
   const [moves, setMoves] = useState<string[]>(
@@ -83,6 +90,8 @@ export function EnemyPokemonEditor({
   useEffect(() => {
     if (!open) return
     setSpecies(existingSlot?.name ?? '')
+    setLevel(String(existingSlot?.level ?? levelCap))
+    setLevelDraft(null)
     setAbility(existingSlot?.ability ? canonicalAbilityName(existingSlot.ability) : '')
     setItem(existingSlot?.item ? displayItemName(existingSlot.item, locale) : '')
     setMoves(
@@ -93,7 +102,7 @@ export function EnemyPokemonEditor({
     setSpeciesFocused(false)
     setItemFocused(false)
     setError(null)
-  }, [existingSlot, locale, open])
+  }, [existingSlot, levelCap, locale, open])
 
   useEffect(() => {
     if (!open) return
@@ -212,7 +221,7 @@ export function EnemyPokemonEditor({
         types: pokemon.types,
         baseStats: pokemon.stats,
         sprite: pokemon.sprite,
-        level: existingSlot?.level ?? 50,
+        level: clampPokemonLevel(Number((levelDraft ?? level).trim()), levelCap),
         nature: existingSlot?.nature ?? defaultNature(),
         ability: canonicalAbilityName(ability.trim()) || undefined,
         item: item.trim() || undefined,
@@ -309,6 +318,64 @@ export function EnemyPokemonEditor({
                   {t('search.searching')}
                 </p>
               )}
+            </div>
+          </label>
+          <label className="control-group">
+            <span className="control-label">{t('battle.editorLevel')}</span>
+            <div className="number-stepper" role="group" aria-label={t('battle.editorLevel')}>
+              <button
+                type="button"
+                className="number-stepper-btn"
+                disabled={clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap) <= MIN_POKEMON_LEVEL}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  const current = clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap)
+                  setLevel(String(clampPokemonLevel(current - 1, levelCap)))
+                  setLevelDraft(null)
+                }}
+                aria-label={t('battle.editorLevelDecrease')}
+              >
+                −
+              </button>
+              <input
+                type="number"
+                className="number-stepper-input"
+                min={MIN_POKEMON_LEVEL}
+                max={maxLevel}
+                step={1}
+                value={levelDraft ?? level}
+                onChange={(event) => setLevelDraft(event.target.value)}
+                onBlur={() => {
+                  const raw = (levelDraft ?? level).trim()
+                  if (!raw) {
+                    setLevel(String(defaultLevel))
+                    setLevelDraft(null)
+                    return
+                  }
+                  setLevel(String(clampPokemonLevel(Number(raw), levelCap)))
+                  setLevelDraft(null)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.currentTarget.blur()
+                  }
+                }}
+                aria-label={t('battle.editorLevel')}
+              />
+              <button
+                type="button"
+                className="number-stepper-btn"
+                disabled={clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap) >= maxLevel}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  const current = clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap)
+                  setLevel(String(clampPokemonLevel(current + 1, levelCap)))
+                  setLevelDraft(null)
+                }}
+                aria-label={t('battle.editorLevelIncrease')}
+              >
+                +
+              </button>
             </div>
           </label>
           <label className="control-group">

@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from 'react'
 import { MoveInput } from '@/features/search/components/MoveInput'
 import { useItemSearch } from '@/features/search/hooks/useItemSearch'
 import { usePokemonSearch } from '@/features/search/hooks/usePokemonSearch'
@@ -22,20 +32,25 @@ import {
 import { useI18n } from '@/i18n'
 import { STAT_KEYS, STAT_LABELS, type PokemonAbility, type PokemonStats } from '@/types/pokemon'
 import { formatPokemonName } from '@/types/pokemon'
+import { clampPokemonLevel, MAX_LEVEL_CAP, MIN_POKEMON_LEVEL } from '@/types/profile'
 import type { PokemonSlot } from '@/types/profile'
 
 interface BattlePokemonEditorModalProps {
   open: boolean
   title: string
   existingSlot: PokemonSlot | null
+  levelCap: number
   allowSpeciesEdit?: boolean
   onClose: () => void
   onSubmit: (slot: PokemonSlot) => void
 }
 
 type StatDraft = Record<keyof PokemonStats, string>
+type EditorPanel = 'main' | 'stats'
 
 const EMPTY_MOVES = ['', '', '', '']
+const DEFAULT_IV_VALUE = '31'
+const DEFAULT_EV_VALUE = '0'
 
 function statsToDraft(values?: Partial<PokemonStats>): StatDraft {
   const draft = {} as StatDraft
@@ -61,26 +76,50 @@ function clampStatValue(value: number, max: number): number {
   return Math.max(0, Math.min(max, Math.round(value)))
 }
 
+function createDefaultIvDraft(): StatDraft {
+  const draft = {} as StatDraft
+  for (const key of STAT_KEYS) draft[key] = DEFAULT_IV_VALUE
+  return draft
+}
+
+function createDefaultEvDraft(): StatDraft {
+  const draft = {} as StatDraft
+  for (const key of STAT_KEYS) draft[key] = DEFAULT_EV_VALUE
+  return draft
+}
+
+function fillEmptyStatDraft(draft: StatDraft, defaultValue: string): StatDraft {
+  const next = { ...draft }
+  for (const key of STAT_KEYS) {
+    if (!next[key]?.trim()) next[key] = defaultValue
+  }
+  return next
+}
+
 export function BattlePokemonEditorModal({
   open,
   title,
   existingSlot,
+  levelCap,
   allowSpeciesEdit = true,
   onClose,
   onSubmit,
 }: BattlePokemonEditorModalProps) {
   const { t, locale } = useI18n()
+  const maxLevel = Math.min(MAX_LEVEL_CAP, levelCap)
+  const defaultLevel = existingSlot?.level ?? levelCap
   const [species, setSpecies] = useState(existingSlot?.name ?? '')
   const [ability, setAbility] = useState(existingSlot?.ability ?? '')
   const [item, setItem] = useState(existingSlot?.item ?? '')
-  const [level, setLevel] = useState(String(existingSlot?.level ?? 50))
+  const [level, setLevel] = useState(String(defaultLevel))
+  const [levelDraft, setLevelDraft] = useState<string | null>(null)
   const [nature, setNature] = useState(existingSlot?.nature ?? defaultNature())
   const [moves, setMoves] = useState<string[]>(
     existingSlot?.moves ? [...existingSlot.moves, ...EMPTY_MOVES].slice(0, 4) : EMPTY_MOVES,
   )
   const [ivDraft, setIvDraft] = useState<StatDraft>(() => statsToDraft(existingSlot?.ivs))
   const [evDraft, setEvDraft] = useState<StatDraft>(() => statsToDraft(existingSlot?.evs))
-  const [showStatSection, setShowStatSection] = useState(false)
+  const [panel, setPanel] = useState<EditorPanel>('main')
   const [speciesAbilities, setSpeciesAbilities] = useState<PokemonAbility[]>([])
   const [loadingAbilities, setLoadingAbilities] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -130,7 +169,8 @@ export function BattlePokemonEditorModal({
     setSpecies(existingSlot?.name ?? '')
     setAbility(existingSlot?.ability ? canonicalAbilityName(existingSlot.ability) : '')
     setItem(existingSlot?.item ? displayItemName(existingSlot.item, locale) : '')
-    setLevel(String(existingSlot?.level ?? 50))
+    setLevel(String(existingSlot?.level ?? levelCap))
+    setLevelDraft(null)
     setNature(existingSlot?.nature ?? defaultNature())
     setIvDraft(statsToDraft(existingSlot?.ivs))
     setEvDraft(statsToDraft(existingSlot?.evs))
@@ -139,11 +179,11 @@ export function BattlePokemonEditorModal({
         ? [...existingSlot.moves.map((move) => displayMoveName(move, locale)), ...EMPTY_MOVES].slice(0, 4)
         : EMPTY_MOVES,
     )
-    setShowStatSection(Boolean(existingSlot?.ivs || existingSlot?.evs))
+    setPanel('main')
     setSpeciesFocused(false)
     setItemFocused(false)
     setError(null)
-  }, [existingSlot, locale, open])
+  }, [existingSlot, levelCap, locale, open])
 
   useEffect(() => {
     if (!open) return
@@ -246,6 +286,48 @@ export function BattlePokemonEditorModal({
 
   const natureOptions = sortedNaturesForDisplay(locale)
 
+  const openStatsPanel = () => {
+    setIvDraft((prev) => fillEmptyStatDraft(prev, DEFAULT_IV_VALUE))
+    setEvDraft((prev) => fillEmptyStatDraft(prev, DEFAULT_EV_VALUE))
+    setPanel('stats')
+  }
+
+  const resetStatsToDefaults = () => {
+    setIvDraft(createDefaultIvDraft())
+    setEvDraft(createDefaultEvDraft())
+  }
+
+  const renderStatInputs = (
+    draft: StatDraft,
+    setDraft: Dispatch<SetStateAction<StatDraft>>,
+    max: number,
+    placeholder: string,
+  ) => (
+    <div className="stat-input-grid">
+      {STAT_KEYS.map((key) => (
+        <label key={key} className="stat-input-row">
+          <span>{STAT_LABELS[key]}</span>
+          <input
+            className="battle-editor-input"
+            type="number"
+            min={0}
+            max={max}
+            step={1}
+            value={draft[key]}
+            placeholder={placeholder}
+            onChange={(event) => setDraft((prev) => ({ ...prev, [key]: event.target.value }))}
+            onBlur={() => {
+              const raw = (draft[key] ?? '').trim()
+              if (!raw) return
+              const clamped = clampStatValue(Number(raw), max)
+              setDraft((prev) => ({ ...prev, [key]: String(clamped) }))
+            }}
+          />
+        </label>
+      ))}
+    </div>
+  )
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmedSpecies = allowSpeciesEdit
@@ -257,8 +339,8 @@ export function BattlePokemonEditorModal({
 
     try {
       const pokemon = await fetchPokemon(trimmedSpecies)
-      const parsedLevel = Number(level.trim())
-      const safeLevel = Number.isFinite(parsedLevel) ? Math.max(1, Math.min(100, Math.round(parsedLevel))) : 50
+      const parsedLevel = Number((levelDraft ?? level).trim())
+      const safeLevel = clampPokemonLevel(parsedLevel, levelCap)
       const nextSlot: PokemonSlot = {
         slotId: existingSlot?.slotId ?? crypto.randomUUID(),
         speciesId: pokemon.id,
@@ -304,8 +386,41 @@ export function BattlePokemonEditorModal({
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div className="modal card battle-editor-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-        <h3>{title}</h3>
-        <form className="inline-form" onSubmit={handleSubmit}>
+        <h3>{panel === 'main' ? title : t('battle.editorIvEvTitle')}</h3>
+        <form className="inline-form battle-editor-form" onSubmit={handleSubmit}>
+          <div className="battle-editor-scroll">
+          {panel === 'stats' ? (
+            <div className="battle-editor-stats-panel">
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost battle-editor-back-btn"
+                onClick={() => setPanel('main')}
+              >
+                {t('battle.editorBack')}
+              </button>
+              <div className="editor-section">
+                <div className="editor-section-header">
+                  <h3>{t('editor.ivs')}</h3>
+                  <span className="muted">{t('editor.ivRange', { max: MAX_IV })}</span>
+                </div>
+                {renderStatInputs(ivDraft, setIvDraft, MAX_IV, DEFAULT_IV_VALUE)}
+              </div>
+              <div className="editor-section">
+                <div className="editor-section-header">
+                  <h3>{t('editor.evs')}</h3>
+                  <span className="muted">0–{MAX_EV_PER_STAT}</span>
+                </div>
+                {renderStatInputs(evDraft, setEvDraft, MAX_EV_PER_STAT, DEFAULT_EV_VALUE)}
+              </div>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={resetStatsToDefaults}>
+                {t('battle.editorResetStats')}
+              </button>
+            </div>
+          ) : (
+            <>
+          <button type="button" className="btn btn-sm battle-editor-nav-btn" onClick={openStatsPanel}>
+            {t('battle.editorSetIvEv')}
+          </button>
           {allowSpeciesEdit ? (
             <label className="control-group">
               <span className="control-label">{t('battle.editorSpecies')}</span>
@@ -370,15 +485,61 @@ export function BattlePokemonEditorModal({
           <div className="battle-editor-meta-grid">
             <label className="control-group">
               <span className="control-label">{t('battle.editorLevel')}</span>
-              <input
-                className="battle-editor-input"
-                type="number"
-                min={1}
-                max={100}
-                step={1}
-                value={level}
-                onChange={(event) => setLevel(event.target.value)}
-              />
+              <div className="number-stepper" role="group" aria-label={t('battle.editorLevel')}>
+                <button
+                  type="button"
+                  className="number-stepper-btn"
+                  disabled={clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap) <= MIN_POKEMON_LEVEL}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    const current = clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap)
+                    setLevel(String(clampPokemonLevel(current - 1, levelCap)))
+                    setLevelDraft(null)
+                  }}
+                  aria-label={t('battle.editorLevelDecrease')}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  className="number-stepper-input"
+                  min={MIN_POKEMON_LEVEL}
+                  max={maxLevel}
+                  step={1}
+                  value={levelDraft ?? level}
+                  onChange={(event) => setLevelDraft(event.target.value)}
+                  onBlur={() => {
+                    const raw = (levelDraft ?? level).trim()
+                    if (!raw) {
+                      setLevel(String(defaultLevel))
+                      setLevelDraft(null)
+                      return
+                    }
+                    setLevel(String(clampPokemonLevel(Number(raw), levelCap)))
+                    setLevelDraft(null)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.currentTarget.blur()
+                    }
+                  }}
+                  aria-label={t('battle.editorLevel')}
+                />
+                <button
+                  type="button"
+                  className="number-stepper-btn"
+                  disabled={clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap) >= maxLevel}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    const current = clampPokemonLevel(Number(levelDraft ?? level) || defaultLevel, levelCap)
+                    setLevel(String(clampPokemonLevel(current + 1, levelCap)))
+                    setLevelDraft(null)
+                  }}
+                  aria-label={t('battle.editorLevelIncrease')}
+                >
+                  +
+                </button>
+              </div>
             </label>
             <label className="control-group">
               <span className="control-label">{t('editor.nature')}</span>
@@ -482,10 +643,12 @@ export function BattlePokemonEditorModal({
               )}
             </div>
           </label>
-          <div className="move-input-grid">
+          <div className="battle-move-input-grid">
             {moves.map((move, index) => (
               <MoveInput
                 key={`battle-move-${index}`}
+                variant="battle"
+                showTypeBadge
                 label={t('battle.editorMove', { n: index + 1 })}
                 placeholder={t('battle.editorMovePlaceholder')}
                 value={move}
@@ -495,84 +658,10 @@ export function BattlePokemonEditorModal({
               />
             ))}
           </div>
-          <div className="battle-editor-expand">
-            <button
-              type="button"
-              className="battle-editor-expand-trigger"
-              onClick={() => setShowStatSection((prev) => !prev)}
-              aria-expanded={showStatSection}
-            >
-              <span>IVs / EVs</span>
-              <span className={`battle-editor-chevron${showStatSection ? ' open' : ''}`}>▾</span>
-            </button>
-            {showStatSection ? (
-              <div className="battle-editor-stat-sections">
-                <div className="editor-section">
-                  <div className="editor-section-header">
-                    <h3>{t('editor.ivs')}</h3>
-                    <span className="muted">{t('editor.ivRange', { max: MAX_IV })}</span>
-                  </div>
-                  <div className="stat-input-grid">
-                    {STAT_KEYS.map((key) => (
-                      <label key={key} className="stat-input-row">
-                        <span>{STAT_LABELS[key]}</span>
-                        <input
-                          className="battle-editor-input"
-                          type="number"
-                          min={0}
-                          max={MAX_IV}
-                          step={1}
-                          value={ivDraft[key]}
-                          placeholder="31"
-                          onChange={(event) =>
-                            setIvDraft((prev) => ({ ...prev, [key]: event.target.value }))
-                          }
-                          onBlur={() => {
-                            const raw = (ivDraft[key] ?? '').trim()
-                            if (!raw) return
-                            const clamped = clampStatValue(Number(raw), MAX_IV)
-                            setIvDraft((prev) => ({ ...prev, [key]: String(clamped) }))
-                          }}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="editor-section">
-                  <div className="editor-section-header">
-                    <h3>{t('editor.evs')}</h3>
-                    <span className="muted">0-252</span>
-                  </div>
-                  <div className="stat-input-grid">
-                    {STAT_KEYS.map((key) => (
-                      <label key={key} className="stat-input-row">
-                        <span>{STAT_LABELS[key]}</span>
-                        <input
-                          className="battle-editor-input"
-                          type="number"
-                          min={0}
-                          max={MAX_EV_PER_STAT}
-                          step={1}
-                          value={evDraft[key]}
-                          placeholder="0"
-                          onChange={(event) =>
-                            setEvDraft((prev) => ({ ...prev, [key]: event.target.value }))
-                          }
-                          onBlur={() => {
-                            const raw = (evDraft[key] ?? '').trim()
-                            if (!raw) return
-                            const clamped = clampStatValue(Number(raw), MAX_EV_PER_STAT)
-                            setEvDraft((prev) => ({ ...prev, [key]: String(clamped) }))
-                          }}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
+            </>
+          )}
           {error && <p className="error-note">{error}</p>}
+          </div>
           <div className="confirm-dialog-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
               {t('common.cancel')}
