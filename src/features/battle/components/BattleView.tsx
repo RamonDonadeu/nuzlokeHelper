@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { PokemonSlot } from '@/types/profile'
 import { useBattleState } from '@/features/battle/hooks/useBattleState'
 import { useI18n } from '@/i18n'
@@ -11,14 +13,27 @@ interface BattleViewProps {
   onEnemyTeamChange: (team: PokemonSlot[]) => void
 }
 
+type BattleLocationState = {
+  startFight?: boolean
+}
+
 export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewProps) {
   const { t } = useI18n()
+  const location = useLocation()
+  const navigate = useNavigate()
   const battle = useBattleState({
     team,
     enemyTeam,
     onEnemyTeamChange,
     confirmClear: () => window.confirm(t('battle.clearConfirm')),
   })
+
+  useEffect(() => {
+    const state = location.state as BattleLocationState | null
+    if (!state?.startFight) return
+    battle.startFight()
+    navigate(location.pathname, { replace: true, state: null })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount when navigated from search
 
   const leftSlots = Array.from({ length: 6 }, (_, index) => team[index] ?? null)
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]

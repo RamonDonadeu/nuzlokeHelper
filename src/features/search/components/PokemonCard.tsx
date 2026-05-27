@@ -21,6 +21,8 @@ interface PokemonCardProps {
   addLabel?: string
   onSendToPC?: () => void
   sendToPCLabel?: string
+  onStartFight?: () => void
+  startFightLabel?: string
   onEvolutionSelect?: (name: string) => void
 }
 
@@ -34,6 +36,8 @@ export function PokemonCard({
   addLabel = 'Add to team',
   onSendToPC,
   sendToPCLabel = 'Send to PC',
+  onStartFight,
+  startFightLabel = 'Start fight',
   onEvolutionSelect,
 }: PokemonCardProps) {
   const { t, locale } = useI18n()
@@ -72,11 +76,16 @@ export function PokemonCard({
             </p>
           )}
         </div>
-        {(onAdd || onSendToPC) && (
+        {(onAdd || onSendToPC || onStartFight) && (
           <div className="pokemon-card-actions">
             {onAdd && (
               <button type="button" className="btn btn-primary" disabled={addDisabled} onClick={onAdd}>
                 {addLabel}
+              </button>
+            )}
+            {onStartFight && (
+              <button type="button" className="btn" onClick={onStartFight}>
+                {startFightLabel}
               </button>
             )}
             {onSendToPC && (

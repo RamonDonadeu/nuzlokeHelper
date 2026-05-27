@@ -261,6 +261,10 @@ function AppContent({
     moveToTeam(slotId, 'box')
   }
 
+  const handleStartFightFromSearch = () => {
+    navigate('/battle', { state: { startFight: true } })
+  }
+
   const handleSendToPC = () => {
     if (!searchPokemon) return
     addToBox(searchPokemon)
@@ -515,6 +519,8 @@ function AppContent({
                     onAdd={handleAddToTeam}
                     addDisabled={hasMember(searchPokemon.id)}
                     addLabel={addLabel}
+                    onStartFight={handleStartFightFromSearch}
+                    startFightLabel={t('battle.startFight')}
                     onSendToPC={handleSendToPC}
                     sendToPCLabel={t('search.sendToPC')}
                     onEvolutionSelect={handleSearchResultClick}
