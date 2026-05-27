@@ -1406,6 +1406,41 @@ ul {
   padding: 0.75rem;
 }
 
+.battle-prep-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.battle-prep-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.battle-prep-stats-table .battle-prep-sort-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-align: inherit;
+}
+
+.battle-prep-stats-table .battle-prep-sort-btn:hover {
+  color: var(--accent, #60a5fa);
+}
+
+.battle-prep-roster-tag {
+  margin-left: 0.35rem;
+  font-size: 0.68rem;
+}
+
 .battle-prep-panel h3,
 .battle-prep-card h4 {
   margin: 0;

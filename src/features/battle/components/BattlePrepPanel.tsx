@@ -10,18 +10,23 @@ import {
   resolveDamagingMoveTypes,
   uniqueNonEmptyMoves,
 } from '@/features/battle/lib/battlePrepMatchup'
+import { BattlePrepStatsTable } from '@/features/battle/components/BattlePrepStatsTable'
 import { formatMultiplier, multiplierSeverity, multiplierTier } from '@/lib/typeChart'
 import { InfoTooltip } from '@/shared/components/InfoTooltip'
 import type { PokemonType } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 
+type PrepView = 'attacks' | 'stats'
+
 interface BattlePrepPanelProps {
   team: PokemonSlot[]
+  pc: PokemonSlot[]
   enemySlots: Array<PokemonSlot | null>
   started: boolean
 }
 
-export function BattlePrepPanel({ team, enemySlots, started }: BattlePrepPanelProps) {
+export function BattlePrepPanel({ team, pc, enemySlots, started }: BattlePrepPanelProps) {
+  const [prepView, setPrepView] = useState<PrepView>('attacks')
   const { t } = useI18n()
   const enemies = useMemo(
     () => enemySlots.filter((slot): slot is PokemonSlot => slot !== null),
@@ -84,7 +89,17 @@ export function BattlePrepPanel({ team, enemySlots, started }: BattlePrepPanelPr
 
   return (
     <section className="card battle-prep-panel">
-      <h3>{t('battle.prepTitle')}</h3>
+      <div className="battle-prep-panel-head">
+        <h3>{prepView === 'attacks' ? t('battle.prepTitle') : t('battle.prepStatsTitle')}</h3>
+        {prepView === 'attacks' ? (
+          <button type="button" className="btn btn-sm" onClick={() => setPrepView('stats')}>
+            {t('battle.prepStatsCompare')}
+          </button>
+        ) : null}
+      </div>
+      {prepView === 'stats' ? (
+        <BattlePrepStatsTable team={team} pc={pc} onBack={() => setPrepView('attacks')} />
+      ) : (
       <div className="battle-prep-grid">
         <article className="battle-prep-card">
           <div className="battle-prep-card-head">
@@ -199,6 +214,7 @@ export function BattlePrepPanel({ team, enemySlots, started }: BattlePrepPanelPr
           )}
         </article>
       </div>
+      )}
     </section>
   )
 }
