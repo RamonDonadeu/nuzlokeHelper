@@ -2796,7 +2796,8 @@ button.evolution-card {
 }
 
 .move-suggestions button:hover,
-.move-suggestions button:focus-visible {
+.move-suggestions button:focus-visible,
+.move-suggestions button.is-highlighted {
   background: var(--bg-soft);
 }
 

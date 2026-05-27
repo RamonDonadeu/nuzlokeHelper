@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { Locale } from '@/i18n'
 import { useMoveSearch } from '@/hooks/useMoveSearch'
+import { useSuggestionKeyboard } from '@/hooks/useSuggestionKeyboard'
 import { canonicalMoveName, displayMoveName } from '@/lib/localizedNames'
 
 interface MoveInputProps {
@@ -38,6 +39,7 @@ export function MoveInput({
   }, [value, locale, focused])
 
   const showSuggestions = focused && text.trim().length >= 2 && indexReady
+  const query = text.trim()
 
   const commitValue = (nextText: string) => {
     const canonical = canonicalMoveName(nextText)
@@ -45,11 +47,23 @@ export function MoveInput({
     setText(displayMoveName(canonical, locale))
   }
 
-  const handleSelect = (canonicalName: string) => {
+  const handleSelect = useCallback((canonicalName: string) => {
     onChange(canonicalName)
     setText(displayMoveName(canonicalName, locale))
     setFocused(false)
-  }
+  }, [locale, onChange])
+
+  const resetKey = `${query}\0${results.map((result) => result.slug).join('\0')}`
+  const {
+    highlightedIndex,
+    listRef,
+    handleKeyDown: handleSuggestionKeyDown,
+  } = useSuggestionKeyboard({
+    enabled: showSuggestions && results.length > 0,
+    results,
+    resetKey,
+    onSelect: (result) => handleSelect(result.canonicalName),
+  })
 
   const handleBlur = () => {
     window.setTimeout(() => {
@@ -68,8 +82,11 @@ export function MoveInput({
           value={text}
           placeholder={placeholder}
           aria-autocomplete="list"
-          aria-controls={showSuggestions ? listId : undefined}
+          aria-controls={showSuggestions && results.length > 0 ? listId : undefined}
           aria-expanded={showSuggestions && results.length > 0}
+          aria-activedescendant={
+            highlightedIndex >= 0 ? `${listId}-option-${highlightedIndex}` : undefined
+          }
           onChange={(event) => setText(event.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={handleBlur}
@@ -79,19 +96,22 @@ export function MoveInput({
               setText(displayMoveName(safeValue, locale))
               return
             }
-            if (event.key === 'Enter' && showSuggestions && results.length > 0) {
-              event.preventDefault()
-              handleSelect(results[0].canonicalName)
-            }
+            handleSuggestionKeyDown(event)
           }}
         />
         {showSuggestions && results.length > 0 && (
-          <ul className="move-suggestions" id={listId} role="listbox">
-            {results.map((result) => (
-              <li key={result.slug} role="option">
+          <ul ref={listRef} className="move-suggestions" id={listId} role="listbox">
+            {results.map((result, index) => (
+              <li
+                key={result.slug}
+                id={`${listId}-option-${index}`}
+                role="option"
+                aria-selected={index === highlightedIndex}
+              >
                 <button
                   type="button"
                   tabIndex={-1}
+                  className={index === highlightedIndex ? 'is-highlighted' : undefined}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => handleSelect(result.canonicalName)}
                 >
