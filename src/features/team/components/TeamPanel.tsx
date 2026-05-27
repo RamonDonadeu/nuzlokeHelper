@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import type { PokemonSlot } from '@/types/profile'
 import { MAX_LEVEL_CAP, MAX_TEAM_SIZE, MIN_LEVEL_CAP, MIN_POKEMON_LEVEL } from '@/types/profile'
 import { calculateAllStats } from '@/lib/stats'
 import { totalStats } from '@/types/pokemon'
-import { useEvolutionBadges } from '@/hooks/useBoxEvolutionBadges'
+import { useEvolutionBadges } from '@/features/team/hooks/useBoxEvolutionBadges'
 import { useI18n } from '@/i18n'
 
 interface TeamPanelProps {

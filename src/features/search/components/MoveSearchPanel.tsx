@@ -1,5 +1,5 @@
 import { useI18n } from '@/i18n'
-import { useMoveEffectiveness } from '@/hooks/useMoveEffectiveness'
+import { useMoveEffectiveness } from '@/features/search/hooks/useMoveEffectiveness'
 import { displayMoveName } from '@/lib/localizedNames'
 import { getMoveDescription } from '@/lib/moveTypes'
 import { formatMultiplier, multiplierTier } from '@/lib/typeChart'

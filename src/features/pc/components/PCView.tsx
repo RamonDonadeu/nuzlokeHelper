@@ -2,8 +2,8 @@ import { useState } from 'react'
 
 import type { PokemonSlot } from '@/types/profile'
 
-import { PCComparison } from '@/components/PCComparison'
-import { useEvolutionBadges } from '@/hooks/useBoxEvolutionBadges'
+import { PCComparison } from '@/features/pc/components/PCComparison'
+import { useEvolutionBadges } from '@/features/team/hooks/useBoxEvolutionBadges'
 import { useI18n } from '@/i18n'
 
 type PCSubView = 'box' | 'death'

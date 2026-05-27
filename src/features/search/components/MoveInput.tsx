@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { Locale } from '@/i18n'
-import { useMoveSearch } from '@/hooks/useMoveSearch'
-import { useSuggestionKeyboard } from '@/hooks/useSuggestionKeyboard'
+import { useMoveSearch } from '@/features/search/hooks/useMoveSearch'
+import { useSuggestionKeyboard } from '@/shared/hooks/useSuggestionKeyboard'
 import { canonicalMoveName, displayMoveName } from '@/lib/localizedNames'
 
 interface MoveInputProps {

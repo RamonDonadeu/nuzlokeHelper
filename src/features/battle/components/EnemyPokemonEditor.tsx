@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
-import { MoveInput } from '@/components/MoveInput'
-import { useItemSearch } from '@/hooks/useItemSearch'
-import { usePokemonSearch } from '@/hooks/usePokemonSearch'
-import { useSuggestionKeyboard } from '@/hooks/useSuggestionKeyboard'
+import { MoveInput } from '@/features/search/components/MoveInput'
+import { useItemSearch } from '@/features/search/hooks/useItemSearch'
+import { usePokemonSearch } from '@/features/search/hooks/usePokemonSearch'
+import { useSuggestionKeyboard } from '@/shared/hooks/useSuggestionKeyboard'
 import { fetchPokemon } from '@/lib/pokeapi'
 import {
   canonicalAbilityName,

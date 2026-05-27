@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import type { EvolutionStage, PokemonSummary } from '@/types/pokemon'
 import { useI18n } from '@/i18n'
-import { EvolutionLine } from '@/components/EvolutionLine'
-import { PokemonStatGrid } from '@/components/PokemonStatGrid'
-import { useAbilityDescriptions } from '@/hooks/useAbilityDescriptions'
+import { EvolutionLine } from '@/features/team/components/EvolutionLine'
+import { PokemonStatGrid } from '@/features/team/components/PokemonStatGrid'
+import { useAbilityDescriptions } from '@/features/team/hooks/useAbilityDescriptions'
 import {
   getLocalizedAbilityName,
   getLocalizedPokemonName,

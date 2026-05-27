@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { InfoTooltip } from '@/components/InfoTooltip'
+import { InfoTooltip } from '@/shared/components/InfoTooltip'
 import { useI18n } from '@/i18n'
 import { resolveTeamSpeciesTypes } from '@/lib/pokeapi'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'

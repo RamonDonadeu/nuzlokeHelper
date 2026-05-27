@@ -55,6 +55,26 @@ npm run dev
 
 Open the URL shown in the terminal (usually `http://localhost:5173`).
 
+## Project structure
+
+```
+src/
+  app/              # App shell, routing (App.tsx), layout (IconNavRail, SidebarDrawer)
+  features/         # Domain modules (each may have components/, hooks/)
+    battle/         # Battle simulator UI
+    search/         # Pokémon/move/ability/item search & comparison
+    team/           # Team panel, editor, evolution, stat grids
+    pc/             # PC & death boxes
+    typing/         # Type matchup analysis
+    profiles/       # Run profiles & settings
+  shared/           # Cross-feature UI (ConfirmDialog, Toast, …) and hooks
+  lib/              # Pure utilities, PokeAPI clients, type chart
+  types/            # Shared TypeScript types
+  i18n/             # Locales and I18nProvider
+```
+
+Imports use the `@/` alias (see `vite.config.ts` / `tsconfig.json`), e.g. `@/features/team/components/TeamPanel`.
+
 ## Build
 
 ```bash

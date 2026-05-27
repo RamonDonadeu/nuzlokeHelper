@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import type { ProfileConfig, ProfileSettings, RunProfile } from '@/types/profile'
 import { createDefaultSettings } from '@/types/profile'
 import { useI18n } from '@/i18n'

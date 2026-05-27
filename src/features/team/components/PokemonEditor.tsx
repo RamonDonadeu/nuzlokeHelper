@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import type { EvolutionStage, PokemonAbility, PokemonStats, PokemonType } from '@/types/pokemon'
 import { STAT_KEYS, STAT_LABELS } from '@/types/pokemon'
 import type { PokemonSlot, SlotListName } from '@/types/profile'
-import { EvolutionLine } from '@/components/EvolutionLine'
-import { PokemonStatGrid } from '@/components/PokemonStatGrid'
-import { usePokemonDetails } from '@/hooks/usePokemonDetails'
+import { EvolutionLine } from '@/features/team/components/EvolutionLine'
+import { PokemonStatGrid } from '@/features/team/components/PokemonStatGrid'
+import { usePokemonDetails } from '@/features/search/hooks/usePokemonDetails'
 import { fetchPokemon } from '@/lib/pokeapi'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'
 import {
@@ -18,9 +18,9 @@ import {
   totalEvCount,
 } from '@/lib/stats'
 import { useI18n } from '@/i18n'
-import { MoveInput } from '@/components/MoveInput'
-import { useAbilityDescriptions } from '@/hooks/useAbilityDescriptions'
-import { useEvolutionBadges } from '@/hooks/useBoxEvolutionBadges'
+import { MoveInput } from '@/features/search/components/MoveInput'
+import { useAbilityDescriptions } from '@/features/team/hooks/useAbilityDescriptions'
+import { useEvolutionBadges } from '@/features/team/hooks/useBoxEvolutionBadges'
 import { resolveMoveTypes } from '@/lib/moveTypes'
 import {
   canonicalAbilityName,

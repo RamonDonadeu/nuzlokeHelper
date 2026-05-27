@@ -11,8 +11,8 @@ import {
 } from '@/lib/stats'
 import { STAT_KEYS, STAT_LABELS, totalStats } from '@/types/pokemon'
 import { useI18n } from '@/i18n'
-import { CustomStatMarker } from '@/components/CustomStatMarker'
-import { InfoTooltip } from '@/components/InfoTooltip'
+import { CustomStatMarker } from '@/features/team/components/CustomStatMarker'
+import { InfoTooltip } from '@/shared/components/InfoTooltip'
 
 interface StatComparisonProps {
   team: PokemonSlot[]

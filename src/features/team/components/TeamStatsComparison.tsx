@@ -1,5 +1,5 @@
 import type { PokemonSlot } from '@/types/profile'
-import { StatComparison } from '@/components/StatComparison'
+import { StatComparison } from '@/features/search/components/StatComparison'
 
 interface TeamStatsComparisonProps {
   team: PokemonSlot[]

@@ -1,4 +1,4 @@
-import { PokemonStatGrid } from '@/components/PokemonStatGrid'
+import { PokemonStatGrid } from '@/features/team/components/PokemonStatGrid'
 import type { PokemonSlot } from '@/types/profile'
 import { useI18n } from '@/i18n'
 import { useMemo, useState } from 'react'

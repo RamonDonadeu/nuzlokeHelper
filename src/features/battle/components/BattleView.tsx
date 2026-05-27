@@ -1,9 +1,9 @@
 import type { PokemonSlot } from '@/types/profile'
-import { useBattleState } from '@/hooks/useBattleState'
+import { useBattleState } from '@/features/battle/hooks/useBattleState'
 import { useI18n } from '@/i18n'
-import { BattleTeamColumn } from '@/components/BattleTeamColumn'
-import { BattlegroundPanel } from '@/components/BattlegroundPanel'
-import { EnemyPokemonEditor } from '@/components/EnemyPokemonEditor'
+import { BattleTeamColumn } from '@/features/battle/components/BattleTeamColumn'
+import { BattlegroundPanel } from '@/features/battle/components/BattlegroundPanel'
+import { EnemyPokemonEditor } from '@/features/battle/components/EnemyPokemonEditor'
 
 interface BattleViewProps {
   team: PokemonSlot[]
