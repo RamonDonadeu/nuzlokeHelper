@@ -5,7 +5,7 @@ import { useBattleState } from '@/features/battle/hooks/useBattleState'
 import { useI18n } from '@/i18n'
 import { BattleTeamColumn } from '@/features/battle/components/BattleTeamColumn'
 import { BattlegroundPanel } from '@/features/battle/components/BattlegroundPanel'
-import { EnemyPokemonEditor } from '@/features/battle/components/EnemyPokemonEditor'
+import { BattlePokemonEditorModal } from '@/features/battle/components/BattlePokemonEditorModal'
 import { EnemyTeamImportDialog } from '@/features/battle/components/EnemyTeamImportDialog'
 import { BattlePrepPanel } from '@/features/battle/components/BattlePrepPanel'
 
@@ -13,17 +13,19 @@ interface BattleViewProps {
   team: PokemonSlot[]
   enemyTeam: PokemonSlot[]
   onEnemyTeamChange: (team: PokemonSlot[]) => void
+  onAllySlotPatch: (slotId: string, patch: Partial<PokemonSlot>) => void
 }
 
 type BattleLocationState = {
   startFight?: boolean
 }
 
-export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewProps) {
+export function BattleView({ team, enemyTeam, onEnemyTeamChange, onAllySlotPatch }: BattleViewProps) {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
   const [importOpen, setImportOpen] = useState(false)
+  const [allyEditorIndex, setAllyEditorIndex] = useState<number | null>(null)
   const battle = useBattleState({
     team,
     enemyTeam,
@@ -40,6 +42,7 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
 
   const leftSlots = Array.from({ length: 6 }, (_, index) => team[index] ?? null)
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]
+  const editingAllySlot = allyEditorIndex === null ? null : team[allyEditorIndex] ?? null
 
   return (
     <div className="battle-view">
@@ -56,7 +59,7 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
             return
           }
           const slot = team[index]
-          if (slot) navigate(`/team/${slot.slotId}`, { state: { returnTo: '/battle' } })
+          if (slot) setAllyEditorIndex(index)
         }}
       />
       <div className="battle-center-column">
@@ -110,13 +113,34 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
           )
         }
       />
-      <EnemyPokemonEditor
+      <BattlePokemonEditorModal
         open={battle.editorOpen}
+        title={t('battle.enemyEditorTitle')}
         existingSlot={editingSlot}
         onClose={battle.closeEnemyEditor}
         onSubmit={(slot) => {
           if (battle.editorIndex === null) return
           battle.upsertEnemySlot(battle.editorIndex, slot)
+        }}
+      />
+      <BattlePokemonEditorModal
+        open={allyEditorIndex !== null}
+        title={t('battle.allyEditorTitle')}
+        existingSlot={editingAllySlot}
+        allowSpeciesEdit={false}
+        onClose={() => setAllyEditorIndex(null)}
+        onSubmit={(slot) => {
+          if (!editingAllySlot) return
+          onAllySlotPatch(editingAllySlot.slotId, {
+            level: slot.level,
+            nature: slot.nature,
+            ability: slot.ability,
+            item: slot.item,
+            moves: slot.moves,
+            ivs: slot.ivs,
+            evs: slot.evs,
+          })
+          setAllyEditorIndex(null)
         }}
       />
       <EnemyTeamImportDialog

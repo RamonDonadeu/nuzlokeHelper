@@ -753,6 +753,7 @@ function AppContent({
                   team={team}
                   enemyTeam={opponentTeam}
                   onEnemyTeamChange={setOpponentTeam}
+                  onAllySlotPatch={(slotId, patch) => updateSlot(slotId, patch, 'team')}
                 />
               }
             />
