@@ -107,6 +107,7 @@ export async function showdownSetsToSlots(sets: ParsedShowdownSet[]): Promise<Po
         evs: set.evs,
         nature: set.nature ?? defaultNature(),
         ability: set.ability,
+        item: set.item,
         moves: set.moves.length > 0 ? set.moves.slice(0, 4) : undefined,
       })
     } catch {

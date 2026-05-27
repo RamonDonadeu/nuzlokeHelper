@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { PokemonSlot } from '@/types/profile'
 import { useBattleState } from '@/features/battle/hooks/useBattleState'
@@ -6,6 +6,8 @@ import { useI18n } from '@/i18n'
 import { BattleTeamColumn } from '@/features/battle/components/BattleTeamColumn'
 import { BattlegroundPanel } from '@/features/battle/components/BattlegroundPanel'
 import { EnemyPokemonEditor } from '@/features/battle/components/EnemyPokemonEditor'
+import { EnemyTeamImportDialog } from '@/features/battle/components/EnemyTeamImportDialog'
+import { BattlePrepPanel } from '@/features/battle/components/BattlePrepPanel'
 
 interface BattleViewProps {
   team: PokemonSlot[]
@@ -21,6 +23,7 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
+  const [importOpen, setImportOpen] = useState(false)
   const battle = useBattleState({
     team,
     enemyTeam,
@@ -81,7 +84,15 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
         selectedActiveSlot={battle.selectedRightActiveSlot}
         onSlotClick={battle.selectRight}
         onEmptySlotClick={battle.openEnemyEditor}
+        actions={
+          <button type="button" className="btn btn-sm" onClick={() => setImportOpen(true)}>
+            {t('battle.importAction')}
+          </button>
+        }
       />
+      <div className="battle-prep-layout">
+        <BattlePrepPanel team={team} enemySlots={battle.enemySlots} />
+      </div>
       <EnemyPokemonEditor
         open={battle.editorOpen}
         existingSlot={editingSlot}
@@ -90,6 +101,12 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
           if (battle.editorIndex === null) return
           battle.upsertEnemySlot(battle.editorIndex, slot)
         }}
+      />
+      <EnemyTeamImportDialog
+        open={importOpen}
+        hasExistingEnemyTeam={battle.enemySlots.some((slot) => slot !== null)}
+        onClose={() => setImportOpen(false)}
+        onImport={battle.importEnemyTeam}
       />
     </div>
   )

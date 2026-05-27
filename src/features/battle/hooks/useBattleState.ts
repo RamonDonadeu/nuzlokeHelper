@@ -44,6 +44,7 @@ interface UseBattleStateResult {
   openEnemyEditor: (index: number) => void
   closeEnemyEditor: () => void
   upsertEnemySlot: (index: number, slot: PokemonSlot) => void
+  importEnemyTeam: (slots: PokemonSlot[], mode: 'replace' | 'append') => void
 }
 
 const ENEMY_TEAM_SIZE = 6
@@ -290,6 +291,24 @@ export function useBattleState({
     closeEnemyEditor()
   }
 
+  const importEnemyTeam = (slots: PokemonSlot[], mode: 'replace' | 'append') => {
+    const imported = slots.slice(0, ENEMY_TEAM_SIZE)
+    if (mode === 'replace') {
+      onEnemyTeamChange(imported)
+      return
+    }
+
+    const nextSlots = [...enemySlots]
+    let insertAt = 0
+    for (const slot of imported) {
+      while (insertAt < ENEMY_TEAM_SIZE && nextSlots[insertAt] !== null) insertAt += 1
+      if (insertAt >= ENEMY_TEAM_SIZE) break
+      nextSlots[insertAt] = slot
+      insertAt += 1
+    }
+    onEnemyTeamChange(compactEnemyTeam(nextSlots))
+  }
+
   const clearBattle = () => {
     if (!confirmClear()) return
     setStarted(false)
@@ -336,5 +355,6 @@ export function useBattleState({
     openEnemyEditor,
     closeEnemyEditor,
     upsertEnemySlot,
+    importEnemyTeam,
   }
 }

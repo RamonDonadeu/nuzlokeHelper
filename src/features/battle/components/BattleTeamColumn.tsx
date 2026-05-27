@@ -1,5 +1,6 @@
 import type { PokemonSlot } from '@/types/profile'
 import { useI18n } from '@/i18n'
+import type { ReactNode } from 'react'
 
 interface BattleTeamColumnProps {
   title: string
@@ -10,6 +11,7 @@ interface BattleTeamColumnProps {
   selectedActiveSlot: number
   onSlotClick: (index: number) => void
   onEmptySlotClick?: (index: number) => void
+  actions?: ReactNode
 }
 
 export function BattleTeamColumn({
@@ -21,12 +23,16 @@ export function BattleTeamColumn({
   selectedActiveSlot,
   onSlotClick,
   onEmptySlotClick,
+  actions,
 }: BattleTeamColumnProps) {
   const { t } = useI18n()
 
   return (
     <aside className={`card battle-team-column battle-team-column-${side}`}>
-      <h3>{title}</h3>
+      <div className="battle-team-column-header">
+        <h3>{title}</h3>
+        {actions}
+      </div>
       <ul className="battle-team-list">
         {slots.map((slot, index) => {
           if (!slot) {
