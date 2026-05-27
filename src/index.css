@@ -2655,22 +2655,28 @@ button.evolution-card {
 
 .editor-move-summary-list {
   display: grid;
-  gap: 0.35rem;
-}
-
-.editor-move-summary-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
 }
 
-.editor-move-summary-name {
-  font-size: 0.88rem;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.editor-move-summary-item {
+  list-style: none;
+}
+
+.editor-move-summary-item .move-detail-grid {
+  margin: 0;
+}
+
+.move-detail-grid-compact {
+  padding: 0.65rem;
+  gap: 0.45rem;
+}
+
+.move-detail-grid-compact .move-stat-grid {
+  gap: 0.4rem;
+}
+
+.move-detail-grid-compact .ability-description {
+  font-size: 0.85rem;
 }
 
 .type-badge.type-unknown {

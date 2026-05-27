@@ -60,6 +60,7 @@ export function analyzeEffectiveMoves(
   team: PokemonSlot[],
   defenderTypes: readonly unknown[],
   moveTypes: Map<string, PokemonType | null>,
+  options?: { damagingMoves?: Set<string> },
 ): MemberOffensiveCoverage[] {
   const defended = normalizePokemonTypes(defenderTypes)
   if (defended.length === 0 || team.length === 0) return []
@@ -69,6 +70,7 @@ export function analyzeEffectiveMoves(
       const effectiveMoves: EffectiveMoveEntry[] = []
 
       for (const moveName of (member.moves ?? []).filter(Boolean)) {
+        if (options?.damagingMoves && !options.damagingMoves.has(moveName)) continue
         const moveType = moveTypes.get(moveName)
         if (!moveType) continue
         const multiplier = getDefensiveMultiplier(defended, moveType)

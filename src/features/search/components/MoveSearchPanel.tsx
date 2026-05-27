@@ -1,7 +1,7 @@
 import { useI18n } from '@/i18n'
+import { MoveDetailCard } from '@/features/search/components/MoveDetailCard'
 import { useMoveEffectiveness } from '@/features/search/hooks/useMoveEffectiveness'
 import { displayMoveName } from '@/lib/localizedNames'
-import { getMoveDescription } from '@/lib/moveTypes'
 import { formatMultiplier, multiplierTier } from '@/lib/typeChart'
 import type { MoveDetails } from '@/lib/moveTypes'
 import type { PokemonSlot } from '@/types/profile'
@@ -26,22 +26,10 @@ function classFromMultiplier(multiplier: number | null): string {
   return `coverage-defense-${multiplierTier(multiplier)}`
 }
 
-function damageClassLabel(value: MoveDetails['damageClass'], t: (key: string) => string): string {
-  if (value === 'physical') return t('search.moveDamageClassPhysical')
-  if (value === 'special') return t('search.moveDamageClassSpecial')
-  if (value === 'status') return t('search.moveDamageClassStatus')
-  return t('search.moveUnknown')
-}
-
-function statLabel(value: number | null, t: (key: string) => string): string {
-  return value === null ? t('search.moveUnknown') : String(value)
-}
-
 export function MoveSearchPanel({ move, team }: MoveSearchPanelProps) {
   const { t, locale } = useI18n()
   const { rows, loading } = useMoveEffectiveness(team, move.type)
   const moveName = displayMoveName(move.name, locale)
-  const description = getMoveDescription(move, locale)
 
   return (
     <section className="card move-search-panel">
@@ -49,37 +37,7 @@ export function MoveSearchPanel({ move, team }: MoveSearchPanelProps) {
         <h3>{t('search.moveInfoTitle')}</h3>
       </div>
 
-      <div className="move-detail-grid">
-        <div className="move-detail-name-row">
-          <strong>{moveName}</strong>
-          <span className={`type-badge type-${move.type ?? 'unknown'}`}>
-            {move.type ?? t('search.moveUnknown')}
-          </span>
-        </div>
-        <p className="muted move-detail-line">
-          {t('search.moveDamageClass')}: {damageClassLabel(move.damageClass, t)}
-        </p>
-        <div className="move-stat-grid">
-          <div>
-            <span className="muted">{t('search.movePower')}</span>
-            <strong>{statLabel(move.power, t)}</strong>
-          </div>
-          <div>
-            <span className="muted">{t('search.moveAccuracy')}</span>
-            <strong>{statLabel(move.accuracy, t)}</strong>
-          </div>
-          <div>
-            <span className="muted">{t('search.movePp')}</span>
-            <strong>{statLabel(move.pp, t)}</strong>
-          </div>
-        </div>
-        {description ? (
-          <div className="move-description-block">
-            <span className="muted">{t('search.moveDescription')}</span>
-            <p className="ability-description">{description}</p>
-          </div>
-        ) : null}
-      </div>
+      <MoveDetailCard move={move} displayName={moveName} />
 
       <div className="matchup-block">
         <h4>{t('search.moveTeamEffectiveness')}</h4>

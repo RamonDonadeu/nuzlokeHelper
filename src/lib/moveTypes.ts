@@ -44,6 +44,21 @@ function pickLatestFlavorEntry(entries: MoveFlavorEntry[]): MoveFlavorEntry | un
   return [...entries].sort((a, b) => compareVersionGroups(a.versionGroup, b.versionGroup))[0]
 }
 
+/** True when the move can deal damage (excludes status and 0-power moves). */
+export function isDamagingMove(details: MoveDetails | null | undefined): boolean {
+  if (!details) return false
+  if (details.damageClass === 'status') return false
+  if (details.power === 0) return false
+  return true
+}
+
+/** Read move details from the in-memory / localStorage cache (no network). */
+export function getCachedMoveDetails(moveName: string): MoveDetails | null {
+  loadDetailsStorageCache()
+  const slug = slugForMoveName(moveName)
+  return detailsMemoryCache.get(slug) ?? null
+}
+
 /** In-game flavor for the locale, then English short_effect, then latest English flavor. */
 export function getMoveDescription(move: MoveDetails, locale: Locale): string {
   const language = flavorLanguageForLocale(locale)

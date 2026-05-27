@@ -210,6 +210,8 @@ export const es: TranslationKey = {
     previewingEvolution: 'Vista previa: {{name}}',
     clearEvolutionPreview: 'Volver a la forma actual',
     noMovesConfigured: 'Aun no hay movimientos configurados.',
+    loadingMoves: 'Cargando detalles del movimiento…',
+    moveDetailsUnavailable: 'No se pudieron cargar los detalles del movimiento.',
     moveTypeUnknown: 'Desconocido',
     resetStats: 'Restablecer IVs/EVs',
     canEvolve: 'Puede evolucionar',

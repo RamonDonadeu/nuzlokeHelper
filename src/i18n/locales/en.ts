@@ -229,6 +229,8 @@ export const en: TranslationKey = {
     previewingEvolution: 'Previewing {{name}}',
     clearEvolutionPreview: 'Back to current form',
     noMovesConfigured: 'No moves configured yet.',
+    loadingMoves: 'Loading move details…',
+    moveDetailsUnavailable: 'Could not load move details.',
     moveTypeUnknown: 'Unknown',
     resetStats: 'Reset IVs/EVs',
     canEvolve: 'Can evolve',

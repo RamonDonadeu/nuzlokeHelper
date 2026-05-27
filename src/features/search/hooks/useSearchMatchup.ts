@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { PokemonSummary } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
-import { resolveMoveTypes } from '@/lib/moveTypes'
+import { getCachedMoveDetails, isDamagingMove, resolveMoveTypes } from '@/lib/moveTypes'
 import {
   analyzeEffectiveMoves,
   analyzeThreats,
@@ -44,8 +44,14 @@ export function useSearchMatchup(team: PokemonSlot[], candidate: PokemonSummary 
       const moveTypes = moveNames.length > 0 ? await resolveMoveTypes(moveNames) : new Map()
       if (cancelled) return
 
+      const damagingMoves = new Set(
+        moveNames.filter((name) => isDamagingMove(getCachedMoveDetails(name))),
+      )
+
       setThreats(analyzeThreats(team, candidate.types))
-      setOffenses(analyzeEffectiveMoves(team, candidate.types, moveTypes))
+      setOffenses(
+        analyzeEffectiveMoves(team, candidate.types, moveTypes, { damagingMoves }),
+      )
       setLoading(false)
     })()
 

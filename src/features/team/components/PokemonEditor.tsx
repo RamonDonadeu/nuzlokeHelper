@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { EvolutionStage, PokemonAbility, PokemonStats, PokemonType } from '@/types/pokemon'
+import type { EvolutionStage, PokemonAbility, PokemonStats } from '@/types/pokemon'
 import { STAT_KEYS, STAT_LABELS } from '@/types/pokemon'
 import type { PokemonSlot, SlotListName } from '@/types/profile'
+import { EditorMoveSummary } from '@/features/team/components/EditorMoveSummary'
 import { EvolutionLine } from '@/features/team/components/EvolutionLine'
 import { PokemonStatGrid } from '@/features/team/components/PokemonStatGrid'
 import { usePokemonDetails } from '@/features/search/hooks/usePokemonDetails'
@@ -21,11 +22,9 @@ import { useI18n } from '@/i18n'
 import { MoveInput } from '@/features/search/components/MoveInput'
 import { useAbilityDescriptions } from '@/features/team/hooks/useAbilityDescriptions'
 import { useEvolutionBadges } from '@/features/team/hooks/useBoxEvolutionBadges'
-import { resolveMoveTypes } from '@/lib/moveTypes'
 import {
   canonicalAbilityName,
   canonicalMoveName,
-  displayMoveName,
   ensureEditorIndexes,
   getLocalizedAbilityName,
   getLocalizedPokemonNameBySlug,
@@ -170,7 +169,6 @@ export function PokemonEditor({
   const [abilitySlugs, setAbilitySlugs] = useState<string[]>([])
   const [loadingAbilities, setLoadingAbilities] = useState(true)
   const [moveIndexReady, setMoveIndexReady] = useState(false)
-  const [moveTypesByName, setMoveTypesByName] = useState<Record<string, PokemonType | null>>({})
   const [previewEvolutionName, setPreviewEvolutionName] = useState<string | null>(null)
 
   const {
@@ -338,38 +336,6 @@ export function PokemonEditor({
 
   const selectedAbilityCanonical = canonicalAbilityName(ability)
 
-  useEffect(() => {
-    let cancelled = false
-    if (configuredMoves.length === 0) {
-      setMoveTypesByName({})
-      return () => {
-        cancelled = true
-      }
-    }
-
-    void resolveMoveTypes(configuredMoves)
-      .then((resolvedTypes) => {
-        if (cancelled) return
-        const next: Record<string, PokemonType | null> = {}
-        for (const moveName of configuredMoves) {
-          next[moveName] = resolvedTypes.get(moveName) ?? null
-        }
-        setMoveTypesByName(next)
-      })
-      .catch(() => {
-        if (cancelled) return
-        const next: Record<string, PokemonType | null> = {}
-        for (const moveName of configuredMoves) {
-          next[moveName] = null
-        }
-        setMoveTypesByName(next)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [configuredMoves])
-
   return (
     <section className="card pokemon-editor">
       <div className="editor-header">
@@ -448,23 +414,7 @@ export function PokemonEditor({
 
         <div className="editor-move-summary">
           <h4>{t('editor.moves')}</h4>
-          {configuredMoves.length > 0 ? (
-            <ul className="editor-move-summary-list">
-              {configuredMoves.map((moveName, index) => {
-                const moveType = moveTypesByName[moveName]
-                return (
-                  <li key={`${moveName}-${index}`} className="editor-move-summary-item">
-                    <span className="editor-move-summary-name">{displayMoveName(moveName, locale)}</span>
-                    <span className={`type-badge ${moveType ? `type-${moveType}` : 'type-unknown'}`}>
-                      {moveType ?? t('editor.moveTypeUnknown')}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <p className="muted">{t('editor.noMovesConfigured')}</p>
-          )}
+          <EditorMoveSummary moveNames={configuredMoves} />
         </div>
 
         {!detailsLoading && evolutions.length > 0 && (
