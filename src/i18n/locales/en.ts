@@ -2,7 +2,7 @@ export type TranslationKey = {
   appTitle: string
   appSubtitle: string
   common: Record<'confirm' | 'cancel', string>
-  tabs: Record<'types' | 'pc', string>
+  tabs: Record<'types' | 'pc' | 'battle', string>
   team: Record<string, string>
   box: Record<string, string>
   profile: Record<string, string>
@@ -17,6 +17,7 @@ export type TranslationKey = {
   nav: Record<'main', string>
   mobile: Record<string, string>
   toast: Record<string, string>
+  battle: Record<string, string>
 }
 
 export const en: TranslationKey = {
@@ -29,6 +30,7 @@ export const en: TranslationKey = {
   tabs: {
     types: 'Team Typing',
     pc: 'PC',
+    battle: 'Battle',
   },
   team: {
     title: 'Your Team',
@@ -283,5 +285,31 @@ export const en: TranslationKey = {
     allSentToPC: 'All Pokémon sent to PC ({{count}})',
     teamFull: 'Team is full',
     cannotAddToTeam: 'Cannot add {{name}} — team is full',
+  },
+  battle: {
+    yourTeam: 'Your team',
+    enemyTeamTitle: 'Enemy team',
+    emptyEnemySlot: 'Empty slot {{n}}',
+    startFight: 'Start fight',
+    clear: 'Clear',
+    clearConfirm: 'Clear the battle and enemy team?',
+    enemyTeam: 'Enemy team',
+    doubleBattle: 'Double battle',
+    yourActive: 'Your active Pokémon',
+    enemyActive: 'Enemy active Pokémon',
+    noActive: 'No active Pokémon selected',
+    statsTab: 'Stats',
+    yourStats: 'Your stats',
+    enemyStats: 'Enemy stats',
+    enemyEditorTitle: 'Add enemy Pokémon',
+    editorSpecies: 'Species / Pokémon',
+    editorSpeciesPlaceholder: 'e.g. garchomp',
+    editorSpeciesError: 'Could not find that Pokémon species.',
+    editorAbility: 'Ability',
+    editorAbilityPlaceholder: 'e.g. rough-skin',
+    editorItem: 'Item',
+    editorItemPlaceholder: 'e.g. leftovers',
+    editorMove: 'Move {{n}}',
+    editorMovePlaceholder: 'e.g. earthquake',
   },
 }

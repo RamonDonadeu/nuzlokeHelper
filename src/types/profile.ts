@@ -38,6 +38,7 @@ export interface PokemonSlot {
   evs?: Partial<PokemonStats>
   nature?: string
   ability?: string
+  item?: string
   /** Up to 4 move names */
   moves?: string[]
   /** Current evolution stage species id (may differ from speciesId if evolved) */

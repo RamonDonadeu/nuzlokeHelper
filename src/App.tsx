@@ -14,6 +14,7 @@ import { ProfileSettingsModal } from '@/components/ProfileSettingsModal'
 import { SidebarDrawer } from '@/components/SidebarDrawer'
 import { SearchMatchup } from '@/components/SearchMatchup'
 import { StatComparison } from '@/components/StatComparison'
+import { BattleView } from '@/components/BattleView'
 import { TeamPanel } from '@/components/TeamPanel'
 import { TeamStatsComparison } from '@/components/TeamStatsComparison'
 import { ToastProvider, useToast } from '@/components/Toast'
@@ -39,7 +40,7 @@ import {
 } from '@/lib/localizedNames'
 import { findSlotInProfile } from '@/types/profile'
 
-type Tab = 'types' | 'pc'
+type Tab = 'types' | 'pc' | 'battle'
 type SearchResultFilter = 'all' | 'pokemon' | 'moves' | 'abilities' | 'items'
 
 export default function App() {
@@ -66,6 +67,7 @@ function AppContent({
   setLevelCap,
   updateProfileConfig,
   team,
+  opponentTeam,
   box,
   deathBox,
   addToTeam,
@@ -89,6 +91,7 @@ function AppContent({
   requestEvolution,
   isFull,
   hasMember,
+  setOpponentTeam,
 }: ReturnType<typeof useProfiles>) {
   const { t, locale } = useI18n()
   const { showToast, showErrorToast } = useToast()
@@ -110,7 +113,13 @@ function AppContent({
   const teamSlotId = teamDetailMatch?.params.slotId ?? null
   const pcSlotId = pcDetailMatch?.params.pokemonId ?? null
   const selectedSlotId = teamSlotId ?? pcSlotId
-  const activeTab: Tab = location.pathname === '/pc' || Boolean(pcSlotId) ? 'pc' : 'types'
+  const isBattleRoute = location.pathname === '/battle'
+  const activeTab: Tab =
+    location.pathname === '/pc' || Boolean(pcSlotId)
+      ? 'pc'
+      : isBattleRoute
+        ? 'battle'
+        : 'types'
   const isTeamTypingRoute = location.pathname === '/' || location.pathname === '/team-typing'
 
   const scrollSearchToTop = useCallback(() => {
@@ -165,7 +174,15 @@ function AppContent({
   }
 
   const handleTabClick = (tab: Tab) => {
-    navigate(tab === 'pc' ? '/pc' : '/search')
+    if (tab === 'pc') {
+      navigate('/pc')
+      return
+    }
+    if (tab === 'battle') {
+      navigate('/battle')
+      return
+    }
+    navigate('/search')
   }
 
   const handleShowTeamStats = () => {
@@ -385,27 +402,31 @@ function AppContent({
 
       <div className="app-body">
         <div className="app-main-area">
-          <div className="app-layout">
-            <SidebarDrawer
-              open={teamDrawerOpen && !isTeamTypingRoute}
-              onOpenChange={(open) => {
-                if (!isTeamTypingRoute) setTeamDrawerOpen(open)
-              }}
-            >
-              {sidebar}
-            </SidebarDrawer>
+          <div className={`app-layout${isBattleRoute ? ' app-layout-battle' : ''}`}>
+            {!isBattleRoute && (
+              <SidebarDrawer
+                open={teamDrawerOpen && !isTeamTypingRoute}
+                onOpenChange={(open) => {
+                  if (!isTeamTypingRoute) setTeamDrawerOpen(open)
+                }}
+              >
+                {sidebar}
+              </SidebarDrawer>
+            )}
 
             <main className="main-content">
-          <div className="main-search-bar">
-            <input
-              type="search"
-              className="search-input"
-              placeholder={t('search.placeholder')}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label={t('search.title')}
-            />
-          </div>
+          {!isBattleRoute && (
+            <div className="main-search-bar">
+              <input
+                type="search"
+                className="search-input"
+                placeholder={t('search.placeholder')}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label={t('search.title')}
+              />
+            </div>
+          )}
 
           <Routes>
             <Route
@@ -683,6 +704,16 @@ function AppContent({
               }
             />
             <Route
+              path="/battle"
+              element={
+                <BattleView
+                  team={team}
+                  enemyTeam={opponentTeam}
+                  onEnemyTeamChange={setOpponentTeam}
+                />
+              }
+            />
+            <Route
               path="/pc/:pokemonId"
               element={
                 selectedSlotInfo ? (
@@ -709,21 +740,23 @@ function AppContent({
         </div>
 
         <div className="mobile-bottom-dock">
-          <button
-            type="button"
-            className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !isTeamTypingRoute ? ' active' : ''}`}
-            onClick={handleMobileTeamNav}
-            aria-label={t('mobile.openTeam')}
-          >
-            <span className="icon-nav-icon" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-              </svg>
-            </span>
-            <span className="icon-nav-label">{t('mobile.teamNav')}</span>
-          </button>
+          {!isBattleRoute && (
+            <button
+              type="button"
+              className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !isTeamTypingRoute ? ' active' : ''}`}
+              onClick={handleMobileTeamNav}
+              aria-label={t('mobile.openTeam')}
+            >
+              <span className="icon-nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                </svg>
+              </span>
+              <span className="icon-nav-label">{t('mobile.teamNav')}</span>
+            </button>
+          )}
           <IconNavRail activeTab={activeTab} onTabNavigate={handleTabClick} />
         </div>
       </div>

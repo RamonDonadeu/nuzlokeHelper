@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useI18n } from '@/i18n'
 
-type Tab = 'types' | 'pc'
+type Tab = 'types' | 'pc' | 'battle'
 
 interface IconNavRailProps {
   activeTab: Tab
@@ -25,6 +25,18 @@ const TABS: { id: Tab; icon: ReactNode }[] = [
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="4" width="18" height="14" rx="2" />
         <path d="M3 10h18" />
+      </svg>
+    ),
+  },
+  {
+    id: 'battle',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="8" cy="8" r="3" />
+        <circle cx="16" cy="16" r="3" />
+        <path d="M10.5 10.5l3 3" />
+        <path d="M14 6h4v4" />
+        <path d="M6 18H2v-4" />
       </svg>
     ),
   },
