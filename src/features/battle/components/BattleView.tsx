@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import type { PokemonType } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 import { useBattleState } from '@/features/battle/hooks/useBattleState'
 import { useI18n } from '@/i18n'
@@ -8,9 +9,15 @@ import { BattlegroundPanel } from '@/features/battle/components/BattlegroundPane
 import { BattlePokemonEditorModal } from '@/features/battle/components/BattlePokemonEditorModal'
 import { EnemyTeamImportDialog } from '@/features/battle/components/EnemyTeamImportDialog'
 import { BattlePrepPanel } from '@/features/battle/components/BattlePrepPanel'
+import {
+  buildThreatCountMap,
+  resolveDamagingMoveTypes,
+  uniqueNonEmptyMoves,
+} from '@/features/battle/lib/battlePrepMatchup'
 
 interface BattleViewProps {
   team: PokemonSlot[]
+  pc: PokemonSlot[]
   enemyTeam: PokemonSlot[]
   levelCap: number
   onEnemyTeamChange: (team: PokemonSlot[]) => void
@@ -21,7 +28,7 @@ type BattleLocationState = {
   startFight?: boolean
 }
 
-export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAllySlotPatch }: BattleViewProps) {
+export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, onAllySlotPatch }: BattleViewProps) {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
@@ -42,6 +49,29 @@ export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAll
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount when navigated from search
 
   const leftSlots = Array.from({ length: 6 }, (_, index) => team[index] ?? null)
+  const enemies = useMemo(
+    () => battle.enemySlots.filter((slot): slot is PokemonSlot => slot !== null),
+    [battle.enemySlots],
+  )
+  const [enemyDamagingMoveTypes, setEnemyDamagingMoveTypes] = useState<Map<string, PokemonType>>(new Map())
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const moveTypes = await resolveDamagingMoveTypes(uniqueNonEmptyMoves(enemies))
+      if (!cancelled) setEnemyDamagingMoveTypes(moveTypes)
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [enemies])
+
+  const threatCountsBySlotId = useMemo(() => {
+    if (enemies.length === 0) return new Map<string, number>()
+    return buildThreatCountMap([...team, ...pc], enemies, enemyDamagingMoveTypes)
+  }, [enemies, enemyDamagingMoveTypes, pc, team])
+
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]
   const editingAllySlot = allyEditorIndex === null ? null : team[allyEditorIndex] ?? null
 
@@ -54,6 +84,12 @@ export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAll
         activeIndices={battle.activeLeftIndices}
         faintedIndices={battle.faintedLeftIndices}
         selectedActiveSlot={battle.selectedLeftActiveSlot}
+        threatCountsBySlotId={threatCountsBySlotId}
+        enemyCount={enemies.length}
+        pcMembers={pc}
+        pcClickDisabled={battle.started}
+        pcClickDisabledTitle={t('battle.pcNotOnTeam')}
+        onPcMemberClick={(slotId) => navigate(`/pc/${slotId}`)}
         onFilledSlotClick={(index) => {
           if (battle.started) {
             battle.selectLeft(index)
@@ -88,7 +124,12 @@ export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAll
           enemyTeam={battle.enemySlots}
         />
         {!battle.started ? (
-          <BattlePrepPanel team={team} enemySlots={battle.enemySlots} started={battle.started} />
+          <BattlePrepPanel
+            team={team}
+            box={box}
+            enemySlots={battle.enemySlots}
+            started={battle.started}
+          />
         ) : null}
       </div>
       <BattleTeamColumn
@@ -115,6 +156,11 @@ export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAll
         }
       />
       <BattlePokemonEditorModal
+        key={
+          battle.editorOpen
+            ? `enemy-${battle.editorIndex}-${editingSlot?.slotId ?? 'new'}`
+            : 'enemy-closed'
+        }
         open={battle.editorOpen}
         title={t('battle.enemyEditorTitle')}
         existingSlot={editingSlot}
@@ -126,6 +172,11 @@ export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAll
         }}
       />
       <BattlePokemonEditorModal
+        key={
+          allyEditorIndex !== null
+            ? `ally-${allyEditorIndex}-${editingAllySlot?.slotId ?? 'new'}`
+            : 'ally-closed'
+        }
         open={allyEditorIndex !== null}
         title={t('battle.allyEditorTitle')}
         existingSlot={editingAllySlot}
@@ -148,6 +199,7 @@ export function BattleView({ team, enemyTeam, levelCap, onEnemyTeamChange, onAll
       />
       <EnemyTeamImportDialog
         open={importOpen}
+        levelCap={levelCap}
         hasExistingEnemyTeam={battle.enemySlots.some((slot) => slot !== null)}
         onClose={() => setImportOpen(false)}
         onImport={battle.importEnemyTeam}

@@ -751,6 +751,7 @@ function AppContent({
               element={
                 <BattleView
                   team={team}
+                  pc={box}
                   enemyTeam={opponentTeam}
                   levelCap={activeProfile.settings.levelCap}
                   onEnemyTeamChange={setOpponentTeam}

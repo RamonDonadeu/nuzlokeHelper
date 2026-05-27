@@ -88,6 +88,47 @@ export function getEnemyAttacks(
   }
 }
 
+export type ThreatCountTier = 'safe' | 'low' | 'medium' | 'high'
+
+/** Enemies with at least one attack that deals 2× or more vs defender types. */
+export function countEnemyThreatsAgainst(
+  defender: PokemonSlot,
+  enemies: PokemonSlot[],
+  enemyDamagingMoveTypes: Map<string, PokemonType>,
+): number {
+  let threateningEnemies = 0
+  for (const enemy of enemies) {
+    const { attacks } = getEnemyAttacks(enemy, enemyDamagingMoveTypes)
+    for (const attack of attacks) {
+      const multiplier = getDefensiveMultiplier(defender.types, attack.attackType) ?? 1
+      if (multiplier >= 2) {
+        threateningEnemies++
+        break
+      }
+    }
+  }
+  return threateningEnemies
+}
+
+export function buildThreatCountMap(
+  defenders: PokemonSlot[],
+  enemies: PokemonSlot[],
+  enemyDamagingMoveTypes: Map<string, PokemonType>,
+): Map<string, number> {
+  const map = new Map<string, number>()
+  for (const defender of defenders) {
+    map.set(defender.slotId, countEnemyThreatsAgainst(defender, enemies, enemyDamagingMoveTypes))
+  }
+  return map
+}
+
+export function threatCountTier(count: number, enemyCount: number): ThreatCountTier {
+  if (count <= 0 || enemyCount <= 0) return 'safe'
+  if (count >= 3 || count / enemyCount >= 0.67) return 'high'
+  if (count >= 2 || count / enemyCount >= 0.34) return 'medium'
+  return 'low'
+}
+
 export function computeVulnerabilityRows(
   team: PokemonSlot[],
   enemies: PokemonSlot[],

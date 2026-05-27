@@ -800,6 +800,74 @@ ul {
   width: 32px;
   height: 32px;
   image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.battle-team-slot-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle-team-section-title {
+  font-size: 0.85rem;
+  margin: 0 0 0.4rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.battle-team-section-title-pc {
+  margin-top: 0.75rem;
+}
+
+.battle-pc-list {
+  max-height: min(40vh, 320px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.battle-pc-slot.disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.battle-threat-badge {
+  flex-shrink: 0;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+
+.battle-threat-safe {
+  color: var(--success, #2d8a4e);
+  background: color-mix(in srgb, var(--success, #2d8a4e) 12%, var(--bg-soft));
+  border-color: color-mix(in srgb, var(--success, #2d8a4e) 35%, var(--border));
+}
+
+.battle-threat-low {
+  color: #9a7b2e;
+  background: color-mix(in srgb, #c9a227 14%, var(--bg-soft));
+  border-color: color-mix(in srgb, #c9a227 40%, var(--border));
+}
+
+.battle-threat-medium {
+  color: #b85c1a;
+  background: color-mix(in srgb, #e67e22 16%, var(--bg-soft));
+  border-color: color-mix(in srgb, #e67e22 45%, var(--border));
+}
+
+.battle-threat-high {
+  color: #b3261e;
+  background: color-mix(in srgb, #e53935 14%, var(--bg-soft));
+  border-color: color-mix(in srgb, #e53935 45%, var(--border));
 }
 
 .battle-slot-chip {
@@ -1238,6 +1306,20 @@ ul {
 
 .battle-editor-meta-grid .number-stepper {
   width: 100%;
+}
+
+.battle-editor-meta-grid .number-stepper-btn {
+  flex: 0 0 auto;
+  min-width: 1.35rem;
+  max-width: 1.5rem;
+  padding: 0 0.2rem;
+  font-size: 0.75rem;
+}
+
+.battle-editor-meta-grid .number-stepper-input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
 }
 
 .battle-switch-modal {

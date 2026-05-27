@@ -275,6 +275,10 @@ export const es: TranslationKey = {
   },
   battle: {
     yourTeam: 'Tu equipo',
+    pcRoster: 'PC',
+    threatCount:
+      '{{count}} de {{total}} rivales hacen 2× o más a este Pokémon (movimientos dañinos configurados, o estimación STAB si no hay movimientos)',
+    pcNotOnTeam: 'No está en tu equipo — añádelo desde la pestaña PC para usarlo en combate',
     enemyTeamTitle: 'Equipo rival',
     emptyEnemySlot: 'Espacio vacío {{n}}',
     startFight: 'Iniciar combate',
