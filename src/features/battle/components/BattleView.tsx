@@ -51,6 +51,10 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
         faintedIndices={battle.faintedLeftIndices}
         selectedActiveSlot={battle.selectedLeftActiveSlot}
         onFilledSlotClick={(index) => {
+          if (battle.started) {
+            battle.selectLeft(index)
+            return
+          }
           const slot = team[index]
           if (slot) navigate(`/team/${slot.slotId}`, { state: { returnTo: '/battle' } })
         }}
@@ -90,8 +94,14 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
         activeIndices={battle.activeRightIndices}
         faintedIndices={battle.faintedRightIndices}
         selectedActiveSlot={battle.selectedRightActiveSlot}
-        onFilledSlotClick={battle.openEnemyEditor}
-        onEmptySlotClick={battle.openEnemyEditor}
+        onFilledSlotClick={(index) => {
+          if (battle.started) {
+            battle.selectRight(index)
+            return
+          }
+          battle.openEnemyEditor(index)
+        }}
+        onEmptySlotClick={battle.started ? undefined : battle.openEnemyEditor}
         actions={
           battle.started ? null : (
             <button type="button" className="btn btn-sm" onClick={() => setImportOpen(true)}>
