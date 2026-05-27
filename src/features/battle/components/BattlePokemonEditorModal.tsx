@@ -386,18 +386,28 @@ export function BattlePokemonEditorModal({
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div className="modal card battle-editor-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-        <h3>{panel === 'main' ? title : t('battle.editorIvEvTitle')}</h3>
-        <form className="inline-form battle-editor-form" onSubmit={handleSubmit}>
-          <div className="battle-editor-scroll">
-          {panel === 'stats' ? (
-            <div className="battle-editor-stats-panel">
+        <div className="battle-editor-header">
+          <h3 className="battle-editor-title">{panel === 'main' ? title : t('battle.editorIvEvTitle')}</h3>
+          <div className="battle-editor-header-actions">
+            {panel === 'stats' ? (
               <button
                 type="button"
-                className="btn btn-sm btn-ghost battle-editor-back-btn"
+                className="btn btn-sm battle-editor-action-btn"
                 onClick={() => setPanel('main')}
               >
                 {t('battle.editorBack')}
               </button>
+            ) : (
+              <button type="button" className="btn btn-sm battle-editor-action-btn" onClick={openStatsPanel}>
+                {t('battle.editorSetIvEv')}
+              </button>
+            )}
+          </div>
+        </div>
+        <form className="inline-form battle-editor-form" onSubmit={handleSubmit}>
+          <div className="battle-editor-scroll">
+          {panel === 'stats' ? (
+            <div className="battle-editor-stats-panel">
               <div className="editor-section">
                 <div className="editor-section-header">
                   <h3>{t('editor.ivs')}</h3>
@@ -418,9 +428,6 @@ export function BattlePokemonEditorModal({
             </div>
           ) : (
             <>
-          <button type="button" className="btn btn-sm battle-editor-nav-btn" onClick={openStatsPanel}>
-            {t('battle.editorSetIvEv')}
-          </button>
           {allowSpeciesEdit ? (
             <label className="control-group">
               <span className="control-label">{t('battle.editorSpecies')}</span>

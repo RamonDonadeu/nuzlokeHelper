@@ -1141,6 +1141,51 @@ ul {
   flex: 1;
 }
 
+.battle-editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.battle-editor-title {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.battle-editor-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.battle-editor-action-btn {
+  padding: 0.3rem 0.6rem;
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 22%, var(--bg-soft));
+  color: #fecaca;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.battle-editor-action-btn:hover {
+  background: color-mix(in srgb, var(--primary) 38%, var(--bg-soft));
+  border-color: color-mix(in srgb, var(--primary) 68%, var(--border));
+  color: #fee2e2;
+}
+
+.battle-editor-action-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
 .battle-editor-scroll {
   overflow-y: auto;
   min-height: 0;
@@ -1150,17 +1195,9 @@ ul {
   padding-right: 0.15rem;
 }
 
-.battle-editor-nav-btn {
-  justify-self: start;
-}
-
 .battle-editor-stats-panel {
   display: grid;
   gap: 0.65rem;
-}
-
-.battle-editor-back-btn {
-  justify-self: start;
 }
 
 .battle-move-input-grid {
@@ -2921,6 +2958,15 @@ button.evolution-card {
   .pc-grid-card-main img {
     width: 56px;
     height: 56px;
+  }
+
+  .battle-editor-header {
+    align-items: center;
+  }
+
+  .battle-editor-action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.72rem;
   }
 }
 
