@@ -16,9 +16,8 @@ import { SearchMatchup } from '@/features/search/components/SearchMatchup'
 import { StatComparison } from '@/features/search/components/StatComparison'
 import { BattleView } from '@/features/battle/components/BattleView'
 import { TeamPanel } from '@/features/team/components/TeamPanel'
-import { TeamStatsComparison } from '@/features/team/components/TeamStatsComparison'
+import { TeamInfoView } from '@/features/team/components/TeamInfoView'
 import { ToastProvider, useToast } from '@/shared/components/Toast'
-import { TypeAnalysis } from '@/features/typing/components/TypeAnalysis'
 import { I18nProvider, useI18n } from '@/i18n'
 import { usePokemonDetails } from '@/features/search/hooks/usePokemonDetails'
 import { useMoveDetails } from '@/features/search/hooks/useMoveDetails'
@@ -160,7 +159,10 @@ function AppContent({
       : isBattleRoute
         ? 'battle'
         : 'types'
-  const isTeamTypingRoute = location.pathname === '/' || location.pathname === '/team-typing'
+  const isTeamInfoRoute =
+    location.pathname === '/team-info' ||
+    location.pathname === '/' ||
+    location.pathname === '/team-typing'
 
   const scrollSearchToTop = useCallback(() => {
     searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -222,17 +224,11 @@ function AppContent({
       navigate('/battle')
       return
     }
-    navigate(buildSearchPath(query))
-  }
-
-  const handleShowTeamStats = () => {
-    if (team.length === 0) return
-    setTeamDrawerOpen(false)
-    navigate('/')
+    navigate('/team-info')
   }
 
   const handleMobileTeamNav = () => {
-    if (isTeamTypingRoute) {
+    if (isTeamInfoRoute) {
       navigate(buildSearchPath(query))
       setTeamDrawerOpen(true)
       return
@@ -404,7 +400,6 @@ function AppContent({
         onUpdateLevelCap={setLevelCap}
         onMoveAllToCap={() => void moveAllToCap()}
         onSendAllToPC={handleSendAllToPC}
-        onShowTeamStats={handleShowTeamStats}
         onLevelUp={(id) => void levelUpSlot(id)}
         onLevelDown={levelDownSlot}
         onMoveToBox={handleMoveTeamToPC}
@@ -449,9 +444,9 @@ function AppContent({
           <div className={`app-layout${isBattleRoute ? ' app-layout-battle' : ''}`}>
             {!isBattleRoute && (
               <SidebarDrawer
-                open={teamDrawerOpen && !isTeamTypingRoute}
+                open={teamDrawerOpen && !isTeamInfoRoute}
                 onOpenChange={(open) => {
-                  if (!isTeamTypingRoute) setTeamDrawerOpen(open)
+                  if (!isTeamInfoRoute) setTeamDrawerOpen(open)
                 }}
               >
                 {sidebar}
@@ -693,21 +688,17 @@ function AppContent({
               )}
             </section>
                   )}
-                  <TypeAnalysis team={team} />
                 </>
               }
             />
             <Route
-              path="/"
+              path="/team-info"
               element={
-                <TeamStatsComparison
-                  team={team}
-                  levelCap={activeProfile.settings.levelCap}
-                  onBack={() => navigate(buildSearchPath(query))}
-                />
+                <TeamInfoView team={team} levelCap={activeProfile.settings.levelCap} />
               }
             />
-            <Route path="/team-typing" element={<Navigate to="/" replace />} />
+            <Route path="/" element={<Navigate to="/team-info" replace />} />
+            <Route path="/team-typing" element={<Navigate to="/team-info" replace />} />
             <Route
               path="/team/:slotId"
               element={
@@ -787,7 +778,7 @@ function AppContent({
           {!isBattleRoute && (
             <button
               type="button"
-              className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !isTeamTypingRoute ? ' active' : ''}`}
+              className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !isTeamInfoRoute ? ' active' : ''}`}
               onClick={handleMobileTeamNav}
               aria-label={t('mobile.openTeam')}
             >

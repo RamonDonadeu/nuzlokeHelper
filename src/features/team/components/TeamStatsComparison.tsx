@@ -4,7 +4,7 @@ import { StatComparison } from '@/features/search/components/StatComparison'
 interface TeamStatsComparisonProps {
   team: PokemonSlot[]
   levelCap: number
-  onBack: () => void
+  onBack?: () => void
 }
 
 export function TeamStatsComparison({ team, levelCap, onBack }: TeamStatsComparisonProps) {

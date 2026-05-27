@@ -15,7 +15,6 @@ interface TeamPanelProps {
   onUpdateLevelCap: (levelCap: number) => void
   onMoveAllToCap: () => void
   onSendAllToPC: () => void
-  onShowTeamStats: () => void
   onLevelUp: (slotId: string) => void
   onLevelDown: (slotId: string) => void
   onMoveToBox: (slotId: string) => void
@@ -40,7 +39,6 @@ export function TeamPanel({
   onUpdateLevelCap,
   onMoveAllToCap,
   onSendAllToPC,
-  onShowTeamStats,
   onLevelUp,
   onLevelDown,
   onMoveToBox,
@@ -229,15 +227,6 @@ export function TeamPanel({
       </ul>
 
       <div className="team-panel-footer">
-        <button
-          type="button"
-          className="btn btn-ghost btn-block"
-          disabled={team.length === 0}
-          title={team.length === 0 ? t('team.seeAllStatsEmpty') : undefined}
-          onClick={onShowTeamStats}
-        >
-          {t('team.seeAllStats')}
-        </button>
         <button
           type="button"
           className="btn btn-ghost btn-block"

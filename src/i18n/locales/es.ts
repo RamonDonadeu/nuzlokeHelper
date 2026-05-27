@@ -8,7 +8,7 @@ export const es: TranslationKey = {
     cancel: 'Cancelar',
   },
   tabs: {
-    types: 'Tipología del equipo',
+    types: 'Info del equipo',
     pc: 'PC',
     battle: 'Batalla',
   },
@@ -29,8 +29,6 @@ export const es: TranslationKey = {
     sendAllToPC: 'Enviar TODO al PC',
     sendAllToPCConfirm: '¿Enviar todos los Pokémon de tu equipo al PC?',
     sendAllToPCEmpty: 'No hay Pokémon en el equipo',
-    seeAllStats: 'Ver todas las stats',
-    seeAllStatsEmpty: 'Añade Pokémon para comparar stats',
     moveToBox: 'A caja',
     sendToPC: 'Enviar al PC',
     markDead: 'Debilitar',
@@ -218,7 +216,7 @@ export const es: TranslationKey = {
     evolve: 'Evolucionar',
   },
   types: {
-    title: 'Tipología del equipo',
+    title: 'Info del equipo',
     empty: 'Añade Pokémon al equipo para ver debilidades defensivas.',
     loading: 'Cargando tipos de especie…',
     defTypesMissingHint:

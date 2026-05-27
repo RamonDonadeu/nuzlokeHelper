@@ -28,7 +28,7 @@ export const en: TranslationKey = {
     cancel: 'Cancel',
   },
   tabs: {
-    types: 'Team Typing',
+    types: 'Team Info',
     pc: 'PC',
     battle: 'Battle',
   },
@@ -49,8 +49,6 @@ export const en: TranslationKey = {
     sendAllToPC: 'Send ALL to PC',
     sendAllToPCConfirm: 'Send all Pokémon on your team to the PC?',
     sendAllToPCEmpty: 'No Pokémon on the team',
-    seeAllStats: 'See all stats',
-    seeAllStatsEmpty: 'Add Pokémon to compare stats',
     moveToBox: 'To box',
     sendToPC: 'Send to PC',
     markDead: 'Faint',
@@ -237,7 +235,7 @@ export const en: TranslationKey = {
     evolve: 'Evolve',
   },
   types: {
-    title: 'Team Typing',
+    title: 'Team Info',
     empty: 'Add Pokémon to the team to see defensive weaknesses.',
     loading: 'Loading species types…',
     defTypesMissingHint: 'Some Pokémon are missing type data — cells show ? until types load from PokeAPI.',

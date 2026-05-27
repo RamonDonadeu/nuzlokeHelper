@@ -150,11 +150,9 @@ function DefenseCoverageView({
   return (
     <>
       <div className="defense-details">
-        <section className="defense-summary-section defense-quad-warning">
-          <h4>{t('types.defQuadTitle')}</h4>
-          {!hasDoubleWeakness ? (
-            <p className="empty-note">{t('types.defQuadEmpty')}</p>
-          ) : (
+        {hasDoubleWeakness && (
+          <section className="defense-summary-section defense-quad-warning">
+            <h4>{t('types.defQuadTitle')}</h4>
             <ul className="defense-quad-list">
               {members.map((member, index) => {
                 const quads = perMemberDoubleWeak[index]
@@ -178,15 +176,12 @@ function DefenseCoverageView({
                 )
               })}
             </ul>
-          )}
-        </section>
+          </section>
+        )}
 
-        <section className="defense-summary-section">
-          <h4>{t('types.defImmunitiesTitle')}</h4>
-          <p className="muted defense-summary-hint">{t('types.defImmunitiesHint')}</p>
-          {!hasImmunities ? (
-            <p className="empty-note">{t('types.defImmunitiesEmpty')}</p>
-          ) : (
+        {hasImmunities && (
+          <section className="defense-summary-section">
+            <h4>{t('types.defImmunitiesTitle')}</h4>
             <ul className="defense-immunity-list">
               {members.map((member, index) => {
                 const immunities = perMemberImmunities[index]
@@ -207,8 +202,8 @@ function DefenseCoverageView({
                 )
               })}
             </ul>
-          )}
-        </section>
+          </section>
+        )}
 
         <section className="defense-summary-section">
           <div className="matrix-header">
