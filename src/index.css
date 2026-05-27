@@ -862,6 +862,11 @@ ul {
   outline-offset: 1px;
 }
 
+.battle-editor-modal select.battle-editor-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .battle-editor-suggestions {
   max-height: 180px;
 }

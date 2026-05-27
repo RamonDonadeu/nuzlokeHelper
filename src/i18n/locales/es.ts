@@ -289,6 +289,8 @@ export const es: TranslationKey = {
     editorSpeciesError: 'No se encontró esa especie de Pokémon.',
     editorAbility: 'Habilidad',
     editorAbilityPlaceholder: 'ej. rough-skin',
+    editorAbilitySelectSpecies: 'Selecciona un Pokémon primero',
+    editorAbilityLoading: 'Cargando habilidades…',
     editorItem: 'Objeto',
     editorItemPlaceholder: 'ej. leftovers',
     editorMove: 'Movimiento {{n}}',

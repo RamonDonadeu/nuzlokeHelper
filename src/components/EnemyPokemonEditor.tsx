@@ -1,19 +1,20 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
 import { MoveInput } from '@/components/MoveInput'
-import { useAbilitySearch } from '@/hooks/useAbilitySearch'
 import { useItemSearch } from '@/hooks/useItemSearch'
 import { usePokemonSearch } from '@/hooks/usePokemonSearch'
+import { useSuggestionKeyboard } from '@/hooks/useSuggestionKeyboard'
 import { fetchPokemon } from '@/lib/pokeapi'
 import {
   canonicalAbilityName,
   displayItemName,
   displayMoveName,
   ensureEditorIndexes,
+  getLocalizedAbilityName,
   resolveItemSlug,
 } from '@/lib/localizedNames'
 import { defaultNature } from '@/lib/stats'
 import { useI18n } from '@/i18n'
-import { formatPokemonName } from '@/types/pokemon'
+import { formatPokemonName, type PokemonAbility } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 
 interface EnemyPokemonEditorProps {
@@ -38,28 +39,30 @@ export function EnemyPokemonEditor({
   const [moves, setMoves] = useState<string[]>(
     existingSlot?.moves ? [...existingSlot.moves, ...EMPTY_MOVES].slice(0, 4) : EMPTY_MOVES,
   )
+  const [speciesAbilities, setSpeciesAbilities] = useState<PokemonAbility[]>([])
+  const [loadingAbilities, setLoadingAbilities] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [speciesFocused, setSpeciesFocused] = useState(false)
-  const [abilityFocused, setAbilityFocused] = useState(false)
   const [itemFocused, setItemFocused] = useState(false)
   const [searchIndexesReady, setSearchIndexesReady] = useState(false)
+  const speciesInputRef = useRef<HTMLInputElement>(null)
   const speciesWrapRef = useRef<HTMLDivElement>(null)
-  const abilityWrapRef = useRef<HTMLDivElement>(null)
   const itemWrapRef = useRef<HTMLDivElement>(null)
+  const speciesListId = useId()
+  const itemListId = useId()
 
+  const speciesSlug = useMemo(
+    () => species.trim().toLowerCase().replace(/\s+/g, '-'),
+    [species],
+  )
   const speciesQuery = species.trim()
-  const abilityQuery = ability.trim()
   const itemQuery = item.trim()
 
   const {
     results: speciesResults,
     isPending: speciesPending,
   } = usePokemonSearch(speciesFocused ? speciesQuery : '')
-  const {
-    results: abilityResults,
-    isPending: abilityPending,
-  } = useAbilitySearch(abilityQuery, locale, searchIndexesReady && abilityFocused)
   const {
     results: itemResults,
     isPending: itemPending,
@@ -88,10 +91,102 @@ export function EnemyPokemonEditor({
         : EMPTY_MOVES,
     )
     setSpeciesFocused(false)
-    setAbilityFocused(false)
     setItemFocused(false)
     setError(null)
   }, [existingSlot, locale, open])
+
+  useEffect(() => {
+    if (!open) return
+    if (speciesSlug.length < 2) {
+      setSpeciesAbilities([])
+      setLoadingAbilities(false)
+      setAbility('')
+      return
+    }
+
+    let cancelled = false
+    setLoadingAbilities(true)
+    void fetchPokemon(speciesSlug)
+      .then((pokemon) => {
+        if (cancelled) return
+        const slugs = pokemon.abilities.map((entry) => entry.slug)
+        setSpeciesAbilities(pokemon.abilities)
+        setAbility((prev) => {
+          const currentCanonical = canonicalAbilityName(prev)
+          const matched = slugs.find((slug) => canonicalAbilityName(slug) === currentCanonical)
+          if (matched) return canonicalAbilityName(matched)
+          if (slugs.length > 0) return canonicalAbilityName(slugs[0])
+          return ''
+        })
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSpeciesAbilities([])
+          setAbility('')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingAbilities(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, speciesSlug])
+
+  const abilitySlugs = useMemo(
+    () => speciesAbilities.map((entry) => entry.slug),
+    [speciesAbilities],
+  )
+  const abilitySelectDisabled =
+    speciesSlug.length < 2 || loadingAbilities || abilitySlugs.length === 0
+
+  const showSpeciesSuggestions = speciesFocused && speciesQuery.length >= 2
+  const showItemSuggestions = itemFocused && itemQuery.length >= 2 && searchIndexesReady
+
+  const selectSpecies = useCallback((name: string) => {
+    setSpecies(name)
+    setSpeciesFocused(false)
+  }, [])
+
+  const selectItem = useCallback((canonicalName: string) => {
+    setItem(canonicalName)
+    setItemFocused(false)
+  }, [])
+
+  const speciesResetKey = `${speciesQuery}\0${speciesResults.map((result) => result.name).join('\0')}`
+  const itemResetKey = `${itemQuery}\0${itemResults.map((result) => result.slug).join('\0')}`
+
+  const {
+    highlightedIndex: speciesHighlightedIndex,
+    listRef: speciesListRef,
+    handleKeyDown: handleSpeciesKeyDown,
+  } = useSuggestionKeyboard({
+    enabled: showSpeciesSuggestions && speciesResults.length > 0,
+    results: speciesResults,
+    resetKey: speciesResetKey,
+    onSelect: (result) => selectSpecies(result.name),
+  })
+
+  const {
+    highlightedIndex: itemHighlightedIndex,
+    listRef: itemListRef,
+    handleKeyDown: handleItemKeyDown,
+  } = useSuggestionKeyboard({
+    enabled: showItemSuggestions && itemResults.length > 0,
+    results: itemResults,
+    resetKey: itemResetKey,
+    onSelect: (result) => selectItem(result.canonicalName),
+  })
+
+  useEffect(() => {
+    if (!open) return
+    const timer = window.setTimeout(() => {
+      speciesInputRef.current?.focus()
+      setSpeciesFocused(true)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [open, existingSlot?.slotId])
 
   if (!open) return null
 
@@ -152,11 +247,6 @@ export function EnemyPokemonEditor({
     }, 150)
   }
 
-  const showSpeciesSuggestions = speciesFocused && speciesQuery.length >= 2
-  const showAbilitySuggestions =
-    abilityFocused && abilityQuery.length >= 2 && searchIndexesReady
-  const showItemSuggestions = itemFocused && itemQuery.length >= 2 && searchIndexesReady
-
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div className="modal card battle-editor-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
@@ -166,27 +256,47 @@ export function EnemyPokemonEditor({
             <span className="control-label">{t('battle.editorSpecies')}</span>
             <div className="move-input-wrap battle-editor-input-wrap" ref={speciesWrapRef}>
               <input
+                ref={speciesInputRef}
                 className="battle-editor-input"
                 type="text"
                 value={species}
+                aria-autocomplete="list"
+                aria-controls={showSpeciesSuggestions && speciesResults.length > 0 ? speciesListId : undefined}
+                aria-expanded={showSpeciesSuggestions && speciesResults.length > 0}
+                aria-activedescendant={
+                  speciesHighlightedIndex >= 0
+                    ? `${speciesListId}-option-${speciesHighlightedIndex}`
+                    : undefined
+                }
                 onChange={(event) => setSpecies(event.target.value)}
                 onFocus={() => setSpeciesFocused(true)}
                 onBlur={() => handleBlurWithDelay(setSpeciesFocused, speciesWrapRef)}
+                onKeyDown={(event) => {
+                  handleSpeciesKeyDown(event)
+                }}
                 placeholder={t('battle.editorSpeciesPlaceholder')}
                 required
               />
               {showSpeciesSuggestions && speciesResults.length > 0 && (
-                <ul className="move-suggestions battle-editor-suggestions" role="listbox">
-                  {speciesResults.map((result) => (
-                    <li key={result.name} role="option">
+                <ul
+                  ref={speciesListRef}
+                  id={speciesListId}
+                  className="move-suggestions battle-editor-suggestions"
+                  role="listbox"
+                >
+                  {speciesResults.map((result, index) => (
+                    <li
+                      key={result.name}
+                      id={`${speciesListId}-option-${index}`}
+                      role="option"
+                      aria-selected={index === speciesHighlightedIndex}
+                    >
                       <button
                         type="button"
                         tabIndex={-1}
+                        className={index === speciesHighlightedIndex ? 'is-highlighted' : undefined}
                         onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          setSpecies(result.name)
-                          setSpeciesFocused(false)
-                        }}
+                        onClick={() => selectSpecies(result.name)}
                       >
                         {formatPokemonName(result.name)}
                       </button>
@@ -203,45 +313,35 @@ export function EnemyPokemonEditor({
           </label>
           <label className="control-group">
             <span className="control-label">{t('battle.editorAbility')}</span>
-            <div className="move-input-wrap battle-editor-input-wrap" ref={abilityWrapRef}>
-              <input
-                className="battle-editor-input"
-                type="text"
-                value={ability}
-                onChange={(event) => setAbility(event.target.value)}
-                onFocus={() => setAbilityFocused(true)}
-                onBlur={() =>
-                  handleBlurWithDelay(setAbilityFocused, abilityWrapRef, () =>
-                    setAbility((prev) => canonicalAbilityName(prev.trim())),
+            <select
+              className="battle-editor-input"
+              value={ability}
+              onChange={(event) => setAbility(event.target.value)}
+              disabled={abilitySelectDisabled}
+              aria-label={t('battle.editorAbility')}
+            >
+              {abilitySelectDisabled ? (
+                <option value="">
+                  {speciesSlug.length < 2
+                    ? t('battle.editorAbilitySelectSpecies')
+                    : loadingAbilities
+                      ? t('battle.editorAbilityLoading')
+                      : t('battle.editorAbilitySelectSpecies')}
+                </option>
+              ) : (
+                abilitySlugs.map((slug) => {
+                  const speciesAbility = speciesAbilities.find((entry) => entry.slug === slug)
+                  const label = getLocalizedAbilityName(slug, locale)
+                  const hiddenSuffix = speciesAbility?.isHidden ? ` (${t('pokemon.hidden')})` : ''
+                  return (
+                    <option key={slug} value={canonicalAbilityName(slug)}>
+                      {label}
+                      {hiddenSuffix}
+                    </option>
                   )
-                }
-                placeholder={t('battle.editorAbilityPlaceholder')}
-              />
-              {showAbilitySuggestions && abilityResults.length > 0 && (
-                <ul className="move-suggestions battle-editor-suggestions" role="listbox">
-                  {abilityResults.map((result) => (
-                    <li key={result.slug} role="option">
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          setAbility(result.canonicalName)
-                          setAbilityFocused(false)
-                        }}
-                      >
-                        {result.displayName}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                })
               )}
-              {showAbilitySuggestions && abilityPending && abilityResults.length === 0 && (
-                <p className="move-suggestions-status muted" aria-live="polite">
-                  {t('search.searching')}
-                </p>
-              )}
-            </div>
+            </select>
           </label>
           <label className="control-group">
             <span className="control-label">{t('battle.editorItem')}</span>
@@ -250,6 +350,12 @@ export function EnemyPokemonEditor({
                 className="battle-editor-input"
                 type="text"
                 value={item}
+                aria-autocomplete="list"
+                aria-controls={showItemSuggestions && itemResults.length > 0 ? itemListId : undefined}
+                aria-expanded={showItemSuggestions && itemResults.length > 0}
+                aria-activedescendant={
+                  itemHighlightedIndex >= 0 ? `${itemListId}-option-${itemHighlightedIndex}` : undefined
+                }
                 onChange={(event) => setItem(event.target.value)}
                 onFocus={() => setItemFocused(true)}
                 onBlur={() =>
@@ -257,20 +363,31 @@ export function EnemyPokemonEditor({
                     setItem((prev) => normalizeItemInput(prev)),
                   )
                 }
+                onKeyDown={(event) => {
+                  handleItemKeyDown(event)
+                }}
                 placeholder={t('battle.editorItemPlaceholder')}
               />
               {showItemSuggestions && itemResults.length > 0 && (
-                <ul className="move-suggestions battle-editor-suggestions" role="listbox">
-                  {itemResults.map((result) => (
-                    <li key={result.slug} role="option">
+                <ul
+                  ref={itemListRef}
+                  id={itemListId}
+                  className="move-suggestions battle-editor-suggestions"
+                  role="listbox"
+                >
+                  {itemResults.map((result, index) => (
+                    <li
+                      key={result.slug}
+                      id={`${itemListId}-option-${index}`}
+                      role="option"
+                      aria-selected={index === itemHighlightedIndex}
+                    >
                       <button
                         type="button"
                         tabIndex={-1}
+                        className={index === itemHighlightedIndex ? 'is-highlighted' : undefined}
                         onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          setItem(result.canonicalName)
-                          setItemFocused(false)
-                        }}
+                        onClick={() => selectItem(result.canonicalName)}
                       >
                         {result.displayName}
                       </button>
