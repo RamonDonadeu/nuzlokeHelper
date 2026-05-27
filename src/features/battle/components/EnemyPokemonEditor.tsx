@@ -469,10 +469,12 @@ export function EnemyPokemonEditor({
               )}
             </div>
           </label>
-          <div className="move-input-grid">
+          <div className="battle-move-input-grid">
             {moves.map((move, index) => (
               <MoveInput
                 key={`enemy-move-${index}`}
+                variant="battle"
+                showTypeBadge
                 label={t('battle.editorMove', { n: index + 1 })}
                 placeholder={t('battle.editorMovePlaceholder')}
                 value={move}

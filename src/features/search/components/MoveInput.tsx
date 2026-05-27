@@ -114,73 +114,71 @@ export function MoveInput({
   return (
     <label className={`move-input-row${isBattle ? ' battle-move-input-row' : ''}`}>
       {isBattle ? (
-        <div className="battle-move-input-label">
-          <span className="control-label">{label}</span>
-          {showTypeBadge ? (
-            <span className={`type-badge type-${moveType ?? 'unknown'}`} aria-hidden={!moveType}>
-              {moveType ?? '?'}
-            </span>
-          ) : null}
-        </div>
+        <span className="control-label">{label}</span>
       ) : (
         <span>{label}</span>
       )}
-      <div className={`move-input-wrap${isBattle ? ' battle-editor-input-wrap' : ''}`} ref={wrapRef}>
-        <input
-          type="text"
-          className={inputClassName}
-          value={text}
-          placeholder={placeholder}
-          aria-autocomplete="list"
-          aria-controls={showSuggestions && results.length > 0 ? listId : undefined}
-          aria-expanded={showSuggestions && results.length > 0}
-          aria-activedescendant={
-            highlightedIndex >= 0 ? `${listId}-option-${highlightedIndex}` : undefined
-          }
-          onChange={(event) => setText(event.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={handleBlur}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              setFocused(false)
-              setText(displayMoveName(safeValue, locale))
-              return
+      <div className={isBattle ? 'battle-move-inline' : undefined}>
+        <div className={`move-input-wrap${isBattle ? ' battle-editor-input-wrap' : ''}`} ref={wrapRef}>
+          <input
+            type="text"
+            className={inputClassName}
+            value={text}
+            placeholder={placeholder}
+            aria-autocomplete="list"
+            aria-controls={showSuggestions && results.length > 0 ? listId : undefined}
+            aria-expanded={showSuggestions && results.length > 0}
+            aria-activedescendant={
+              highlightedIndex >= 0 ? `${listId}-option-${highlightedIndex}` : undefined
             }
-            handleSuggestionKeyDown(event)
-          }}
-        />
-        {showSuggestions && results.length > 0 && (
-          <ul
-            ref={listRef}
-            className={`move-suggestions${isBattle ? ' battle-editor-suggestions' : ''}`}
-            id={listId}
-            role="listbox"
-          >
-            {results.map((result, index) => (
-              <li
-                key={result.slug}
-                id={`${listId}-option-${index}`}
-                role="option"
-                aria-selected={index === highlightedIndex}
-              >
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  className={index === highlightedIndex ? 'is-highlighted' : undefined}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => handleSelect(result.canonicalName)}
+            onChange={(event) => setText(event.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={handleBlur}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setFocused(false)
+                setText(displayMoveName(safeValue, locale))
+                return
+              }
+              handleSuggestionKeyDown(event)
+            }}
+          />
+          {showSuggestions && results.length > 0 && (
+            <ul
+              ref={listRef}
+              className={`move-suggestions${isBattle ? ' battle-editor-suggestions' : ''}`}
+              id={listId}
+              role="listbox"
+            >
+              {results.map((result, index) => (
+                <li
+                  key={result.slug}
+                  id={`${listId}-option-${index}`}
+                  role="option"
+                  aria-selected={index === highlightedIndex}
                 >
-                  {result.displayName}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {showSuggestions && isPending && results.length === 0 && (
-          <p className="move-suggestions-status muted" aria-live="polite">
-            …
-          </p>
-        )}
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className={index === highlightedIndex ? 'is-highlighted' : undefined}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => handleSelect(result.canonicalName)}
+                  >
+                    {result.displayName}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {showSuggestions && isPending && results.length === 0 && (
+            <p className="move-suggestions-status muted" aria-live="polite">
+              …
+            </p>
+          )}
+        </div>
+        {isBattle && showTypeBadge && moveType ? (
+          <span className={`type-badge type-${moveType}`}>{moveType}</span>
+        ) : null}
       </div>
     </label>
   )
