@@ -22,10 +22,11 @@ interface BattlePrepPanelProps {
   team: PokemonSlot[]
   pc: PokemonSlot[]
   enemySlots: Array<PokemonSlot | null>
+  levelCap: number
   started: boolean
 }
 
-export function BattlePrepPanel({ team, pc, enemySlots, started }: BattlePrepPanelProps) {
+export function BattlePrepPanel({ team, pc, enemySlots, levelCap, started }: BattlePrepPanelProps) {
   const [prepView, setPrepView] = useState<PrepView>('attacks')
   const { t } = useI18n()
   const enemies = useMemo(
@@ -95,10 +96,21 @@ export function BattlePrepPanel({ team, pc, enemySlots, started }: BattlePrepPan
           <button type="button" className="btn btn-sm" onClick={() => setPrepView('stats')}>
             {t('battle.prepStatsCompare')}
           </button>
-        ) : null}
+        ) : (
+          <button type="button" className="btn btn-sm" onClick={() => setPrepView('attacks')}>
+            {t('battle.prepBackToAttacks')}
+          </button>
+        )}
       </div>
       {prepView === 'stats' ? (
-        <BattlePrepStatsTable team={team} pc={pc} onBack={() => setPrepView('attacks')} />
+        <div className="battle-prep-panel-body">
+          <BattlePrepStatsTable
+            team={team}
+            pc={pc}
+            enemySlots={enemySlots}
+            levelCap={levelCap}
+          />
+        </div>
       ) : (
       <div className="battle-prep-grid">
         <article className="battle-prep-card">
@@ -106,6 +118,7 @@ export function BattlePrepPanel({ team, pc, enemySlots, started }: BattlePrepPan
             <h4>{t('battle.prepThreatsTitle')}</h4>
             <InfoTooltip label={t('battle.prepThreatsHintLabel')} text={t('battle.prepThreatsHint')} />
           </div>
+          <div className="battle-prep-card-scroll">
           {stabFallbackEnemies.length > 0 && (
             <p className="muted coverage-fallback-note battle-prep-note">
               {t('battle.prepStabFallbackNote', {
@@ -163,6 +176,7 @@ export function BattlePrepPanel({ team, pc, enemySlots, started }: BattlePrepPan
               )
             })}
           </ul>
+          </div>
         </article>
 
         <article className="battle-prep-card">
@@ -170,6 +184,7 @@ export function BattlePrepPanel({ team, pc, enemySlots, started }: BattlePrepPan
             <h4>{t('battle.prepCoverageTitle')}</h4>
             <InfoTooltip label={t('battle.prepCoverageHintLabel')} text={t('battle.prepCoverageHint')} />
           </div>
+          <div className="battle-prep-card-scroll">
           {!hasTeamMoves ? (
             <p className="muted">{t('battle.prepCoverageNoMoves')}</p>
           ) : !hasTeamDamagingMoves ? (
@@ -212,6 +227,7 @@ export function BattlePrepPanel({ team, pc, enemySlots, started }: BattlePrepPan
               })}
             </ul>
           )}
+          </div>
         </article>
       </div>
       )}
