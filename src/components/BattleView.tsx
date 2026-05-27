@@ -22,8 +22,6 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
 
   const leftSlots = Array.from({ length: 6 }, (_, index) => team[index] ?? null)
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]
-  const firstEditableEnemyIndex = battle.enemySlots.findIndex((slot) => slot === null)
-  const enemyEditorIndex = firstEditableEnemyIndex >= 0 ? firstEditableEnemyIndex : 0
 
   return (
     <div className="battle-view">
@@ -42,7 +40,6 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
         onDoubleBattleChange={battle.setDoubleBattle}
         onStartFight={battle.startFight}
         onClear={battle.clearBattle}
-        onOpenEnemyEditor={() => battle.openEnemyEditor(enemyEditorIndex)}
       />
       <BattleTeamColumn
         title={t('battle.enemyTeamTitle')}

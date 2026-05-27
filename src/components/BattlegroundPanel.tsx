@@ -10,7 +10,6 @@ interface BattlegroundPanelProps {
   onDoubleBattleChange: (value: boolean) => void
   onStartFight: () => void
   onClear: () => void
-  onOpenEnemyEditor: () => void
 }
 
 function ActivePokemonCard({
@@ -57,7 +56,6 @@ export function BattlegroundPanel({
   onDoubleBattleChange,
   onStartFight,
   onClear,
-  onOpenEnemyEditor,
 }: BattlegroundPanelProps) {
   const { t } = useI18n()
 
@@ -69,9 +67,6 @@ export function BattlegroundPanel({
         </button>
         <button type="button" className="btn" onClick={onClear}>
           {t('battle.clear')}
-        </button>
-        <button type="button" className="btn" onClick={onOpenEnemyEditor}>
-          {t('battle.enemyTeam')}
         </button>
         <label className="toggle-switch">
           <input
