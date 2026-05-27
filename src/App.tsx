@@ -111,6 +111,7 @@ function AppContent({
   const pcSlotId = pcDetailMatch?.params.pokemonId ?? null
   const selectedSlotId = teamSlotId ?? pcSlotId
   const activeTab: Tab = location.pathname === '/pc' || Boolean(pcSlotId) ? 'pc' : 'types'
+  const isTeamTypingRoute = location.pathname === '/' || location.pathname === '/team-typing'
 
   const scrollSearchToTop = useCallback(() => {
     searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -170,11 +171,11 @@ function AppContent({
   const handleShowTeamStats = () => {
     if (team.length === 0) return
     setTeamDrawerOpen(false)
-    navigate('/team-typing')
+    navigate('/')
   }
 
   const handleMobileTeamNav = () => {
-    if (location.pathname === '/team-typing') {
+    if (isTeamTypingRoute) {
       navigate('/search')
       setTeamDrawerOpen(true)
       return
@@ -386,9 +387,9 @@ function AppContent({
         <div className="app-main-area">
           <div className="app-layout">
             <SidebarDrawer
-              open={teamDrawerOpen && location.pathname !== '/team-typing'}
+              open={teamDrawerOpen && !isTeamTypingRoute}
               onOpenChange={(open) => {
-                if (location.pathname !== '/team-typing') setTeamDrawerOpen(open)
+                if (!isTeamTypingRoute) setTeamDrawerOpen(open)
               }}
             >
               {sidebar}
@@ -632,7 +633,7 @@ function AppContent({
               }
             />
             <Route
-              path="/team-typing"
+              path="/"
               element={
                 <TeamStatsComparison
                   team={team}
@@ -641,6 +642,7 @@ function AppContent({
                 />
               }
             />
+            <Route path="/team-typing" element={<Navigate to="/" replace />} />
             <Route
               path="/team/:slotId"
               element={
@@ -699,7 +701,6 @@ function AppContent({
                 )
               }
             />
-            <Route path="/" element={<Navigate to="/search" replace />} />
             <Route path="*" element={<Navigate to="/search" replace />} />
           </Routes>
 
@@ -710,7 +711,7 @@ function AppContent({
         <div className="mobile-bottom-dock">
           <button
             type="button"
-            className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && location.pathname !== '/team-typing' ? ' active' : ''}`}
+            className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !isTeamTypingRoute ? ' active' : ''}`}
             onClick={handleMobileTeamNav}
             aria-label={t('mobile.openTeam')}
           >
