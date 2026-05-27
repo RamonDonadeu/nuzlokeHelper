@@ -1,4 +1,7 @@
-import { useId } from 'react'
+import {
+  FloatingTooltipPortal,
+  useFloatingTooltip,
+} from '@/shared/hooks/useFloatingTooltip'
 
 interface InfoTooltipProps {
   label: string
@@ -6,15 +9,18 @@ interface InfoTooltipProps {
 }
 
 export function InfoTooltip({ label, text }: InfoTooltipProps) {
-  const tooltipId = useId()
+  const { tooltipId, anchorRef, open, style, triggerHandlers } =
+    useFloatingTooltip<HTMLButtonElement>('end')
 
   return (
     <span className="info-tooltip">
       <button
+        ref={anchorRef}
         type="button"
         className="info-tooltip-trigger"
         aria-label={label}
-        aria-describedby={tooltipId}
+        aria-describedby={open ? tooltipId : undefined}
+        {...triggerHandlers}
       >
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
           <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -24,9 +30,14 @@ export function InfoTooltip({ label, text }: InfoTooltipProps) {
           />
         </svg>
       </button>
-      <span id={tooltipId} role="tooltip" className="info-tooltip-content">
+      <FloatingTooltipPortal
+        id={tooltipId}
+        open={open}
+        style={style}
+        className="info-tooltip-content"
+      >
         {text}
-      </span>
+      </FloatingTooltipPortal>
     </span>
   )
 }
