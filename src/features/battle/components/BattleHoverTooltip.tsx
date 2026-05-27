@@ -1,6 +1,7 @@
 import {
   FloatingTooltipPortal,
   useFloatingTooltip,
+  type FloatingTooltipPlacement,
 } from '@/shared/hooks/useFloatingTooltip'
 import type { ReactNode } from 'react'
 
@@ -10,6 +11,7 @@ interface BattleHoverTooltipProps {
   children: ReactNode
   className?: string
   disabled?: boolean
+  placement?: FloatingTooltipPlacement
 }
 
 export function BattleHoverTooltip({
@@ -18,9 +20,10 @@ export function BattleHoverTooltip({
   children,
   className,
   disabled = false,
+  placement = 'center',
 }: BattleHoverTooltipProps) {
-  const { tooltipId, anchorRef, open, style, triggerHandlers } =
-    useFloatingTooltip<HTMLSpanElement>('center')
+  const { tooltipId, anchorRef, tooltipRef, open, style, triggerHandlers } =
+    useFloatingTooltip<HTMLSpanElement>(placement)
 
   if (disabled || !tooltip) {
     return <span className={className}>{children}</span>
@@ -38,6 +41,7 @@ export function BattleHoverTooltip({
         {children}
       </span>
       <FloatingTooltipPortal
+        ref={tooltipRef}
         id={tooltipId}
         open={open}
         style={style}

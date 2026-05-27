@@ -2,25 +2,35 @@ import { useMemo, useState } from 'react'
 import { useI18n } from '@/i18n'
 import { calculateAllStats, comparisonNatureForMember } from '@/lib/stats'
 import type { PokemonStats } from '@/types/pokemon'
-import { STAT_KEYS } from '@/types/pokemon'
-import type { PokemonSlot } from '@/types/profile'
+import { STAT_KEYS, totalStats } from '@/types/pokemon'
+import { clampPokemonLevel, type PokemonSlot } from '@/types/profile'
 
 const STAT_DEFAULTS = { ivWhenUnset: 0, evWhenUnset: 0 } as const
 const ROSTER_SIZE = 6
 
-type SortKey = keyof PokemonStats | 'name'
+type SortKey = keyof PokemonStats | 'name' | 'level' | 'total'
 type SortDir = 'asc' | 'desc'
+type PrepStatsSource = 'team' | 'pc' | 'enemy'
 
 interface PrepStatsRow {
   slot: PokemonSlot
-  source: 'team' | 'pc'
+  source: PrepStatsSource
+  level: number
   stats: PokemonStats
 }
 
-function statsForSlot(slot: PokemonSlot): PokemonStats {
+function levelForStats(slot: PokemonSlot, source: PrepStatsSource, levelCap: number): number {
+  if (source === 'enemy') {
+    return clampPokemonLevel(slot.level, levelCap)
+  }
+  return clampPokemonLevel(slot.level ?? levelCap, levelCap)
+}
+
+function statsForSlot(slot: PokemonSlot, source: PrepStatsSource, levelCap: number): PokemonStats {
+  const level = levelForStats(slot, source, levelCap)
   return calculateAllStats(
     slot.baseStats,
-    slot.level,
+    level,
     slot.ivs,
     slot.evs,
     comparisonNatureForMember(slot),
@@ -28,15 +38,33 @@ function statsForSlot(slot: PokemonSlot): PokemonStats {
   )
 }
 
-function buildPrepStatsRows(team: PokemonSlot[], pc: PokemonSlot[]): PrepStatsRow[] {
+function buildPrepStatsRows(
+  team: PokemonSlot[],
+  pc: PokemonSlot[],
+  enemySlots: Array<PokemonSlot | null>,
+  levelCap: number,
+): PrepStatsRow[] {
   const rows: PrepStatsRow[] = []
   for (let index = 0; index < ROSTER_SIZE; index++) {
     const slot = team[index]
-    if (slot) rows.push({ slot, source: 'team', stats: statsForSlot(slot) })
+    if (slot) {
+      const source = 'team'
+      rows.push({ slot, source, level: levelForStats(slot, source, levelCap), stats: statsForSlot(slot, source, levelCap) })
+    }
   }
   for (let index = 0; index < ROSTER_SIZE; index++) {
     const slot = pc[index]
-    if (slot) rows.push({ slot, source: 'pc', stats: statsForSlot(slot) })
+    if (slot) {
+      const source = 'pc'
+      rows.push({ slot, source, level: levelForStats(slot, source, levelCap), stats: statsForSlot(slot, source, levelCap) })
+    }
+  }
+  for (let index = 0; index < ROSTER_SIZE; index++) {
+    const slot = enemySlots[index]
+    if (slot) {
+      const source = 'enemy'
+      rows.push({ slot, source, level: levelForStats(slot, source, levelCap), stats: statsForSlot(slot, source, levelCap) })
+    }
   }
   return rows
 }
@@ -48,24 +76,43 @@ function compareRows(a: PrepStatsRow, b: PrepStatsRow, sortKey: SortKey, sortDir
     const bName = (b.slot.nickname ?? b.slot.displayName).toLowerCase()
     return aName.localeCompare(bName) * mult
   }
+  if (sortKey === 'level') {
+    return (a.level - b.level) * mult
+  }
+  if (sortKey === 'total') {
+    return (totalStats(a.stats) - totalStats(b.stats)) * mult
+  }
   return (a.stats[sortKey] - b.stats[sortKey]) * mult
+}
+
+const ROW_CLASS_BY_SOURCE: Record<PrepStatsSource, string> = {
+  team: 'battle-stats-row-team',
+  pc: 'battle-stats-row-pc',
+  enemy: 'battle-stats-row-enemy',
+}
+
+const SIDE_LABEL_KEYS: Record<PrepStatsSource, 'battle.prepStatsTeam' | 'battle.prepStatsPC' | 'battle.prepStatsEnemy'> = {
+  team: 'battle.prepStatsTeam',
+  pc: 'battle.prepStatsPC',
+  enemy: 'battle.prepStatsEnemy',
 }
 
 interface BattlePrepStatsTableProps {
   team: PokemonSlot[]
   pc: PokemonSlot[]
-  onBack: () => void
+  enemySlots: Array<PokemonSlot | null>
+  levelCap: number
 }
 
-export function BattlePrepStatsTable({ team, pc, onBack }: BattlePrepStatsTableProps) {
+export function BattlePrepStatsTable({ team, pc, enemySlots, levelCap }: BattlePrepStatsTableProps) {
   const { t } = useI18n()
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const rows = useMemo(() => {
-    const built = buildPrepStatsRows(team, pc)
+    const built = buildPrepStatsRows(team, pc, enemySlots, levelCap)
     return [...built].sort((a, b) => compareRows(a, b, sortKey, sortDir))
-  }, [pc, sortDir, sortKey, team])
+  }, [enemySlots, levelCap, pc, sortDir, sortKey, team])
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -92,11 +139,6 @@ export function BattlePrepStatsTable({ team, pc, onBack }: BattlePrepStatsTableP
 
   return (
     <>
-      <div className="battle-prep-toolbar">
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>
-          ← {t('battle.prepBackToAttacks')}
-        </button>
-      </div>
       {rows.length === 0 ? (
         <p className="muted">{t('battle.prepStatsEmpty')}</p>
       ) : (
@@ -110,6 +152,13 @@ export function BattlePrepStatsTable({ team, pc, onBack }: BattlePrepStatsTableP
                     {sortIndicator('name')}
                   </button>
                 </th>
+                <th>{t('battle.prepStatsSide')}</th>
+                <th>
+                  <button type="button" className="battle-prep-sort-btn" onClick={() => handleSort('level')}>
+                    {t('battle.prepStatsLevel')}
+                    {sortIndicator('level')}
+                  </button>
+                </th>
                 {STAT_KEYS.map((key) => (
                   <th key={key}>
                     <button type="button" className="battle-prep-sort-btn" onClick={() => handleSort(key)}>
@@ -118,25 +167,31 @@ export function BattlePrepStatsTable({ team, pc, onBack }: BattlePrepStatsTableP
                     </button>
                   </th>
                 ))}
+                <th>
+                  <button type="button" className="battle-prep-sort-btn" onClick={() => handleSort('total')}>
+                    {t('battle.statsTotal')}
+                    {sortIndicator('total')}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.slot.slotId}>
+                <tr key={row.slot.slotId} className={ROW_CLASS_BY_SOURCE[row.source]}>
                   <td>
                     <div className="table-pokemon">
                       <img src={row.slot.sprite} alt="" loading="lazy" />
-                      <span>
-                        {row.slot.nickname ?? row.slot.displayName}
-                        <span className="tag battle-prep-roster-tag">
-                          {row.source === 'team' ? t('battle.prepStatsTeam') : t('battle.prepStatsPC')}
-                        </span>
-                      </span>
+                      <span>{row.slot.nickname ?? row.slot.displayName}</span>
                     </div>
                   </td>
+                  <td>
+                    <span className="tag battle-prep-roster-tag">{t(SIDE_LABEL_KEYS[row.source])}</span>
+                  </td>
+                  <td>{row.level}</td>
                   {STAT_KEYS.map((key) => (
                     <td key={key}>{row.stats[key]}</td>
                   ))}
+                  <td>{totalStats(row.stats)}</td>
                 </tr>
               ))}
             </tbody>

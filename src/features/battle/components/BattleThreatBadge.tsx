@@ -1,19 +1,42 @@
+import { BattleHoverTooltip } from '@/features/battle/components/BattleHoverTooltip'
 import { threatCountTier } from '@/features/battle/lib/battlePrepMatchup'
 import { useI18n } from '@/i18n'
+import type { FloatingTooltipPlacement } from '@/shared/hooks/useFloatingTooltip'
+
+export type BattleThreatBadgeVariant = 'defensive' | 'offensive'
 
 interface BattleThreatBadgeProps {
   count: number
-  enemyCount: number
+  total: number
+  variant: BattleThreatBadgeVariant
+  tooltipPlacement?: FloatingTooltipPlacement
 }
 
-export function BattleThreatBadge({ count, enemyCount }: BattleThreatBadgeProps) {
+export function BattleThreatBadge({
+  count,
+  total,
+  variant,
+  tooltipPlacement = 'end',
+}: BattleThreatBadgeProps) {
   const { t } = useI18n()
-  const tier = threatCountTier(count, enemyCount)
-  const label = t('battle.threatCount', { count, total: enemyCount })
+  const tier = threatCountTier(count, total)
+  const label =
+    variant === 'defensive'
+      ? t('battle.threatCount', { count, total })
+      : t('battle.enemyThreatCount', { count, total })
+  const hint =
+    variant === 'defensive'
+      ? t('battle.threatCountHint', { count, total })
+      : t('battle.enemyThreatCountHint', { count, total })
 
   return (
-    <span className={`battle-threat-badge battle-threat-${tier}`} title={label} aria-label={label}>
-      {count}
-    </span>
+    <BattleHoverTooltip
+      label={label}
+      tooltip={hint}
+      placement={tooltipPlacement}
+      className="battle-threat-badge-wrap"
+    >
+      <span className={`battle-threat-badge battle-threat-${tier}`}>{count}</span>
+    </BattleHoverTooltip>
   )
 }

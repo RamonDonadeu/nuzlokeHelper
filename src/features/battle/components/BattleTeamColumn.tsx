@@ -1,7 +1,11 @@
 import type { PokemonSlot } from '@/types/profile'
 import { useI18n } from '@/i18n'
 import type { ReactNode } from 'react'
-import { BattleThreatBadge } from '@/features/battle/components/BattleThreatBadge'
+import {
+  BattleThreatBadge,
+  type BattleThreatBadgeVariant,
+} from '@/features/battle/components/BattleThreatBadge'
+import type { FloatingTooltipPlacement } from '@/shared/hooks/useFloatingTooltip'
 
 interface BattleTeamColumnProps {
   title: string
@@ -14,7 +18,8 @@ interface BattleTeamColumnProps {
   onEmptySlotClick?: (index: number) => void
   actions?: ReactNode
   threatCountsBySlotId?: Map<string, number>
-  enemyCount?: number
+  threatTotalCount?: number
+  threatBadgeVariant?: BattleThreatBadgeVariant
   pcMembers?: PokemonSlot[]
   onPcMemberClick?: (slotId: string) => void
   pcClickDisabled?: boolean
@@ -24,22 +29,24 @@ interface BattleTeamColumnProps {
 function TeamSlotRow({
   slot,
   index,
-  side,
   activeIndices,
   faintedIndices,
   selectedActiveSlot,
   threatCount,
-  enemyCount,
+  threatTotalCount,
+  threatBadgeVariant,
+  threatTooltipPlacement,
   onFilledSlotClick,
 }: {
   slot: PokemonSlot
   index: number
-  side: 'left' | 'right'
   activeIndices: Array<number | null>
   faintedIndices: Set<number>
   selectedActiveSlot: number
   threatCount?: number
-  enemyCount: number
+  threatTotalCount: number
+  threatBadgeVariant?: BattleThreatBadgeVariant
+  threatTooltipPlacement: FloatingTooltipPlacement
   onFilledSlotClick?: (index: number) => void
 }) {
   const isFainted = faintedIndices.has(index)
@@ -68,8 +75,13 @@ function TeamSlotRow({
       >
         <img src={slot.sprite} alt={slot.displayName} loading="lazy" />
         <span className="battle-team-slot-name">{slot.nickname ?? slot.displayName}</span>
-        {side === 'left' && threatCount !== undefined && enemyCount > 0 ? (
-          <BattleThreatBadge count={threatCount} enemyCount={enemyCount} />
+        {threatCount !== undefined && threatTotalCount > 0 && threatBadgeVariant ? (
+          <BattleThreatBadge
+            count={threatCount}
+            total={threatTotalCount}
+            variant={threatBadgeVariant}
+            tooltipPlacement={threatTooltipPlacement}
+          />
         ) : null}
       </button>
     </li>
@@ -79,14 +91,18 @@ function TeamSlotRow({
 function PcMemberRow({
   slot,
   threatCount,
-  enemyCount,
+  threatTotalCount,
+  threatBadgeVariant,
+  threatTooltipPlacement,
   onClick,
   disabled,
   disabledTitle,
 }: {
   slot: PokemonSlot
   threatCount: number
-  enemyCount: number
+  threatTotalCount: number
+  threatBadgeVariant: BattleThreatBadgeVariant
+  threatTooltipPlacement: FloatingTooltipPlacement
   onClick?: () => void
   disabled?: boolean
   disabledTitle?: string
@@ -105,7 +121,14 @@ function PcMemberRow({
       >
         <img src={slot.sprite} alt={slot.displayName} loading="lazy" />
         <span className="battle-team-slot-name">{slot.nickname ?? slot.displayName}</span>
-        {enemyCount > 0 ? <BattleThreatBadge count={threatCount} enemyCount={enemyCount} /> : null}
+        {threatTotalCount > 0 ? (
+          <BattleThreatBadge
+            count={threatCount}
+            total={threatTotalCount}
+            variant={threatBadgeVariant}
+            tooltipPlacement={threatTooltipPlacement}
+          />
+        ) : null}
       </button>
     </li>
   )
@@ -122,7 +145,8 @@ export function BattleTeamColumn({
   onEmptySlotClick,
   actions,
   threatCountsBySlotId,
-  enemyCount = 0,
+  threatTotalCount = 0,
+  threatBadgeVariant,
   pcMembers,
   onPcMemberClick,
   pcClickDisabled,
@@ -130,7 +154,9 @@ export function BattleTeamColumn({
 }: BattleTeamColumnProps) {
   const { t } = useI18n()
   const showPcSection = side === 'left' && pcMembers !== undefined
-  const showThreatBadges = side === 'left' && threatCountsBySlotId !== undefined && enemyCount > 0
+  const showThreatBadges =
+    threatCountsBySlotId !== undefined && threatTotalCount > 0 && threatBadgeVariant !== undefined
+  const threatTooltipPlacement: FloatingTooltipPlacement = side === 'right' ? 'start' : 'end'
 
   const renderSlots = () =>
     slots.map((slot, index) => {
@@ -153,12 +179,13 @@ export function BattleTeamColumn({
           key={slot.slotId}
           slot={slot}
           index={index}
-          side={side}
           activeIndices={activeIndices}
           faintedIndices={faintedIndices}
           selectedActiveSlot={selectedActiveSlot}
           threatCount={showThreatBadges ? threatCountsBySlotId.get(slot.slotId) : undefined}
-          enemyCount={enemyCount}
+          threatTotalCount={threatTotalCount}
+          threatBadgeVariant={threatBadgeVariant}
+          threatTooltipPlacement={threatTooltipPlacement}
           onFilledSlotClick={onFilledSlotClick}
         />
       )
@@ -181,7 +208,9 @@ export function BattleTeamColumn({
                     key={slot.slotId}
                     slot={slot}
                     threatCount={threatCountsBySlotId?.get(slot.slotId) ?? 0}
-                    enemyCount={enemyCount}
+                    threatTotalCount={threatTotalCount}
+                    threatBadgeVariant={threatBadgeVariant ?? 'defensive'}
+                    threatTooltipPlacement={threatTooltipPlacement}
                     disabled={pcClickDisabled}
                     disabledTitle={pcClickDisabledTitle}
                     onClick={() => onPcMemberClick?.(slot.slotId)}

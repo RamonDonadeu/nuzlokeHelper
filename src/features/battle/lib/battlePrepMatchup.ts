@@ -122,6 +122,41 @@ export function buildThreatCountMap(
   return map
 }
 
+/** Roster members with at least one configured damaging move that deals 2× or more vs enemy types. */
+export function countPlayerThreatsAgainst(
+  enemy: PokemonSlot,
+  roster: PokemonSlot[],
+  teamDamagingMoveTypes: Map<string, PokemonType>,
+): number {
+  let threateningMembers = 0
+  for (const member of roster) {
+    for (const moveName of member.moves ?? []) {
+      const trimmed = moveName.trim()
+      if (!trimmed) continue
+      const moveType = teamDamagingMoveTypes.get(trimmed)
+      if (!moveType) continue
+      const multiplier = getDefensiveMultiplier(enemy.types, moveType) ?? 1
+      if (multiplier >= 2) {
+        threateningMembers++
+        break
+      }
+    }
+  }
+  return threateningMembers
+}
+
+export function buildPlayerThreatCountMap(
+  enemies: PokemonSlot[],
+  roster: PokemonSlot[],
+  teamDamagingMoveTypes: Map<string, PokemonType>,
+): Map<string, number> {
+  const map = new Map<string, number>()
+  for (const enemy of enemies) {
+    map.set(enemy.slotId, countPlayerThreatsAgainst(enemy, roster, teamDamagingMoveTypes))
+  }
+  return map
+}
+
 export function threatCountTier(count: number, enemyCount: number): ThreatCountTier {
   if (count <= 0 || enemyCount <= 0) return 'safe'
   if (count >= 3 || count / enemyCount >= 0.67) return 'high'
