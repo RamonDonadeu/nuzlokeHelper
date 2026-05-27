@@ -14,7 +14,6 @@ export function CustomStatMarker({ label }: CustomStatMarkerProps) {
         tabIndex={0}
         aria-label={label}
         aria-describedby={tooltipId}
-        title={label}
       >
         *
       </span>
