@@ -8,6 +8,7 @@ import type { PokemonSlot } from '@/types/profile'
 interface BattlePrepPanelProps {
   team: PokemonSlot[]
   enemySlots: Array<PokemonSlot | null>
+  started: boolean
 }
 
 interface PlayerThreatRow {
@@ -53,7 +54,7 @@ function enemyAttackTypes(enemy: PokemonSlot, damagingEnemyMoveTypes: Map<string
   return enemy.types
 }
 
-export function BattlePrepPanel({ team, enemySlots }: BattlePrepPanelProps) {
+export function BattlePrepPanel({ team, enemySlots, started }: BattlePrepPanelProps) {
   const { t } = useI18n()
   const enemies = useMemo(
     () => enemySlots.filter((slot): slot is PokemonSlot => slot !== null),
@@ -143,7 +144,7 @@ export function BattlePrepPanel({ team, enemySlots }: BattlePrepPanelProps) {
     [team],
   )
 
-  if (team.length === 0 || enemies.length === 0) return null
+  if (started || team.length === 0 || enemies.length === 0) return null
 
   return (
     <section className="card battle-prep-panel">

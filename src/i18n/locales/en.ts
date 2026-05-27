@@ -349,5 +349,10 @@ export const en: TranslationKey = {
     prepSeverityneutral: 'Neutral',
     prepSeverityweak: 'Weak',
     prepSeveritydouble: 'Very weak',
+    statsCompare: 'Stat comparison',
+    heldItem: 'Held item',
+    noAbility: '—',
+    noItem: '—',
+    movesLabel: 'Moves',
   },
 }

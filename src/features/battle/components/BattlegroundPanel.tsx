@@ -1,4 +1,4 @@
-import { PokemonStatGrid } from '@/features/team/components/PokemonStatGrid'
+import { BattlegroundSlotDetail } from '@/features/battle/components/BattlegroundSlotDetail'
 import type { PokemonSlot } from '@/types/profile'
 import { useI18n } from '@/i18n'
 import { useMemo, useState } from 'react'
@@ -163,7 +163,7 @@ export function BattlegroundPanel({
   return (
     <section className="card battle-panel">
       <div className="battle-top-controls">
-        <button type="button" className="btn btn-primary" onClick={onStartFight}>
+        <button type="button" className="btn btn-primary" onClick={onStartFight} disabled={started}>
           {t('battle.startFight')}
         </button>
         <button type="button" className="btn" onClick={onClear}>
@@ -173,6 +173,7 @@ export function BattlegroundPanel({
           <input
             type="checkbox"
             checked={doubleBattle}
+            disabled={started}
             onChange={(event) => onDoubleBattleChange(event.target.checked)}
           />
           <span className="toggle-switch-track" aria-hidden="true" />
@@ -180,66 +181,68 @@ export function BattlegroundPanel({
         </label>
       </div>
 
-      <div className="battle-battleground">
-        <div className="battle-active-side">
-          {shownLeft.map((slot, index) => (
-            <ActivePokemonCard
-              key={`left-${index}`}
-              title={activeSlots === 2 ? t('battle.activeSlot', { n: index + 1 }) : t('battle.yourActive')}
-              slot={started ? slot : null}
-              canAct={started && Boolean(slot)}
-              noPokemonLeft={started && !leftHasAlivePokemon}
-              onSwitch={() => {
-                onSelectLeftSlot(index)
-                setSwitchPopup({ side: 'left', slot: index })
-              }}
-              onFaint={() => onFaintLeft(index)}
-              onSelect={() => onSelectLeftSlot(index)}
-            />
-          ))}
-        </div>
-        <div className="battle-vs">VS</div>
-        <div className="battle-active-side">
-          {shownRight.map((slot, index) => (
-            <ActivePokemonCard
-              key={`right-${index}`}
-              title={activeSlots === 2 ? t('battle.activeSlot', { n: index + 1 }) : t('battle.enemyActive')}
-              slot={started ? slot : null}
-              canAct={started && Boolean(slot)}
-              noPokemonLeft={started && !rightHasAlivePokemon}
-              onSwitch={() => {
-                onSelectRightSlot(index)
-                setSwitchPopup({ side: 'right', slot: index })
-              }}
-              onFaint={() => onFaintRight(index)}
-              onSelect={() => onSelectRightSlot(index)}
-            />
-          ))}
-        </div>
-      </div>
+      {started ? (
+        <>
+          <div className="battle-battleground">
+            <div className="battle-active-side">
+              {shownLeft.map((slot, index) => (
+                <ActivePokemonCard
+                  key={`left-${index}`}
+                  title={
+                    activeSlots === 2
+                      ? t('battle.activeSlot', { n: index + 1 })
+                      : t('battle.yourActive')
+                  }
+                  slot={slot}
+                  canAct={Boolean(slot)}
+                  noPokemonLeft={!leftHasAlivePokemon}
+                  onSwitch={() => {
+                    onSelectLeftSlot(index)
+                    setSwitchPopup({ side: 'left', slot: index })
+                  }}
+                  onFaint={() => onFaintLeft(index)}
+                  onSelect={() => onSelectLeftSlot(index)}
+                />
+              ))}
+            </div>
+            <div className="battle-vs">VS</div>
+            <div className="battle-active-side">
+              {shownRight.map((slot, index) => (
+                <ActivePokemonCard
+                  key={`right-${index}`}
+                  title={
+                    activeSlots === 2
+                      ? t('battle.activeSlot', { n: index + 1 })
+                      : t('battle.enemyActive')
+                  }
+                  slot={slot}
+                  canAct={Boolean(slot)}
+                  noPokemonLeft={!rightHasAlivePokemon}
+                  onSwitch={() => {
+                    onSelectRightSlot(index)
+                    setSwitchPopup({ side: 'right', slot: index })
+                  }}
+                  onFaint={() => onFaintRight(index)}
+                  onSelect={() => onSelectRightSlot(index)}
+                />
+              ))}
+            </div>
+          </div>
 
-      <div className="battle-tab-bar">
-        <button type="button" className="tab-btn active" aria-current="page">
-          {t('battle.statsTab')}
-        </button>
-      </div>
-
-      <div className="battle-stats-grid">
-        <div className="card">
-          <PokemonStatGrid
-            title={t('battle.yourStats')}
-            stats={started && shownLeft[0] ? shownLeft[0].baseStats : { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 }}
-            nature={shownLeft[0]?.nature}
-          />
-        </div>
-        <div className="card">
-          <PokemonStatGrid
-            title={t('battle.enemyStats')}
-            stats={started && shownRight[0] ? shownRight[0].baseStats : { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 }}
-            nature={shownRight[0]?.nature}
-          />
-        </div>
-      </div>
+          <div className="battleground-slot-details">
+            {Array.from({ length: activeSlots }, (_, index) => (
+              <BattlegroundSlotDetail
+                key={`slot-detail-${index}`}
+                slotLabel={
+                  activeSlots === 2 ? t('battle.activeSlot', { n: index + 1 }) : undefined
+                }
+                left={shownLeft[index] ?? null}
+                right={shownRight[index] ?? null}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
 
       {switchPopup ? (
         <div className="modal-backdrop" onClick={() => setSwitchPopup(null)}>

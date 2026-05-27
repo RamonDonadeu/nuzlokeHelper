@@ -893,20 +893,214 @@ ul {
   font-weight: 600;
 }
 
-.battle-tab-bar {
-  display: flex;
-  gap: 0.35rem;
+.battleground-slot-details {
+  display: grid;
+  gap: 0.85rem;
 }
 
-.battle-stats-grid {
+.battleground-slot-detail {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-soft) 88%, transparent);
+}
+
+.battleground-slot-detail-title {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.battleground-stats-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.35rem;
+  font-size: 0.72rem;
+}
+
+.battleground-stats-side-label {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.battleground-stats-side-label-right {
+  text-align: right;
+}
+
+.battleground-stats-rows {
+  margin: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.battleground-stat-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.battleground-stat-label {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 600;
+}
+
+.battleground-stat-value {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.battleground-stat-value-right {
+  text-align: right;
+}
+
+.battle-stat-win-left {
+  color: #86efac;
+}
+
+.battle-stat-win-right {
+  color: #93c5fd;
+}
+
+.battle-stat-nature-left,
+.battle-stat-nature-right {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.battleground-meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
+  gap: 0.55rem;
+  font-size: 0.8rem;
 }
 
-.battle-stats-grid .card {
-  padding: 0.7rem;
-  box-shadow: none;
+.battleground-meta-cell {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.battleground-meta-cell-right {
+  text-align: right;
+}
+
+.battleground-meta-line {
+  display: block;
+  cursor: help;
+}
+
+.battle-hover-tooltip {
+  display: inline;
+}
+
+.battle-hover-tooltip > span[tabindex] {
+  cursor: help;
+}
+
+.battle-hover-tooltip-content {
+  max-width: min(20rem, 80vw);
+}
+
+.battleground-moves {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.battleground-moves-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.battleground-move-cell {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.4rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  font-size: 0.72rem;
+  cursor: help;
+}
+
+.battleground-move-empty {
+  place-items: center;
+  min-height: 3.2rem;
+  cursor: default;
+}
+
+.battleground-move-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.battleground-move-name {
+  font-size: 0.74rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battleground-move-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  color: var(--text);
+}
+
+.battleground-move-mult {
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Your moves: green = strong vs enemy, red = weak */
+.battle-move-off-x4 {
+  border-color: color-mix(in srgb, #22c55e 55%, var(--border));
+  background: color-mix(in srgb, #22c55e 16%, var(--bg-soft));
+}
+
+.battle-move-off-x2 {
+  border-color: color-mix(in srgb, #4ade80 45%, var(--border));
+  background: color-mix(in srgb, #22c55e 10%, var(--bg-soft));
+}
+
+.battle-move-off-x1 {
+  border-color: var(--border);
+}
+
+.battle-move-off-x05 {
+  border-color: color-mix(in srgb, #f97316 40%, var(--border));
+  background: color-mix(in srgb, #f97316 10%, var(--bg-soft));
+}
+
+.battle-move-off-x025 {
+  border-color: color-mix(in srgb, #ef4444 40%, var(--border));
+  background: color-mix(in srgb, #ef4444 12%, var(--bg-soft));
+}
+
+.battle-move-off-x0 {
+  border-color: color-mix(in srgb, #ef4444 55%, var(--border));
+  background: color-mix(in srgb, #ef4444 18%, var(--bg-soft));
+}
+
+.battle-move-eff-unknown {
+  border-style: dashed;
 }
 
 .battle-editor-modal {
@@ -1089,7 +1283,15 @@ ul {
     display: none;
   }
 
-  .battle-stats-grid {
+  .battleground-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .battleground-meta-cell-right {
+    text-align: left;
+  }
+
+  .battleground-moves {
     grid-template-columns: minmax(0, 1fr);
   }
 

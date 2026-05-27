@@ -85,14 +85,18 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
         onSlotClick={battle.selectRight}
         onEmptySlotClick={battle.openEnemyEditor}
         actions={
-          <button type="button" className="btn btn-sm" onClick={() => setImportOpen(true)}>
-            {t('battle.importAction')}
-          </button>
+          battle.started ? null : (
+            <button type="button" className="btn btn-sm" onClick={() => setImportOpen(true)}>
+              {t('battle.importAction')}
+            </button>
+          )
         }
       />
-      <div className="battle-prep-layout">
-        <BattlePrepPanel team={team} enemySlots={battle.enemySlots} />
-      </div>
+      {!battle.started ? (
+        <div className="battle-prep-layout">
+          <BattlePrepPanel team={team} enemySlots={battle.enemySlots} started={battle.started} />
+        </div>
+      ) : null}
       <EnemyPokemonEditor
         open={battle.editorOpen}
         existingSlot={editingSlot}
