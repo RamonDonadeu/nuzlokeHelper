@@ -5,7 +5,7 @@ type Tab = 'types' | 'pc'
 
 interface IconNavRailProps {
   activeTab: Tab
-  onTabClick: (tab: Tab) => void
+  onTabNavigate: (tab: Tab) => void
 }
 
 const TABS: { id: Tab; icon: ReactNode }[] = [
@@ -30,7 +30,7 @@ const TABS: { id: Tab; icon: ReactNode }[] = [
   },
 ]
 
-export function IconNavRail({ activeTab, onTabClick }: IconNavRailProps) {
+export function IconNavRail({ activeTab, onTabNavigate }: IconNavRailProps) {
   const { t } = useI18n()
 
   return (
@@ -40,7 +40,7 @@ export function IconNavRail({ activeTab, onTabClick }: IconNavRailProps) {
           key={id}
           type="button"
           className={`icon-nav-item ${activeTab === id ? 'active' : ''}`}
-          onClick={() => onTabClick(id)}
+          onClick={() => onTabNavigate(id)}
           aria-label={t(`tabs.${id}`)}
           aria-current={activeTab === id ? 'page' : undefined}
         >

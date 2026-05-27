@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Navigate, Route, Routes, matchPath, useLocation, useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EvolutionPrompt } from '@/components/EvolutionPrompt'
 import { AbilitySearchPanel } from '@/components/AbilitySearchPanel'
@@ -91,27 +92,31 @@ function AppContent({
 }: ReturnType<typeof useProfiles>) {
   const { t, locale } = useI18n()
   const { showToast, showErrorToast } = useToast()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [searchResultFilter, setSearchResultFilter] = useState<SearchResultFilter>('all')
   const [searchOverrideName, setSearchOverrideName] = useState<string | null>(null)
   const [searchOverrideMove, setSearchOverrideMove] = useState<string | null>(null)
   const [searchOverrideAbility, setSearchOverrideAbility] = useState<string | null>(null)
   const [searchOverrideItem, setSearchOverrideItem] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('types')
-  const [showTeamStats, setShowTeamStats] = useState(false)
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [confirmSendAllToPC, setConfirmSendAllToPC] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [teamDrawerOpen, setTeamDrawerOpen] = useState(false)
   const searchSectionRef = useRef<HTMLElement>(null)
 
+  const teamDetailMatch = matchPath('/team/:slotId', location.pathname)
+  const pcDetailMatch = matchPath('/pc/:pokemonId', location.pathname)
+  const teamSlotId = teamDetailMatch?.params.slotId ?? null
+  const pcSlotId = pcDetailMatch?.params.pokemonId ?? null
+  const selectedSlotId = teamSlotId ?? pcSlotId
+  const activeTab: Tab = location.pathname === '/pc' || Boolean(pcSlotId) ? 'pc' : 'types'
+
   const scrollSearchToTop = useCallback(() => {
     searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
-  const selectedSlotInfo = selectedSlotId
-    ? findSlotInProfile(activeProfile, selectedSlotId)
-    : null
+  const selectedSlotInfo = selectedSlotId ? findSlotInProfile(activeProfile, selectedSlotId) : null
 
   const {
     results,
@@ -154,34 +159,23 @@ function AppContent({
     setSearchOverrideItem(null)
   }, [query])
 
-  useEffect(() => {
-    if (selectedSlotId && !findSlotInProfile(activeProfile, selectedSlotId)) {
-      setSelectedSlotId(null)
-    }
-  }, [activeProfile, selectedSlotId])
-
   const handleSelectSlot = (slotId: string, tab?: Tab) => {
-    setShowTeamStats(false)
-    setSelectedSlotId(slotId)
-    if (tab) setActiveTab(tab)
+    navigate(tab === 'pc' ? `/pc/${slotId}` : `/team/${slotId}`)
   }
 
   const handleTabClick = (tab: Tab) => {
-    setShowTeamStats(false)
-    setSelectedSlotId(null)
-    setActiveTab(tab)
+    navigate(tab === 'pc' ? '/pc' : '/search')
   }
 
   const handleShowTeamStats = () => {
     if (team.length === 0) return
-    setSelectedSlotId(null)
     setTeamDrawerOpen(false)
-    setShowTeamStats(true)
+    navigate('/team-typing')
   }
 
   const handleMobileTeamNav = () => {
-    if (showTeamStats) {
-      setShowTeamStats(false)
+    if (location.pathname === '/team-typing') {
+      navigate('/search')
       setTeamDrawerOpen(true)
       return
     }
@@ -289,8 +283,7 @@ function AppContent({
       ? t('search.teamFull')
       : t('search.addToTeam')
 
-  const showSearchResults =
-    !showTeamStats && !selectedSlotInfo && query.trim().length >= 2
+  const showSearchResults = location.pathname === '/search' && query.trim().length >= 2
 
   const hasPokemonResults = results.length > 0
   const hasMoveResults = moveSearch.results.length > 0
@@ -393,9 +386,9 @@ function AppContent({
         <div className="app-main-area">
           <div className="app-layout">
             <SidebarDrawer
-              open={teamDrawerOpen && !showTeamStats}
+              open={teamDrawerOpen && location.pathname !== '/team-typing'}
               onOpenChange={(open) => {
-                if (!showTeamStats) setTeamDrawerOpen(open)
+                if (location.pathname !== '/team-typing') setTeamDrawerOpen(open)
               }}
             >
               {sidebar}
@@ -413,32 +406,12 @@ function AppContent({
             />
           </div>
 
-          {showTeamStats && (
-            <TeamStatsComparison
-              team={team}
-              levelCap={activeProfile.settings.levelCap}
-              onBack={() => setShowTeamStats(false)}
-            />
-          )}
-
-          {!showTeamStats && selectedSlotInfo && (
-            <PokemonEditor
-              slot={selectedSlotInfo.slot}
-              list={selectedSlotInfo.list}
-              levelCap={activeProfile.settings.levelCap}
-              profileVersionGroup={versionGroup}
-              backLabel={
-                selectedSlotInfo.list === 'box' || selectedSlotInfo.list === 'deathBox'
-                  ? t('editor.backToPC')
-                  : undefined
-              }
-              onBack={() => setSelectedSlotId(null)}
-              onSave={(patch) => updateSlot(selectedSlotId!, patch, selectedSlotInfo.list)}
-              onEvolve={(id) => void requestEvolution(id)}
-            />
-          )}
-
-          {showSearchResults && (
+          <Routes>
+            <Route
+              path="/search"
+              element={
+                <>
+                  {showSearchResults && (
             <section ref={searchSectionRef} className="card search-section">
               {showSearchFilters && (
                 <div
@@ -653,28 +626,82 @@ function AppContent({
                 </>
               )}
             </section>
-          )}
-
-          {!showTeamStats && activeTab === 'pc' && !selectedSlotInfo && (
-            <PCView
-              box={box}
-              deathBox={deathBox}
-              team={team}
-              allowRevival={activeProfile.settings.allowRevival}
-              levelCap={activeProfile.settings.levelCap}
-              selectedSlotId={selectedSlotId}
-              onSelectSlot={(id) => handleSelectSlot(id, 'pc')}
-              onMoveToTeam={handleMoveToTeam}
-              onFaint={faintFromBox}
-              onDelete={removeFromBox}
-              onRevive={revive}
-              onDeleteDeath={removeFromDeathBox}
-              onSetAllToLevelCap={setAllBoxToLevelCap}
-              onEvolve={(id) => void requestEvolution(id)}
+                  )}
+                  <TypeAnalysis team={team} />
+                </>
+              }
             />
-          )}
-
-          {!showTeamStats && activeTab === 'types' && <TypeAnalysis team={team} />}
+            <Route
+              path="/team-typing"
+              element={
+                <TeamStatsComparison
+                  team={team}
+                  levelCap={activeProfile.settings.levelCap}
+                  onBack={() => navigate('/search')}
+                />
+              }
+            />
+            <Route
+              path="/team/:slotId"
+              element={
+                selectedSlotInfo ? (
+                  <PokemonEditor
+                    slot={selectedSlotInfo.slot}
+                    list={selectedSlotInfo.list}
+                    levelCap={activeProfile.settings.levelCap}
+                    profileVersionGroup={versionGroup}
+                    onBack={() => navigate('/search')}
+                    onSave={(patch) => updateSlot(selectedSlotInfo.slot.slotId, patch, selectedSlotInfo.list)}
+                    onEvolve={(id) => void requestEvolution(id)}
+                  />
+                ) : (
+                  <Navigate to="/search" replace />
+                )
+              }
+            />
+            <Route
+              path="/pc"
+              element={
+                <PCView
+                  box={box}
+                  deathBox={deathBox}
+                  team={team}
+                  allowRevival={activeProfile.settings.allowRevival}
+                  levelCap={activeProfile.settings.levelCap}
+                  selectedSlotId={selectedSlotId}
+                  onSelectSlot={(id) => handleSelectSlot(id, 'pc')}
+                  onMoveToTeam={handleMoveToTeam}
+                  onFaint={faintFromBox}
+                  onDelete={removeFromBox}
+                  onRevive={revive}
+                  onDeleteDeath={removeFromDeathBox}
+                  onSetAllToLevelCap={setAllBoxToLevelCap}
+                  onEvolve={(id) => void requestEvolution(id)}
+                />
+              }
+            />
+            <Route
+              path="/pc/:pokemonId"
+              element={
+                selectedSlotInfo ? (
+                  <PokemonEditor
+                    slot={selectedSlotInfo.slot}
+                    list={selectedSlotInfo.list}
+                    levelCap={activeProfile.settings.levelCap}
+                    profileVersionGroup={versionGroup}
+                    backLabel={t('editor.backToPC')}
+                    onBack={() => navigate('/pc')}
+                    onSave={(patch) => updateSlot(selectedSlotInfo.slot.slotId, patch, selectedSlotInfo.list)}
+                    onEvolve={(id) => void requestEvolution(id)}
+                  />
+                ) : (
+                  <Navigate to="/pc" replace />
+                )
+              }
+            />
+            <Route path="/" element={<Navigate to="/search" replace />} />
+            <Route path="*" element={<Navigate to="/search" replace />} />
+          </Routes>
 
             </main>
           </div>
@@ -683,7 +710,7 @@ function AppContent({
         <div className="mobile-bottom-dock">
           <button
             type="button"
-            className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !showTeamStats ? ' active' : ''}`}
+            className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && location.pathname !== '/team-typing' ? ' active' : ''}`}
             onClick={handleMobileTeamNav}
             aria-label={t('mobile.openTeam')}
           >
@@ -696,7 +723,7 @@ function AppContent({
             </span>
             <span className="icon-nav-label">{t('mobile.teamNav')}</span>
           </button>
-          <IconNavRail activeTab={activeTab} onTabClick={handleTabClick} />
+          <IconNavRail activeTab={activeTab} onTabNavigate={handleTabClick} />
         </div>
       </div>
 
