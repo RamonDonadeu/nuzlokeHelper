@@ -130,6 +130,8 @@ export function BattlegroundPanel({
   const activeSlots = doubleBattle ? 2 : 1
   const shownLeft = activeLeft.slice(0, activeSlots)
   const shownRight = activeRight.slice(0, activeSlots)
+  const allyActives = shownLeft.filter((slot): slot is PokemonSlot => slot !== null)
+  const enemyActives = shownRight.filter((slot): slot is PokemonSlot => slot !== null)
 
   const replacements = useMemo(() => {
     if (!switchPopup) return []
@@ -238,6 +240,9 @@ export function BattlegroundPanel({
                 }
                 left={shownLeft[index] ?? null}
                 right={shownRight[index] ?? null}
+                doubleBattle={doubleBattle}
+                allyActives={allyActives}
+                enemyActives={enemyActives}
               />
             ))}
           </div>

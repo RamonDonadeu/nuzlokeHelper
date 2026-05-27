@@ -21,6 +21,9 @@ type MovePerspective = 'offensive' | 'incoming'
 interface BattlegroundMovesProps {
   left: PokemonSlot | null
   right: PokemonSlot | null
+  doubleBattle?: boolean
+  allyActives?: PokemonSlot[]
+  enemyActives?: PokemonSlot[]
 }
 
 function padMoves(moves: string[] | undefined): string[] {
@@ -131,7 +134,13 @@ function MoveGrid({
                 <span className={`type-badge type-${moveType ?? 'unknown'}`}>
                   {moveType ?? '?'}
                 </span>
-                {multiplier !== null ? (
+                {showTargetIcons && moveType ? (
+                  <MoveTargetIcons
+                    targets={defenderTargets!}
+                    moveType={moveType}
+                    perspective={perspective}
+                  />
+                ) : multiplier !== null ? (
                   <span className="battleground-move-mult">{formatMultiplier(multiplier)}</span>
                 ) : null}
               </div>
@@ -152,7 +161,13 @@ function MoveGrid({
   )
 }
 
-export function BattlegroundMoves({ left, right }: BattlegroundMovesProps) {
+export function BattlegroundMoves({
+  left,
+  right,
+  doubleBattle = false,
+  allyActives = [],
+  enemyActives = [],
+}: BattlegroundMovesProps) {
   const [detailsByName, setDetailsByName] = useState<Map<string, MoveDetails | null>>(new Map())
 
   const moveNames = useMemo(() => uniqueMoveNames(left, right), [left, right])
@@ -182,18 +197,22 @@ export function BattlegroundMoves({ left, right }: BattlegroundMovesProps) {
 
   const leftDefenderTypes = right?.types ?? []
   const rightDefenderTypes = left?.types ?? []
+  const showEnemyTargets = doubleBattle && enemyActives.length >= 2
+  const showAllyTargets = doubleBattle && allyActives.length >= 2
 
   return (
     <div className="battleground-moves">
       <MoveGrid
         slot={left}
         defenderTypes={leftDefenderTypes}
+        defenderTargets={showEnemyTargets ? enemyActives : undefined}
         perspective="offensive"
         detailsByName={detailsByName}
       />
       <MoveGrid
         slot={right}
         defenderTypes={rightDefenderTypes}
+        defenderTargets={showAllyTargets ? allyActives : undefined}
         perspective="incoming"
         detailsByName={detailsByName}
       />

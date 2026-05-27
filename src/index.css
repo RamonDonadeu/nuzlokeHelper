@@ -1069,6 +1069,30 @@ ul {
   font-variant-numeric: tabular-nums;
 }
 
+.battleground-move-targets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.15rem;
+  flex-shrink: 0;
+}
+
+.battleground-move-target {
+  display: inline-flex;
+  padding: 1px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  line-height: 0;
+  background: var(--bg-elevated);
+}
+
+.battleground-move-target img {
+  width: 20px;
+  height: 20px;
+  image-rendering: pixelated;
+  display: block;
+}
+
 /* Your moves: green = strong vs enemy, red = weak */
 .battle-move-off-x4 {
   border-color: color-mix(in srgb, #22c55e 55%, var(--border));
