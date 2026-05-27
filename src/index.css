@@ -1203,8 +1203,10 @@ ul {
   font-size: 0.88rem;
 }
 
-.battle-prep-layout {
-  grid-column: 2 / 3;
+.battle-center-column {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
 }
 
 .battle-prep-panel {
@@ -1317,10 +1319,6 @@ ul {
 
   .battleground-moves {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .battle-prep-layout {
-    grid-column: auto;
   }
 
   .battle-prep-grid {
