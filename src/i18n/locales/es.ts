@@ -185,6 +185,7 @@ export const es: TranslationKey = {
     modeEdit: 'Editar',
     back: 'Volver a buscar',
     backToPC: 'Volver al PC',
+    backToBattle: 'Volver al combate',
     fromTeam: 'Equipo',
     fromBox: 'Caja PC',
     fromDeathBox: 'Caja de muertos',

@@ -9,7 +9,7 @@ interface BattleTeamColumnProps {
   activeIndices: Array<number | null>
   faintedIndices: Set<number>
   selectedActiveSlot: number
-  onSlotClick: (index: number) => void
+  onFilledSlotClick?: (index: number) => void
   onEmptySlotClick?: (index: number) => void
   actions?: ReactNode
 }
@@ -21,7 +21,7 @@ export function BattleTeamColumn({
   activeIndices,
   faintedIndices,
   selectedActiveSlot,
-  onSlotClick,
+  onFilledSlotClick,
   onEmptySlotClick,
   actions,
 }: BattleTeamColumnProps) {
@@ -70,7 +70,7 @@ export function BattleTeamColumn({
                 disabled={isFainted}
                 onClick={() => {
                   if (isFainted) return
-                  onSlotClick(index)
+                  onFilledSlotClick?.(index)
                 }}
               >
                 <img src={slot.sprite} alt={slot.displayName} loading="lazy" />

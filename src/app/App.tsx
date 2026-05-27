@@ -708,7 +708,15 @@ function AppContent({
                     list={selectedSlotInfo.list}
                     levelCap={activeProfile.settings.levelCap}
                     profileVersionGroup={versionGroup}
-                    onBack={() => navigate(buildSearchPath(query))}
+                    backLabel={
+                      (location.state as { returnTo?: string } | null)?.returnTo === '/battle'
+                        ? t('editor.backToBattle')
+                        : undefined
+                    }
+                    onBack={() => {
+                      const returnTo = (location.state as { returnTo?: string } | null)?.returnTo
+                      navigate(returnTo ?? buildSearchPath(query))
+                    }}
                     onSave={(patch) => updateSlot(selectedSlotInfo.slot.slotId, patch, selectedSlotInfo.list)}
                     onEvolve={(id) => void requestEvolution(id)}
                   />

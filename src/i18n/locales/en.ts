@@ -204,6 +204,7 @@ export const en: TranslationKey = {
     modeEdit: 'Edit',
     back: 'Back to search',
     backToPC: 'Back to PC',
+    backToBattle: 'Back to battle',
     fromTeam: 'Team',
     fromBox: 'PC box',
     fromDeathBox: 'Death box',
