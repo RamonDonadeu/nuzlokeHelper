@@ -126,7 +126,7 @@ export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, o
         {!battle.started ? (
           <BattlePrepPanel
             team={team}
-            box={box}
+            pc={pc}
             enemySlots={battle.enemySlots}
             started={battle.started}
           />

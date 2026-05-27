@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -96,6 +97,11 @@ function fillEmptyStatDraft(draft: StatDraft, defaultValue: string): StatDraft {
   return next
 }
 
+function editorDefaultLevel(existingSlot: PokemonSlot | null, levelCap: number): number {
+  if (existingSlot == null) return levelCap
+  return existingSlot.level ?? levelCap
+}
+
 export function BattlePokemonEditorModal({
   open,
   title,
@@ -107,11 +113,11 @@ export function BattlePokemonEditorModal({
 }: BattlePokemonEditorModalProps) {
   const { t, locale } = useI18n()
   const maxLevel = Math.min(MAX_LEVEL_CAP, levelCap)
-  const defaultLevel = existingSlot?.level ?? levelCap
+  const defaultLevel = editorDefaultLevel(existingSlot, levelCap)
   const [species, setSpecies] = useState(existingSlot?.name ?? '')
   const [ability, setAbility] = useState(existingSlot?.ability ?? '')
   const [item, setItem] = useState(existingSlot?.item ?? '')
-  const [level, setLevel] = useState(String(defaultLevel))
+  const [level, setLevel] = useState(() => String(editorDefaultLevel(existingSlot, levelCap)))
   const [levelDraft, setLevelDraft] = useState<string | null>(null)
   const [nature, setNature] = useState(existingSlot?.nature ?? defaultNature())
   const [moves, setMoves] = useState<string[]>(
@@ -164,12 +170,12 @@ export function BattlePokemonEditorModal({
     }
   }, [open])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return
     setSpecies(existingSlot?.name ?? '')
     setAbility(existingSlot?.ability ? canonicalAbilityName(existingSlot.ability) : '')
     setItem(existingSlot?.item ? displayItemName(existingSlot.item, locale) : '')
-    setLevel(String(existingSlot?.level ?? levelCap))
+    setLevel(String(editorDefaultLevel(existingSlot, levelCap)))
     setLevelDraft(null)
     setNature(existingSlot?.nature ?? defaultNature())
     setIvDraft(statsToDraft(existingSlot?.ivs))
@@ -339,8 +345,12 @@ export function BattlePokemonEditorModal({
 
     try {
       const pokemon = await fetchPokemon(trimmedSpecies)
-      const parsedLevel = Number((levelDraft ?? level).trim())
-      const safeLevel = clampPokemonLevel(parsedLevel, levelCap)
+      const levelRaw = (levelDraft ?? level).trim()
+      const parsedLevel = Number(levelRaw)
+      const safeLevel = clampPokemonLevel(
+        levelRaw ? parsedLevel : editorDefaultLevel(existingSlot, levelCap),
+        levelCap,
+      )
       const nextSlot: PokemonSlot = {
         slotId: existingSlot?.slotId ?? crypto.randomUUID(),
         speciesId: pokemon.id,

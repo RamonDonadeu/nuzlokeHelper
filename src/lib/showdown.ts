@@ -85,7 +85,10 @@ export function parseShowdownPaste(text: string): ParsedShowdownSet[] {
   return sets
 }
 
-export async function showdownSetsToSlots(sets: ParsedShowdownSet[]): Promise<PokemonSlot[]> {
+export async function showdownSetsToSlots(
+  sets: ParsedShowdownSet[],
+  defaultLevel = 5,
+): Promise<PokemonSlot[]> {
   const slots: PokemonSlot[] = []
 
   for (const set of sets) {
@@ -102,7 +105,7 @@ export async function showdownSetsToSlots(sets: ParsedShowdownSet[]): Promise<Po
         baseStats: pokemon.stats,
         sprite: pokemon.sprite,
         nickname: set.nickname,
-        level: set.level ?? 5,
+        level: set.level ?? defaultLevel,
         ivs: set.ivs,
         evs: set.evs,
         nature: set.nature ?? defaultNature(),
