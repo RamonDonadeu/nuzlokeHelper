@@ -107,6 +107,46 @@ function AppContent({
   const [profileOpen, setProfileOpen] = useState(false)
   const [teamDrawerOpen, setTeamDrawerOpen] = useState(false)
   const searchSectionRef = useRef<HTMLElement>(null)
+  const isSearchRoute = location.pathname === '/search'
+
+  const buildSearchPath = useCallback((q: string) => {
+    const trimmed = q.trim()
+    if (trimmed.length >= 2) {
+      return `/search?q=${encodeURIComponent(trimmed)}`
+    }
+    return '/search'
+  }, [])
+
+  useEffect(() => {
+    if (!isSearchRoute) return
+    const urlQ = new URLSearchParams(location.search).get('q')
+    if (urlQ === null) return
+    setQuery((prev) => (prev === urlQ ? prev : urlQ))
+  }, [isSearchRoute, location.search])
+
+  useEffect(() => {
+    if (!isSearchRoute) return
+    const trimmed = query.trim()
+    const params = new URLSearchParams(location.search)
+    if (trimmed.length < 2) {
+      if (!params.has('q')) return
+      params.delete('q')
+      const search = params.toString()
+      navigate({ pathname: '/search', search: search ? `?${search}` : '' }, { replace: true })
+      return
+    }
+    if (params.get('q') === trimmed) return
+    params.set('q', trimmed)
+    navigate({ pathname: '/search', search: `?${params.toString()}` }, { replace: true })
+  }, [query, isSearchRoute, location.search, navigate])
+
+  const handleSearchChange = (value: string) => {
+    setQuery(value)
+    const trimmed = value.trim()
+    if (trimmed.length >= 2 && !isSearchRoute) {
+      navigate(buildSearchPath(trimmed))
+    }
+  }
 
   const teamDetailMatch = matchPath('/team/:slotId', location.pathname)
   const pcDetailMatch = matchPath('/pc/:pokemonId', location.pathname)
@@ -182,7 +222,7 @@ function AppContent({
       navigate('/battle')
       return
     }
-    navigate('/search')
+    navigate(buildSearchPath(query))
   }
 
   const handleShowTeamStats = () => {
@@ -193,7 +233,7 @@ function AppContent({
 
   const handleMobileTeamNav = () => {
     if (isTeamTypingRoute) {
-      navigate('/search')
+      navigate(buildSearchPath(query))
       setTeamDrawerOpen(true)
       return
     }
@@ -305,7 +345,7 @@ function AppContent({
       ? t('search.teamFull')
       : t('search.addToTeam')
 
-  const showSearchResults = location.pathname === '/search' && query.trim().length >= 2
+  const showSearchResults = isSearchRoute && query.trim().length >= 2
 
   const hasPokemonResults = results.length > 0
   const hasMoveResults = moveSearch.results.length > 0
@@ -419,18 +459,16 @@ function AppContent({
             )}
 
             <main className="main-content">
-          {!isBattleRoute && (
-            <div className="main-search-bar">
-              <input
-                type="search"
-                className="search-input"
-                placeholder={t('search.placeholder')}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                aria-label={t('search.title')}
-              />
-            </div>
-          )}
+          <div className="main-search-bar">
+            <input
+              type="search"
+              className="search-input"
+              placeholder={t('search.placeholder')}
+              value={query}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              aria-label={t('search.title')}
+            />
+          </div>
 
           <Routes>
             <Route
@@ -665,7 +703,7 @@ function AppContent({
                 <TeamStatsComparison
                   team={team}
                   levelCap={activeProfile.settings.levelCap}
-                  onBack={() => navigate('/search')}
+                  onBack={() => navigate(buildSearchPath(query))}
                 />
               }
             />
@@ -679,7 +717,7 @@ function AppContent({
                     list={selectedSlotInfo.list}
                     levelCap={activeProfile.settings.levelCap}
                     profileVersionGroup={versionGroup}
-                    onBack={() => navigate('/search')}
+                    onBack={() => navigate(buildSearchPath(query))}
                     onSave={(patch) => updateSlot(selectedSlotInfo.slot.slotId, patch, selectedSlotInfo.list)}
                     onEvolve={(id) => void requestEvolution(id)}
                   />
