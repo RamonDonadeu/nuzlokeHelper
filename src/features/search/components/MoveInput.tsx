@@ -3,6 +3,8 @@ import type { Locale } from '@/i18n'
 import { useMoveSearch } from '@/features/search/hooks/useMoveSearch'
 import { useSuggestionKeyboard } from '@/shared/hooks/useSuggestionKeyboard'
 import { canonicalMoveName, displayMoveName } from '@/lib/localizedNames'
+import { fetchMoveDetails, getCachedMoveDetails } from '@/lib/moveTypes'
+import type { PokemonType } from '@/types/pokemon'
 
 interface MoveInputProps {
   value: string
@@ -11,6 +13,9 @@ interface MoveInputProps {
   placeholder: string
   locale: Locale
   indexReady: boolean
+  /** Compact battle-editor row with optional type badge. */
+  variant?: 'default' | 'battle'
+  showTypeBadge?: boolean
 }
 
 function toMoveText(value: string): string {
@@ -24,13 +29,42 @@ export function MoveInput({
   placeholder,
   locale,
   indexReady,
+  variant = 'default',
+  showTypeBadge = false,
 }: MoveInputProps) {
   const safeValue = toMoveText(value)
   const listId = useId()
   const wrapRef = useRef<HTMLDivElement>(null)
   const [text, setText] = useState(() => displayMoveName(safeValue, locale))
   const [focused, setFocused] = useState(false)
+  const [moveType, setMoveType] = useState<PokemonType | null>(null)
   const { results, isPending } = useMoveSearch(text, locale, indexReady && focused)
+  const isBattle = variant === 'battle'
+  const inputClassName = isBattle ? 'battle-editor-input' : undefined
+
+  useEffect(() => {
+    if (!showTypeBadge) {
+      setMoveType(null)
+      return
+    }
+    const canonical = canonicalMoveName(safeValue)
+    if (!canonical.trim()) {
+      setMoveType(null)
+      return
+    }
+    const cached = getCachedMoveDetails(canonical)
+    if (cached?.type) {
+      setMoveType(cached.type)
+      return
+    }
+    let cancelled = false
+    void fetchMoveDetails(canonical).then((details) => {
+      if (!cancelled) setMoveType(details?.type ?? null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [safeValue, showTypeBadge])
 
   useEffect(() => {
     if (!focused) {
@@ -51,7 +85,11 @@ export function MoveInput({
     onChange(canonicalName)
     setText(displayMoveName(canonicalName, locale))
     setFocused(false)
-  }, [locale, onChange])
+    if (showTypeBadge) {
+      const cached = getCachedMoveDetails(canonicalName)
+      setMoveType(cached?.type ?? null)
+    }
+  }, [locale, onChange, showTypeBadge])
 
   const resetKey = `${query}\0${results.map((result) => result.slug).join('\0')}`
   const {
@@ -74,11 +112,23 @@ export function MoveInput({
   }
 
   return (
-    <label className="move-input-row">
-      <span>{label}</span>
-      <div className="move-input-wrap" ref={wrapRef}>
+    <label className={`move-input-row${isBattle ? ' battle-move-input-row' : ''}`}>
+      {isBattle ? (
+        <div className="battle-move-input-label">
+          <span className="control-label">{label}</span>
+          {showTypeBadge ? (
+            <span className={`type-badge type-${moveType ?? 'unknown'}`} aria-hidden={!moveType}>
+              {moveType ?? '?'}
+            </span>
+          ) : null}
+        </div>
+      ) : (
+        <span>{label}</span>
+      )}
+      <div className={`move-input-wrap${isBattle ? ' battle-editor-input-wrap' : ''}`} ref={wrapRef}>
         <input
           type="text"
+          className={inputClassName}
           value={text}
           placeholder={placeholder}
           aria-autocomplete="list"
@@ -100,7 +150,12 @@ export function MoveInput({
           }}
         />
         {showSuggestions && results.length > 0 && (
-          <ul ref={listRef} className="move-suggestions" id={listId} role="listbox">
+          <ul
+            ref={listRef}
+            className={`move-suggestions${isBattle ? ' battle-editor-suggestions' : ''}`}
+            id={listId}
+            role="listbox"
+          >
             {results.map((result, index) => (
               <li
                 key={result.slug}
