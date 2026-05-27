@@ -743,6 +743,10 @@ ul {
   gap: 0.35rem;
 }
 
+.battle-team-list li {
+  position: relative;
+}
+
 .battle-team-slot {
   display: flex;
   align-items: center;
@@ -763,6 +767,17 @@ ul {
   background: color-mix(in srgb, var(--primary) 14%, var(--bg-soft));
 }
 
+.battle-team-slot.fainted {
+  opacity: 0.45;
+  filter: grayscale(0.85);
+  cursor: not-allowed;
+}
+
+.battle-team-slot.fainted.active {
+  border-color: var(--border);
+  background: var(--bg-soft);
+}
+
 .battle-team-slot.empty {
   justify-content: center;
   border-style: dashed;
@@ -773,6 +788,29 @@ ul {
   width: 32px;
   height: 32px;
   image-rendering: pixelated;
+}
+
+.battle-slot-chip {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.2rem;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  padding: 0 0.3rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--muted);
+}
+
+.battle-slot-chip.selected {
+  color: var(--text);
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 30%, var(--bg-elevated));
 }
 
 .battle-panel {
@@ -804,6 +842,11 @@ ul {
   gap: 0.45rem;
 }
 
+.battle-active-side {
+  display: grid;
+  gap: 0.45rem;
+}
+
 .battle-active-card-header {
   display: flex;
   align-items: center;
@@ -814,6 +857,20 @@ ul {
   width: 56px;
   height: 56px;
   image-rendering: pixelated;
+}
+
+.battle-switch-btn {
+  justify-self: start;
+}
+
+.battle-active-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.battle-faint-btn {
+  justify-self: start;
 }
 
 .battle-vs {
@@ -842,6 +899,19 @@ ul {
 
 .battle-editor-modal {
   width: min(100%, 480px);
+}
+
+.battle-switch-modal {
+  width: min(100%, 460px);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.battle-switch-list {
+  display: grid;
+  gap: 0.4rem;
+  max-height: 18rem;
+  overflow-y: auto;
 }
 
 .battle-editor-input-wrap {

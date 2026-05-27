@@ -29,23 +29,41 @@ export function BattleView({ team, enemyTeam, onEnemyTeamChange }: BattleViewPro
         title={t('battle.yourTeam')}
         side="left"
         slots={leftSlots}
-        activeIndex={battle.activeLeftIndex}
+        activeIndices={battle.activeLeftIndices}
+        faintedIndices={battle.faintedLeftIndices}
+        selectedActiveSlot={battle.selectedLeftActiveSlot}
         onSlotClick={battle.selectLeft}
       />
       <BattlegroundPanel
         started={battle.started}
-        activeLeft={battle.activeLeft}
-        activeRight={battle.activeRight}
+        activeLeft={battle.activeLeftSlots}
+        activeRight={battle.activeRightSlots}
+        activeLeftIndices={battle.activeLeftIndices}
+        activeRightIndices={battle.activeRightIndices}
+        faintedLeftIndices={battle.faintedLeftIndices}
+        faintedRightIndices={battle.faintedRightIndices}
+        leftHasAlivePokemon={battle.leftHasAlivePokemon}
+        rightHasAlivePokemon={battle.rightHasAlivePokemon}
         doubleBattle={battle.doubleBattle}
         onDoubleBattleChange={battle.setDoubleBattle}
+        onSelectLeftSlot={battle.setSelectedLeftActiveSlot}
+        onSelectRightSlot={battle.setSelectedRightActiveSlot}
+        onSwitchLeft={battle.switchLeftSlot}
+        onSwitchRight={battle.switchRightSlot}
+        onFaintLeft={battle.faintLeftSlot}
+        onFaintRight={battle.faintRightSlot}
         onStartFight={battle.startFight}
         onClear={battle.clearBattle}
+        team={leftSlots}
+        enemyTeam={battle.enemySlots}
       />
       <BattleTeamColumn
         title={t('battle.enemyTeamTitle')}
         side="right"
         slots={battle.enemySlots}
-        activeIndex={battle.activeRightIndex}
+        activeIndices={battle.activeRightIndices}
+        faintedIndices={battle.faintedRightIndices}
+        selectedActiveSlot={battle.selectedRightActiveSlot}
         onSlotClick={battle.selectRight}
         onEmptySlotClick={battle.openEnemyEditor}
       />

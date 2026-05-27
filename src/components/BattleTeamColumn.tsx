@@ -5,7 +5,9 @@ interface BattleTeamColumnProps {
   title: string
   side: 'left' | 'right'
   slots: Array<PokemonSlot | null>
-  activeIndex: number | null
+  activeIndices: Array<number | null>
+  faintedIndices: Set<number>
+  selectedActiveSlot: number
   onSlotClick: (index: number) => void
   onEmptySlotClick?: (index: number) => void
 }
@@ -14,7 +16,9 @@ export function BattleTeamColumn({
   title,
   side,
   slots,
-  activeIndex,
+  activeIndices,
+  faintedIndices,
+  selectedActiveSlot,
   onSlotClick,
   onEmptySlotClick,
 }: BattleTeamColumnProps) {
@@ -39,12 +43,29 @@ export function BattleTeamColumn({
             )
           }
 
+          const isFainted = faintedIndices.has(index)
+
           return (
             <li key={slot.slotId}>
+              {activeIndices
+                .map((activeIndex, activeSlot) => ({ activeIndex, activeSlot }))
+                .filter(({ activeIndex }) => activeIndex === index)
+                .map(({ activeSlot }) => (
+                  <span
+                    key={`${slot.slotId}-active-${activeSlot}`}
+                    className={`battle-slot-chip${selectedActiveSlot === activeSlot ? ' selected' : ''}`}
+                  >
+                    {activeSlot + 1}
+                  </span>
+                ))}
               <button
                 type="button"
-                className={`battle-team-slot${activeIndex === index ? ' active' : ''}`}
-                onClick={() => onSlotClick(index)}
+                className={`battle-team-slot${activeIndices.includes(index) ? ' active' : ''}${isFainted ? ' fainted' : ''}`}
+                disabled={isFainted}
+                onClick={() => {
+                  if (isFainted) return
+                  onSlotClick(index)
+                }}
               >
                 <img src={slot.sprite} alt={slot.displayName} loading="lazy" />
                 <span>{slot.nickname ?? slot.displayName}</span>

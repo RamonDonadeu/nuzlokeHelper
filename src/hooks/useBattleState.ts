@@ -14,19 +14,33 @@ interface UseBattleStateResult {
   started: boolean
   doubleBattle: boolean
   activeTab: ActiveBattleTab
-  activeLeftIndex: number | null
-  activeRightIndex: number | null
+  activeLeftIndices: Array<number | null>
+  activeRightIndices: Array<number | null>
+  faintedLeftIndices: Set<number>
+  faintedRightIndices: Set<number>
+  selectedLeftActiveSlot: number
+  selectedRightActiveSlot: number
   editorOpen: boolean
   editorIndex: number | null
   enemySlots: Array<PokemonSlot | null>
   activeLeft: PokemonSlot | null
   activeRight: PokemonSlot | null
+  activeLeftSlots: Array<PokemonSlot | null>
+  activeRightSlots: Array<PokemonSlot | null>
+  leftHasAlivePokemon: boolean
+  rightHasAlivePokemon: boolean
   setDoubleBattle: (value: boolean) => void
+  setSelectedLeftActiveSlot: (slot: number) => void
+  setSelectedRightActiveSlot: (slot: number) => void
   setActiveTab: (tab: ActiveBattleTab) => void
   startFight: () => void
   clearBattle: () => void
   selectLeft: (index: number) => void
   selectRight: (index: number) => void
+  switchLeftSlot: (slot: number, index: number) => void
+  switchRightSlot: (slot: number, index: number) => void
+  faintLeftSlot: (slot: number) => void
+  faintRightSlot: (slot: number) => void
   openEnemyEditor: (index: number) => void
   closeEnemyEditor: () => void
   upsertEnemySlot: (index: number, slot: PokemonSlot) => void
@@ -42,6 +56,76 @@ function compactEnemyTeam(slots: Array<PokemonSlot | null>): PokemonSlot[] {
   return slots.filter((slot): slot is PokemonSlot => slot !== null)
 }
 
+function createInitialActiveIndices(): Array<number | null> {
+  return [null, null]
+}
+
+function pickFirstAvailable(
+  slots: Array<PokemonSlot | null> | PokemonSlot[],
+  fainted: Set<number> = new Set(),
+): number | null {
+  const index = slots.findIndex(
+    (slot, candidateIndex) => slot !== null && !fainted.has(candidateIndex),
+  )
+  return index >= 0 ? index : null
+}
+
+function pickNextAvailable(
+  slots: Array<PokemonSlot | null> | PokemonSlot[],
+  taken: Array<number | null>,
+  fainted: Set<number> = new Set(),
+): number | null {
+  const used = new Set(taken.filter((value): value is number => value !== null))
+  const index = slots.findIndex(
+    (slot, candidateIndex) =>
+      slot !== null && !used.has(candidateIndex) && !fainted.has(candidateIndex),
+  )
+  return index >= 0 ? index : null
+}
+
+function findNextAliveIndex(
+  slots: Array<PokemonSlot | null> | PokemonSlot[],
+  fainted: Set<number>,
+  fromIndex: number,
+  exclude: Array<number | null> = [],
+): number | null {
+  const excluded = new Set([
+    ...fainted,
+    ...exclude.filter((value): value is number => value !== null),
+  ])
+  const length = slots.length
+  for (let offset = 1; offset <= length; offset += 1) {
+    const candidate = (fromIndex + offset) % length
+    if (slots[candidate] !== null && slots[candidate] !== undefined && !excluded.has(candidate)) {
+      return candidate
+    }
+  }
+  return null
+}
+
+function sideHasAlivePokemon(
+  slots: Array<PokemonSlot | null> | PokemonSlot[],
+  fainted: Set<number>,
+): boolean {
+  return slots.some(
+    (slot, index) => slot !== null && slot !== undefined && !fainted.has(index),
+  )
+}
+
+function replaceSlotKeepingUnique(
+  current: Array<number | null>,
+  slot: number,
+  nextIndex: number,
+): Array<number | null> {
+  const next = [...current]
+  const duplicateSlot = next.findIndex((value, idx) => idx !== slot && value === nextIndex)
+  if (duplicateSlot >= 0) {
+    next[duplicateSlot] = next[slot]
+  }
+  next[slot] = nextIndex
+  return next
+}
+
 export function useBattleState({
   team,
   enemyTeam,
@@ -49,33 +133,143 @@ export function useBattleState({
   confirmClear,
 }: UseBattleStateArgs): UseBattleStateResult {
   const [started, setStarted] = useState(false)
-  const [doubleBattle, setDoubleBattle] = useState(false)
+  const [doubleBattle, setDoubleBattleState] = useState(false)
   const [activeTab, setActiveTab] = useState<ActiveBattleTab>('stats')
-  const [activeLeftIndex, setActiveLeftIndex] = useState<number | null>(null)
-  const [activeRightIndex, setActiveRightIndex] = useState<number | null>(null)
+  const [activeLeftIndices, setActiveLeftIndices] = useState<Array<number | null>>(
+    createInitialActiveIndices,
+  )
+  const [activeRightIndices, setActiveRightIndices] = useState<Array<number | null>>(
+    createInitialActiveIndices,
+  )
+  const [selectedLeftActiveSlot, setSelectedLeftActiveSlot] = useState(0)
+  const [selectedRightActiveSlot, setSelectedRightActiveSlot] = useState(0)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editorIndex, setEditorIndex] = useState<number | null>(null)
+  const [faintedLeftIndices, setFaintedLeftIndices] = useState<Set<number>>(() => new Set())
+  const [faintedRightIndices, setFaintedRightIndices] = useState<Set<number>>(() => new Set())
 
   const enemySlots = useMemo(() => toEnemySlots(enemyTeam), [enemyTeam])
-  const activeLeft = activeLeftIndex === null ? null : team[activeLeftIndex] ?? null
-  const activeRight = activeRightIndex === null ? null : enemySlots[activeRightIndex] ?? null
+  const activeLeftSlots = useMemo(
+    () =>
+      activeLeftIndices.map((index) => (index === null ? null : team[index] ?? null)).slice(
+        0,
+        doubleBattle ? 2 : 1,
+      ),
+    [activeLeftIndices, doubleBattle, team],
+  )
+  const activeRightSlots = useMemo(
+    () =>
+      activeRightIndices
+        .map((index) => (index === null ? null : enemySlots[index] ?? null))
+        .slice(0, doubleBattle ? 2 : 1),
+    [activeRightIndices, doubleBattle, enemySlots],
+  )
+  const activeLeft = activeLeftSlots[0] ?? null
+  const activeRight = activeRightSlots[0] ?? null
+  const leftHasAlivePokemon = useMemo(
+    () => sideHasAlivePokemon(team, faintedLeftIndices),
+    [team, faintedLeftIndices],
+  )
+  const rightHasAlivePokemon = useMemo(
+    () => sideHasAlivePokemon(enemySlots, faintedRightIndices),
+    [enemySlots, faintedRightIndices],
+  )
 
   const startFight = () => {
-    const firstLeft = team.length > 0 ? 0 : null
-    const firstRight = enemySlots.findIndex((slot) => slot !== null)
-    setActiveLeftIndex(firstLeft)
-    setActiveRightIndex(firstRight >= 0 ? firstRight : null)
+    const emptyFainted = new Set<number>()
+    setFaintedLeftIndices(emptyFainted)
+    setFaintedRightIndices(new Set())
+    const leftFirst = pickFirstAvailable(team, emptyFainted)
+    const rightFirst = pickFirstAvailable(enemySlots, emptyFainted)
+    const leftSecond = doubleBattle ? pickNextAvailable(team, [leftFirst], emptyFainted) : null
+    const rightSecond = doubleBattle ? pickNextAvailable(enemySlots, [rightFirst], emptyFainted) : null
+    setActiveLeftIndices([leftFirst, leftSecond])
+    setActiveRightIndices([rightFirst, rightSecond])
+    setSelectedLeftActiveSlot(0)
+    setSelectedRightActiveSlot(0)
     setStarted(true)
   }
 
+  const setDoubleBattle = (value: boolean) => {
+    setDoubleBattleState(value)
+    setSelectedLeftActiveSlot(0)
+    setSelectedRightActiveSlot(0)
+
+    setActiveLeftIndices((previous) => {
+      if (!value) return [previous[0] ?? null, null]
+      const first = previous[0] ?? pickFirstAvailable(team, faintedLeftIndices)
+      const second = previous[1] ?? pickNextAvailable(team, [first], faintedLeftIndices)
+      return [first, second]
+    })
+
+    setActiveRightIndices((previous) => {
+      if (!value) return [previous[0] ?? null, null]
+      const first = previous[0] ?? pickFirstAvailable(enemySlots, faintedRightIndices)
+      const second = previous[1] ?? pickNextAvailable(enemySlots, [first], faintedRightIndices)
+      return [first, second]
+    })
+  }
+
   const selectLeft = (index: number) => {
-    if (!team[index]) return
-    setActiveLeftIndex(index)
+    if (!team[index] || faintedLeftIndices.has(index)) return
+    setActiveLeftIndices((previous) =>
+      replaceSlotKeepingUnique(previous, selectedLeftActiveSlot, index),
+    )
   }
 
   const selectRight = (index: number) => {
-    if (!enemySlots[index]) return
-    setActiveRightIndex(index)
+    if (!enemySlots[index] || faintedRightIndices.has(index)) return
+    setActiveRightIndices((previous) =>
+      replaceSlotKeepingUnique(previous, selectedRightActiveSlot, index),
+    )
+  }
+
+  const switchLeftSlot = (slot: number, index: number) => {
+    if (!team[index] || faintedLeftIndices.has(index) || slot < 0 || slot > 1) return
+    setActiveLeftIndices((previous) => replaceSlotKeepingUnique(previous, slot, index))
+    setSelectedLeftActiveSlot(slot)
+  }
+
+  const switchRightSlot = (slot: number, index: number) => {
+    if (!enemySlots[index] || faintedRightIndices.has(index) || slot < 0 || slot > 1) return
+    setActiveRightIndices((previous) => replaceSlotKeepingUnique(previous, slot, index))
+    setSelectedRightActiveSlot(slot)
+  }
+
+  const faintLeftSlot = (slot: number) => {
+    if (slot < 0 || slot > 1) return
+    const currentIndex = activeLeftIndices[slot]
+    if (currentIndex === null) return
+
+    const nextFainted = new Set(faintedLeftIndices)
+    nextFainted.add(currentIndex)
+    setFaintedLeftIndices(nextFainted)
+
+    const otherActive = activeLeftIndices.filter((value, idx) => idx !== slot && value !== null)
+    const nextAlive = findNextAliveIndex(team, nextFainted, currentIndex, otherActive)
+    setActiveLeftIndices((previous) => {
+      const next = [...previous]
+      next[slot] = nextAlive
+      return next
+    })
+  }
+
+  const faintRightSlot = (slot: number) => {
+    if (slot < 0 || slot > 1) return
+    const currentIndex = activeRightIndices[slot]
+    if (currentIndex === null) return
+
+    const nextFainted = new Set(faintedRightIndices)
+    nextFainted.add(currentIndex)
+    setFaintedRightIndices(nextFainted)
+
+    const otherActive = activeRightIndices.filter((value, idx) => idx !== slot && value !== null)
+    const nextAlive = findNextAliveIndex(enemySlots, nextFainted, currentIndex, otherActive)
+    setActiveRightIndices((previous) => {
+      const next = [...previous]
+      next[slot] = nextAlive
+      return next
+    })
   }
 
   const openEnemyEditor = (index: number) => {
@@ -99,8 +293,12 @@ export function useBattleState({
   const clearBattle = () => {
     if (!confirmClear()) return
     setStarted(false)
-    setActiveLeftIndex(null)
-    setActiveRightIndex(null)
+    setActiveLeftIndices(createInitialActiveIndices())
+    setActiveRightIndices(createInitialActiveIndices())
+    setFaintedLeftIndices(new Set())
+    setFaintedRightIndices(new Set())
+    setSelectedLeftActiveSlot(0)
+    setSelectedRightActiveSlot(0)
     onEnemyTeamChange([])
   }
 
@@ -108,19 +306,33 @@ export function useBattleState({
     started,
     doubleBattle,
     activeTab,
-    activeLeftIndex,
-    activeRightIndex,
+    activeLeftIndices,
+    activeRightIndices,
+    faintedLeftIndices,
+    faintedRightIndices,
+    selectedLeftActiveSlot,
+    selectedRightActiveSlot,
     editorOpen,
     editorIndex,
     enemySlots,
     activeLeft,
     activeRight,
+    activeLeftSlots,
+    activeRightSlots,
+    leftHasAlivePokemon,
+    rightHasAlivePokemon,
     setDoubleBattle,
+    setSelectedLeftActiveSlot,
+    setSelectedRightActiveSlot,
     setActiveTab,
     startFight,
     clearBattle,
     selectLeft,
     selectRight,
+    switchLeftSlot,
+    switchRightSlot,
+    faintLeftSlot,
+    faintRightSlot,
     openEnemyEditor,
     closeEnemyEditor,
     upsertEnemySlot,
