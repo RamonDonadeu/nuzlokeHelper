@@ -14,18 +14,20 @@ export function useMoveDetails(moveName: string | null) {
       return
     }
 
+    const controller = new AbortController()
     let cancelled = false
     setLoading(true)
     setError(null)
 
     void (async () => {
       try {
-        const details = await fetchMoveDetails(moveName)
+        const details = await fetchMoveDetails(moveName, { signal: controller.signal })
         if (!cancelled) {
           setMove(details)
           if (!details) setError('Move not found.')
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         if (!cancelled) {
           setMove(null)
           setError('Failed to load move data.')
@@ -37,6 +39,7 @@ export function useMoveDetails(moveName: string | null) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [moveName])
 

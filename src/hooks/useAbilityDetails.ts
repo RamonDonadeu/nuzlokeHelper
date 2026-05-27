@@ -23,18 +23,20 @@ export function useAbilityDetails(abilityName: string | null) {
       return
     }
 
+    const controller = new AbortController()
     let cancelled = false
     setLoading(true)
     setError(null)
 
     void (async () => {
       try {
-        const map = await ensureAbilityDescriptions([slug])
+        const map = await ensureAbilityDescriptions([slug], { signal: controller.signal })
         if (cancelled) return
         const details = map.get(slug) ?? null
         setAbility(details)
         if (!details) setError('Ability not found.')
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         if (!cancelled) {
           setAbility(null)
           setError('Failed to load ability data.')
@@ -46,6 +48,7 @@ export function useAbilityDetails(abilityName: string | null) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [abilityName])
 

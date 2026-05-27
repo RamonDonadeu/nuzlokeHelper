@@ -14,18 +14,20 @@ export function useItemDetails(itemName: string | null) {
       return
     }
 
+    const controller = new AbortController()
     let cancelled = false
     setLoading(true)
     setError(null)
 
     void (async () => {
       try {
-        const details = await fetchItemDetails(itemName)
+        const details = await fetchItemDetails(itemName, { signal: controller.signal })
         if (!cancelled) {
           setItem(details)
           if (!details) setError('Item not found.')
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         if (!cancelled) {
           setItem(null)
           setError('Failed to load item data.')
@@ -37,6 +39,7 @@ export function useItemDetails(itemName: string | null) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [itemName])
 

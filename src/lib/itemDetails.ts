@@ -52,8 +52,8 @@ function persistDetailsCache(): void {
   }
 }
 
-async function fetchItemDetailsBySlug(slug: string): Promise<ItemDetails | null> {
-  const response = await fetch(`${POKEAPI_BASE}/item/${slug}`)
+async function fetchItemDetailsBySlug(slug: string, signal?: AbortSignal): Promise<ItemDetails | null> {
+  const response = await fetch(`${POKEAPI_BASE}/item/${slug}`, { signal })
   if (!response.ok) return null
   const data = (await response.json()) as {
     name?: string
@@ -113,12 +113,15 @@ function slugForItemName(name: string): string {
   return resolveItemSlug(name) ?? toItemSlug(name)
 }
 
-export async function fetchItemDetails(itemName: string): Promise<ItemDetails | null> {
+export async function fetchItemDetails(
+  itemName: string,
+  options?: { signal?: AbortSignal },
+): Promise<ItemDetails | null> {
   loadDetailsStorageCache()
   const slug = slugForItemName(itemName)
   if (detailsMemoryCache.has(slug)) return detailsMemoryCache.get(slug) ?? null
 
-  const details = await fetchItemDetailsBySlug(slug)
+  const details = await fetchItemDetailsBySlug(slug, options?.signal)
   detailsMemoryCache.set(slug, details)
   persistDetailsCache()
   return details

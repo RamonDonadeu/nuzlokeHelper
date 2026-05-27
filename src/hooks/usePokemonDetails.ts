@@ -17,6 +17,7 @@ export function usePokemonDetails(name: string | null) {
     }
 
     const pokemonName = name
+    const controller = new AbortController()
     let cancelled = false
 
     async function load() {
@@ -24,14 +25,15 @@ export function usePokemonDetails(name: string | null) {
       setError(null)
 
       try {
-        const summary = await fetchPokemon(pokemonName)
-        const chain = await fetchEvolutionChain(summary.speciesUrl)
+        const summary = await fetchPokemon(pokemonName, { signal: controller.signal })
+        const chain = await fetchEvolutionChain(summary.speciesUrl, { signal: controller.signal })
 
         if (cancelled) return
         setPokemon(summary)
         setEvolutions(chain)
       } catch (err) {
         if (cancelled) return
+        if (err instanceof DOMException && err.name === 'AbortError') return
         setPokemon(null)
         setEvolutions([])
         setError(err instanceof Error ? err.message : 'Failed to load Pokémon')
@@ -44,6 +46,7 @@ export function usePokemonDetails(name: string | null) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [name])
 

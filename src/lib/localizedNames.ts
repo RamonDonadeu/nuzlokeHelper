@@ -5,6 +5,7 @@ const POKEAPI_BASE = 'https://pokeapi.co/api/v2'
 const CACHE_VERSION = 2
 const STORAGE_KEY = 'nuzlokeHelper:localizedNames:v2'
 const BATCH_SIZE = 25
+const LIST_LIMIT = 5000
 
 export interface LocalizedEntry {
   slug: string
@@ -135,8 +136,12 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 interface PokeApiListPage {
-  results: Array<{ url: string }>
+  results: Array<{ url: string; name: string }>
   next: string | null
+}
+
+interface PokeApiResourceList {
+  results: Array<{ name: string }>
 }
 
 async function fetchAllResourceUrls(path: string): Promise<string[]> {
@@ -152,10 +157,20 @@ async function fetchAllResourceUrls(path: string): Promise<string[]> {
   return urls
 }
 
+async function fetchAllResourceNames(path: string): Promise<string[]> {
+  const page = await fetchJson<PokeApiResourceList>(`${POKEAPI_BASE}/${path}?limit=${LIST_LIMIT}`)
+  return page.results.map((entry) => entry.name)
+}
+
 function localizedFromResource(data: PokeApiNamedResource): LocalizedEntry {
   const en = data.names.find((entry) => entry.language.name === 'en')?.name ?? formatPokemonName(data.name)
   const es = data.names.find((entry) => entry.language.name === 'es')?.name ?? en
   return { slug: data.name, en, es }
+}
+
+function localizedFromSlug(slug: string): LocalizedEntry {
+  const display = formatPokemonName(slug)
+  return { slug, en: display, es: display }
 }
 
 async function fetchLocalizedEntries(urls: string[]): Promise<LocalizedEntry[]> {
@@ -234,8 +249,8 @@ export async function ensureMoveIndex(): Promise<void> {
       return
     }
 
-    const urls = await fetchAllResourceUrls('move')
-    const entries = await fetchLocalizedEntries(urls)
+    const names = await fetchAllResourceNames('move')
+    const entries = names.map(localizedFromSlug)
     moveIndex = buildIndex(entries)
 
     const existing = readCache()
@@ -263,8 +278,8 @@ export async function ensureAbilityIndex(): Promise<void> {
       return
     }
 
-    const urls = await fetchAllResourceUrls('ability')
-    const entries = await fetchLocalizedEntries(urls)
+    const names = await fetchAllResourceNames('ability')
+    const entries = names.map(localizedFromSlug)
     abilityIndex = buildIndex(entries)
 
     const existing = readCache()
@@ -337,8 +352,8 @@ export async function ensureItemIndex(): Promise<void> {
       return
     }
 
-    const urls = await fetchAllResourceUrls('item')
-    const entries = await fetchLocalizedEntries(urls)
+    const names = await fetchAllResourceNames('item')
+    const entries = names.map(localizedFromSlug)
     itemIndex = buildIndex(entries)
 
     const existing = readCache()

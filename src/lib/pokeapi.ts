@@ -100,8 +100,8 @@ export function toTeamMember(summary: PokemonSummary, nickname?: string): TeamMe
   }
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url)
+async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(url, { signal })
   if (!response.ok) {
     throw new Error(`PokeAPI request failed (${response.status})`)
   }
@@ -110,8 +110,9 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 async function fetchPokemonResource(
   identifier: string | number,
+  options?: { signal?: AbortSignal },
 ): Promise<{ data: PokeApiPokemon; alternateFormNames?: string[] }> {
-  const response = await fetch(`${POKEAPI_BASE}/pokemon/${identifier}`)
+  const response = await fetch(`${POKEAPI_BASE}/pokemon/${identifier}`, { signal: options?.signal })
   if (response.ok) {
     return { data: (await response.json()) as PokeApiPokemon }
   }
@@ -123,13 +124,14 @@ async function fetchPokemonResource(
   const speciesSlug = String(identifier)
   const species = await fetchJson<PokeApiSpeciesVarieties>(
     `${POKEAPI_BASE}/pokemon-species/${speciesSlug}`,
+    options?.signal,
   )
   const defaultVariety = species.varieties.find((variety) => variety.is_default) ?? species.varieties[0]
   if (!defaultVariety) {
     throw new Error(`No Pokémon variety found for species "${speciesSlug}"`)
   }
 
-  const data = await fetchJson<PokeApiPokemon>(defaultVariety.pokemon.url)
+  const data = await fetchJson<PokeApiPokemon>(defaultVariety.pokemon.url, options?.signal)
   const alternateFormNames =
     species.varieties.length > 1
       ? species.varieties.map((variety) => variety.pokemon.name).filter((name) => name !== data.name)
@@ -138,8 +140,11 @@ async function fetchPokemonResource(
   return { data, alternateFormNames }
 }
 
-export async function fetchPokemon(identifier: string | number): Promise<PokemonSummary> {
-  const { data, alternateFormNames } = await fetchPokemonResource(identifier)
+export async function fetchPokemon(
+  identifier: string | number,
+  options?: { signal?: AbortSignal },
+): Promise<PokemonSummary> {
+  const { data, alternateFormNames } = await fetchPokemonResource(identifier, options)
   return { ...toSummary(data), alternateFormNames }
 }
 
@@ -225,13 +230,16 @@ function flattenEvolutionChain(link: PokeApiEvolutionLink): string[] {
   return names
 }
 
-export async function fetchEvolutionChain(speciesUrl: string): Promise<EvolutionStage[]> {
-  const species = await fetchJson<PokeApiSpecies>(speciesUrl)
-  const chain = await fetchJson<PokeApiEvolutionChain>(species.evolution_chain.url)
+export async function fetchEvolutionChain(
+  speciesUrl: string,
+  options?: { signal?: AbortSignal },
+): Promise<EvolutionStage[]> {
+  const species = await fetchJson<PokeApiSpecies>(speciesUrl, options?.signal)
+  const chain = await fetchJson<PokeApiEvolutionChain>(species.evolution_chain.url, options?.signal)
   const names = flattenEvolutionChain(chain.chain)
 
   const uniqueNames = [...new Set(names)]
-  const stages = await Promise.all(uniqueNames.map((name) => fetchPokemon(name)))
+  const stages = await Promise.all(uniqueNames.map((name) => fetchPokemon(name, options)))
 
   return stages.map((stage) => ({
     id: stage.id,

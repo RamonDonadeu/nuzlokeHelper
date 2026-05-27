@@ -428,9 +428,9 @@ function persistEntry(entry: CachedAbilityDetails): void {
 
 
 
-async function fetchJson<T>(url: string): Promise<T> {
+async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
 
-  const response = await fetch(url)
+  const response = await fetch(url, { signal })
 
   if (!response.ok) {
 
@@ -444,7 +444,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 
 
-async function fetchAbilityDetails(slug: string): Promise<CachedAbilityDetails> {
+async function fetchAbilityDetails(slug: string, signal?: AbortSignal): Promise<CachedAbilityDetails> {
 
   loadStorageCache()
 
@@ -466,7 +466,7 @@ async function fetchAbilityDetails(slug: string): Promise<CachedAbilityDetails> 
 
     try {
 
-      const data = await fetchJson<PokeApiAbility>(`${POKEAPI_BASE}/ability/${slug}`)
+      const data = await fetchJson<PokeApiAbility>(`${POKEAPI_BASE}/ability/${slug}`, signal)
 
       const entry = parseAbilityDetails(data)
 
@@ -523,6 +523,7 @@ export function getCachedAbilityDescription(
 export async function ensureAbilityDescriptions(
 
   slugs: string[],
+  options?: { signal?: AbortSignal },
 
 ): Promise<Map<string, CachedAbilityDetails>> {
 
@@ -554,7 +555,7 @@ export async function ensureAbilityDescriptions(
 
     const batch = missing.slice(offset, offset + BATCH_SIZE)
 
-    const entries = await Promise.all(batch.map((slug) => fetchAbilityDetails(slug)))
+    const entries = await Promise.all(batch.map((slug) => fetchAbilityDetails(slug, options?.signal)))
 
     for (const entry of entries) {
 

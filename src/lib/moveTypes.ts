@@ -113,8 +113,8 @@ function persistDetailsCache(): void {
   }
 }
 
-async function fetchMoveDetailsBySlug(slug: string): Promise<MoveDetails | null> {
-  const response = await fetch(`${POKEAPI_BASE}/move/${slug}`)
+async function fetchMoveDetailsBySlug(slug: string, signal?: AbortSignal): Promise<MoveDetails | null> {
+  const response = await fetch(`${POKEAPI_BASE}/move/${slug}`, { signal })
   if (!response.ok) return null
   const data = (await response.json()) as {
     name?: string
@@ -199,13 +199,16 @@ export async function resolveMoveTypes(moveNames: string[]): Promise<Map<string,
 }
 
 /** Resolve a move name to full details (cached in memory + localStorage). */
-export async function fetchMoveDetails(moveName: string): Promise<MoveDetails | null> {
+export async function fetchMoveDetails(
+  moveName: string,
+  options?: { signal?: AbortSignal },
+): Promise<MoveDetails | null> {
   loadStorageCache()
   loadDetailsStorageCache()
   const slug = slugForMoveName(moveName)
   if (detailsMemoryCache.has(slug)) return detailsMemoryCache.get(slug) ?? null
 
-  const details = await fetchMoveDetailsBySlug(slug)
+  const details = await fetchMoveDetailsBySlug(slug, options?.signal)
   detailsMemoryCache.set(slug, details)
   memoryCache.set(slug, details?.type ?? null)
   persistDetailsCache()
