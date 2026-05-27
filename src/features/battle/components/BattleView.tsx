@@ -2,14 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { PokemonType } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
+import { MAX_TEAM_SIZE } from '@/types/profile'
 import { useBattleState } from '@/features/battle/hooks/useBattleState'
 import { useI18n } from '@/i18n'
 import { BattleTeamColumn } from '@/features/battle/components/BattleTeamColumn'
 import { BattlegroundPanel } from '@/features/battle/components/BattlegroundPanel'
 import { BattlePokemonEditorModal } from '@/features/battle/components/BattlePokemonEditorModal'
+import { BattlePcSwitchDialog } from '@/features/battle/components/BattlePcSwitchDialog'
 import { EnemyTeamImportDialog } from '@/features/battle/components/EnemyTeamImportDialog'
 import { BattlePrepPanel } from '@/features/battle/components/BattlePrepPanel'
+import { sortPcByTotalStats } from '@/features/battle/lib/sortPcByTotalStats'
 import {
+  buildPlayerThreatCountMap,
   buildThreatCountMap,
   resolveDamagingMoveTypes,
   uniqueNonEmptyMoves,
@@ -22,18 +26,30 @@ interface BattleViewProps {
   levelCap: number
   onEnemyTeamChange: (team: PokemonSlot[]) => void
   onAllySlotPatch: (slotId: string, patch: Partial<PokemonSlot>) => void
+  onMovePcToTeam: (boxSlotId: string) => void
+  onSwapPcWithTeamSlot: (boxSlotId: string, teamIndex: number) => void
 }
 
 type BattleLocationState = {
   startFight?: boolean
 }
 
-export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, onAllySlotPatch }: BattleViewProps) {
+export function BattleView({
+  team,
+  pc,
+  enemyTeam,
+  levelCap,
+  onEnemyTeamChange,
+  onAllySlotPatch,
+  onMovePcToTeam,
+  onSwapPcWithTeamSlot,
+}: BattleViewProps) {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
   const [importOpen, setImportOpen] = useState(false)
   const [allyEditorIndex, setAllyEditorIndex] = useState<number | null>(null)
+  const [pcSwitchSlotId, setPcSwitchSlotId] = useState<string | null>(null)
   const battle = useBattleState({
     team,
     enemyTeam,
@@ -48,12 +64,16 @@ export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, o
     navigate(location.pathname, { replace: true, state: null })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount when navigated from search
 
-  const leftSlots = Array.from({ length: 6 }, (_, index) => team[index] ?? null)
+  const leftSlots = Array.from({ length: MAX_TEAM_SIZE }, (_, index) => team[index] ?? null)
+  const sortedPc = useMemo(() => sortPcByTotalStats(pc), [pc])
+  const pcSwitchIncoming = pcSwitchSlotId ? (pc.find((m) => m.slotId === pcSwitchSlotId) ?? null) : null
   const enemies = useMemo(
     () => battle.enemySlots.filter((slot): slot is PokemonSlot => slot !== null),
     [battle.enemySlots],
   )
+  const playerRoster = useMemo(() => [...team, ...pc], [pc, team])
   const [enemyDamagingMoveTypes, setEnemyDamagingMoveTypes] = useState<Map<string, PokemonType>>(new Map())
+  const [teamDamagingMoveTypes, setTeamDamagingMoveTypes] = useState<Map<string, PokemonType>>(new Map())
 
   useEffect(() => {
     let cancelled = false
@@ -67,10 +87,27 @@ export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, o
     }
   }, [enemies])
 
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const moveTypes = await resolveDamagingMoveTypes(uniqueNonEmptyMoves(playerRoster))
+      if (!cancelled) setTeamDamagingMoveTypes(moveTypes)
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [playerRoster])
+
   const threatCountsBySlotId = useMemo(() => {
     if (enemies.length === 0) return new Map<string, number>()
-    return buildThreatCountMap([...team, ...pc], enemies, enemyDamagingMoveTypes)
-  }, [enemies, enemyDamagingMoveTypes, pc, team])
+    return buildThreatCountMap(playerRoster, enemies, enemyDamagingMoveTypes)
+  }, [enemies, enemyDamagingMoveTypes, playerRoster])
+
+  const enemyThreatCountsBySlotId = useMemo(() => {
+    if (enemies.length === 0 || playerRoster.length === 0) return new Map<string, number>()
+    return buildPlayerThreatCountMap(enemies, playerRoster, teamDamagingMoveTypes)
+  }, [enemies, playerRoster, teamDamagingMoveTypes])
 
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]
   const editingAllySlot = allyEditorIndex === null ? null : team[allyEditorIndex] ?? null
@@ -85,11 +122,19 @@ export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, o
         faintedIndices={battle.faintedLeftIndices}
         selectedActiveSlot={battle.selectedLeftActiveSlot}
         threatCountsBySlotId={threatCountsBySlotId}
-        enemyCount={enemies.length}
-        pcMembers={pc}
+        threatTotalCount={enemies.length}
+        threatBadgeVariant="defensive"
+        pcMembers={sortedPc}
         pcClickDisabled={battle.started}
-        pcClickDisabledTitle={t('battle.pcNotOnTeam')}
-        onPcMemberClick={(slotId) => navigate(`/pc/${slotId}`)}
+        pcClickDisabledTitle={t('battle.pcDisabledDuringFight')}
+        onPcMemberClick={(slotId) => {
+          if (battle.started) return
+          if (team.length >= MAX_TEAM_SIZE) {
+            setPcSwitchSlotId(slotId)
+            return
+          }
+          onMovePcToTeam(slotId)
+        }}
         onFilledSlotClick={(index) => {
           if (battle.started) {
             battle.selectLeft(index)
@@ -128,6 +173,7 @@ export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, o
             team={team}
             pc={pc}
             enemySlots={battle.enemySlots}
+            levelCap={levelCap}
             started={battle.started}
           />
         ) : null}
@@ -139,6 +185,9 @@ export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, o
         activeIndices={battle.activeRightIndices}
         faintedIndices={battle.faintedRightIndices}
         selectedActiveSlot={battle.selectedRightActiveSlot}
+        threatCountsBySlotId={enemyThreatCountsBySlotId}
+        threatTotalCount={playerRoster.length}
+        threatBadgeVariant="offensive"
         onFilledSlotClick={(index) => {
           if (battle.started) {
             battle.selectRight(index)
@@ -203,6 +252,17 @@ export function BattleView({ team, pc, enemyTeam, levelCap, onEnemyTeamChange, o
         hasExistingEnemyTeam={battle.enemySlots.some((slot) => slot !== null)}
         onClose={() => setImportOpen(false)}
         onImport={battle.importEnemyTeam}
+      />
+      <BattlePcSwitchDialog
+        open={pcSwitchSlotId !== null}
+        incoming={pcSwitchIncoming}
+        teamSlots={leftSlots}
+        onClose={() => setPcSwitchSlotId(null)}
+        onPickSlot={(teamIndex) => {
+          if (!pcSwitchSlotId) return
+          onSwapPcWithTeamSlot(pcSwitchSlotId, teamIndex)
+          setPcSwitchSlotId(null)
+        }}
       />
     </div>
   )

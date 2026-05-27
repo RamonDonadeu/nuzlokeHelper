@@ -78,6 +78,7 @@ function AppContent({
   removeFromBox,
   removeFromDeathBox,
   moveToTeam,
+  replaceTeamSlotWithBox,
   revive,
   updateSlot,
   levelUpSlot,
@@ -756,6 +757,8 @@ function AppContent({
                   levelCap={activeProfile.settings.levelCap}
                   onEnemyTeamChange={setOpponentTeam}
                   onAllySlotPatch={(slotId, patch) => updateSlot(slotId, patch, 'team')}
+                  onMovePcToTeam={(slotId) => moveToTeam(slotId, 'box')}
+                  onSwapPcWithTeamSlot={replaceTeamSlotWithBox}
                 />
               }
             />

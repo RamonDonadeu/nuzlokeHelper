@@ -316,6 +316,30 @@ export function useProfiles() {
     moveSlot(slotId, from, 'team')
   }, [moveSlot])
 
+  const replaceTeamSlotWithBox = useCallback((boxSlotId: string, teamIndex: number) => {
+    setState((s) =>
+      updateActiveProfile(s, (p) => {
+        const incoming = p.box.find((m) => m.slotId === boxSlotId)
+        if (!incoming) return p
+
+        const newTeam = [...p.team]
+        const newBox = p.box.filter((m) => m.slotId !== boxSlotId)
+
+        if (teamIndex < newTeam.length) {
+          const outgoing = newTeam[teamIndex]
+          newTeam[teamIndex] = incoming
+          if (outgoing) newBox.push(outgoing)
+          return { ...p, team: newTeam, box: newBox }
+        }
+
+        if (newTeam.length >= MAX_TEAM_SIZE) return p
+
+        newTeam.push(incoming)
+        return { ...p, team: newTeam, box: newBox }
+      }),
+    )
+  }, [])
+
   const revive = useCallback((slotId: string) => {
     if (!activeProfile.settings.allowRevival) return
     moveSlot(slotId, 'deathBox', 'box')
@@ -564,6 +588,7 @@ export function useProfiles() {
     removeFromBox,
     removeFromDeathBox,
     moveToTeam,
+    replaceTeamSlotWithBox,
     revive,
     updateSlot,
     levelUpSlot,
