@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { InfoTooltip } from '@/shared/components/InfoTooltip'
 import { useI18n } from '@/i18n'
+import { resolveTeamMoveTypes } from '@/lib/moveTypes'
 import { resolveTeamSpeciesTypes } from '@/lib/pokeapi'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'
 import {
@@ -26,28 +27,44 @@ function multiplierCellLabel(multiplier: number | null): string {
 export function TypeAnalysis({ team }: TypeAnalysisProps) {
   const { t } = useI18n()
   const [memberSpeciesTypes, setMemberSpeciesTypes] = useState<Map<string, PokemonType[]>>(new Map())
+  const [teamMoveTypes, setTeamMoveTypes] = useState<PokemonType[]>([])
   const [loading, setLoading] = useState(false)
+
+  const moveNamesKey = useMemo(
+    () =>
+      team
+        .flatMap((member) => member.moves ?? [])
+        .map((move) => move.trim())
+        .filter(Boolean)
+        .sort()
+        .join('\0'),
+    [team],
+  )
 
   useEffect(() => {
     if (team.length === 0) {
       setMemberSpeciesTypes(new Map())
+      setTeamMoveTypes([])
       return
     }
 
     let cancelled = false
     setLoading(true)
 
-    void resolveTeamSpeciesTypes(team).then((resolved) => {
-      if (!cancelled) {
-        setMemberSpeciesTypes(resolved)
-        setLoading(false)
-      }
-    })
+    void Promise.all([resolveTeamSpeciesTypes(team), resolveTeamMoveTypes(team)]).then(
+      ([resolved, moveTypes]) => {
+        if (!cancelled) {
+          setMemberSpeciesTypes(resolved)
+          setTeamMoveTypes(moveTypes)
+          setLoading(false)
+        }
+      },
+    )
 
     return () => {
       cancelled = true
     }
-  }, [team])
+  }, [team, moveNamesKey])
 
   const defenseMembers = useMemo(
     () =>
@@ -91,7 +108,12 @@ export function TypeAnalysis({ team }: TypeAnalysisProps) {
         <p className="muted matrix-empty-hint">{t('types.defTypesMissingHint')}</p>
       )}
 
-      <DefenseCoverageView t={t} members={defenseMembers} coverage={defensiveCoverage} />
+      <DefenseCoverageView
+        t={t}
+        members={defenseMembers}
+        coverage={defensiveCoverage}
+        teamMoveTypes={teamMoveTypes}
+      />
     </section>
   )
 }
@@ -100,10 +122,12 @@ function DefenseCoverageView({
   t,
   members,
   coverage,
+  teamMoveTypes,
 }: {
   t: (key: string, vars?: Record<string, string | number>) => string
   members: Array<{ slotId: string; name: string; defenderTypes: PokemonType[]; typesMissing?: boolean }>
   coverage: ReturnType<typeof getDefensiveCoverage>
+  teamMoveTypes: PokemonType[]
 }) {
   const perMemberDoubleWeak = useMemo(
     () => getPerMemberDoubleWeaknesses(coverage.perMemberWeaknesses),
@@ -115,8 +139,8 @@ function DefenseCoverageView({
     [coverage.memberMatrix],
   )
   const uncoveredAttackTypes = useMemo(
-    () => getUncoveredAttackTypes(coverage.memberMatrix),
-    [coverage.memberMatrix],
+    () => getUncoveredAttackTypes(teamMoveTypes),
+    [teamMoveTypes],
   )
 
   const hasDoubleWeakness = perMemberDoubleWeak.some((entries) => entries.length > 0)
@@ -187,7 +211,13 @@ function DefenseCoverageView({
         </section>
 
         <section className="defense-summary-section">
-          <h4>{t('types.defUncoveredTitle')}</h4>
+          <div className="matrix-header">
+            <h4>{t('types.defUncoveredTitle')}</h4>
+            <InfoTooltip
+              label={t('types.defUncoveredHintLabel')}
+              text={t('types.defUncoveredHint')}
+            />
+          </div>
           {!hasUncoveredAttackTypes ? (
             <p className="empty-note">{t('types.defUncoveredEmpty')}</p>
           ) : (

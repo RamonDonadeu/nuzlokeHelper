@@ -1,5 +1,6 @@
 import type { Locale } from '@/i18n'
 import type { PokemonType } from '@/types/pokemon'
+import type { PokemonSlot } from '@/types/profile'
 import { resolveMoveSlug } from '@/lib/localizedNames'
 import { compareVersionGroups } from '@/lib/versionGroups'
 
@@ -161,6 +162,29 @@ async function fetchMoveDetailsBySlug(slug: string, signal?: AbortSignal): Promi
 
 function slugForMoveName(name: string): string {
   return resolveMoveSlug(name) ?? toMoveSlug(name)
+}
+
+/** Resolve configured team moves to their attacking types (order preserved, duplicates kept). */
+export async function resolveTeamMoveTypes(team: PokemonSlot[]): Promise<PokemonType[]> {
+  const moveNames = team
+    .flatMap((member) => member.moves ?? [])
+    .map((move) => move.trim())
+    .filter(Boolean)
+  if (moveNames.length === 0) return []
+
+  const typeByName = await resolveMoveTypes(moveNames)
+  const types: PokemonType[] = []
+
+  for (const member of team) {
+    for (const move of member.moves ?? []) {
+      const trimmed = move.trim()
+      if (!trimmed) continue
+      const moveType = typeByName.get(trimmed)
+      if (moveType) types.push(moveType)
+    }
+  }
+
+  return types
 }
 
 /** Resolve move display names to types (cached in memory + localStorage). */

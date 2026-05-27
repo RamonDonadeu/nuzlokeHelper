@@ -274,18 +274,27 @@ export function getPerMemberImmunities(
   return result
 }
 
-/** Attacking types with no known team resist (<=0.5×) or immunity (0×). */
-export function getUncoveredAttackTypes(
-  memberMatrix: DefensiveCoverage['memberMatrix'],
-): PokemonType[] {
-  return memberMatrix
-    .filter((row) => {
-      const knownMultipliers = row.memberMultipliers.filter(
-        (multiplier): multiplier is number => multiplier !== null,
-      )
-      return !knownMultipliers.some((multiplier) => multiplier <= 0.5)
-    })
-    .map((row) => row.attackType)
+/** Whether an attacking type can deal 2×+ vs at least one mono-type defender. */
+export function canAttackTypeSuperEffective(attackType: PokemonType): boolean {
+  return ALL_TYPES.some((defenderType) => {
+    const multiplier = getDefensiveMultiplier([defenderType], attackType)
+    return multiplier !== null && multiplier >= 2
+  })
+}
+
+/**
+ * Attacking types the team cannot cover offensively with configured moves.
+ * If no moves are set, every type is uncovered.
+ */
+export function getUncoveredAttackTypes(teamMoveTypes: readonly PokemonType[]): PokemonType[] {
+  if (teamMoveTypes.length === 0) return [...ALL_TYPES]
+
+  const presentAttackTypes = new Set(teamMoveTypes)
+
+  return ALL_TYPES.filter((attackType) => {
+    if (!presentAttackTypes.has(attackType)) return true
+    return !canAttackTypeSuperEffective(attackType)
+  })
 }
 
 export function formatMultiplier(value: number): string {
