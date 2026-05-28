@@ -375,6 +375,14 @@ ul {
   height: fit-content;
 }
 
+.team-page {
+  min-width: 0;
+}
+
+.team-page .team-panel {
+  width: 100%;
+}
+
 .team-panel .panel-header h2 {
   font-size: 1rem;
 }
@@ -1542,6 +1550,127 @@ ul {
   box-shadow: 0 1px 0 var(--border);
 }
 
+.stats-compare-table--mobile,
+.stat-comparison-table--mobile {
+  display: none;
+}
+
+.stats-compare-mobile thead th {
+  background: var(--bg-elevated);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.stats-compare-mobile .stats-compare-mobile-corner {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  vertical-align: bottom;
+  padding: 0.35rem;
+}
+
+.stats-compare-mobile .stats-compare-mobile-pokemon {
+  min-width: 3.5rem;
+  width: 3.5rem;
+  padding: 0.4rem 0.3rem;
+  vertical-align: bottom;
+  text-align: center;
+}
+
+.stats-compare-mobile .stats-compare-mobile-pokemon img {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.stats-compare-mobile .stats-compare-mobile-stat-label {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 3.25rem;
+  white-space: nowrap;
+  background: var(--bg-elevated);
+  box-shadow: 1px 0 0 var(--border);
+}
+
+.stats-compare-mobile tbody td {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.stats-compare-mobile thead .battle-stats-row-team,
+.stats-compare-mobile tbody td.battle-stats-row-team {
+  background: color-mix(in srgb, var(--positive, #4ade80) 14%, transparent);
+}
+
+.stats-compare-mobile thead .battle-stats-row-pc,
+.stats-compare-mobile tbody td.battle-stats-row-pc {
+  background: color-mix(in srgb, #60a5fa 14%, transparent);
+}
+
+.stats-compare-mobile thead .battle-stats-row-enemy,
+.stats-compare-mobile tbody td.battle-stats-row-enemy {
+  background: color-mix(in srgb, var(--negative, #f87171) 14%, transparent);
+}
+
+.stats-compare-mobile thead .candidate-row,
+.stats-compare-mobile tbody td.candidate-row {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.stats-compare-mobile thead .strongest-row,
+.stats-compare-mobile tbody td.strongest-row {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.stats-compare-mobile thead .threatened-row,
+.stats-compare-mobile tbody td.threatened-row {
+  background: color-mix(in srgb, #f97316 10%, transparent);
+}
+
+.stats-compare-mobile thead .pc-comparison-row,
+.stats-compare-mobile tbody td.pc-comparison-row {
+  background: color-mix(in srgb, var(--positive) 8%, transparent);
+}
+
+.stats-compare-mobile thead .pc-comparison-team-row,
+.stats-compare-mobile tbody td.pc-comparison-team-row {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.stats-compare-mobile .stats-compare-mobile-corner,
+.stats-compare-mobile thead .stats-compare-mobile-pokemon {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.stats-compare-mobile .stats-compare-mobile-corner {
+  left: 0;
+  z-index: 3;
+}
+
+.stats-compare-mobile .stats-compare-sort-btn--corner {
+  min-width: 1.75rem;
+  padding: 0.2rem;
+}
+
+@media (max-width: 900px) {
+  .stats-compare-table--desktop,
+  .stat-comparison-table--desktop,
+  .battle-prep-stats-table--desktop {
+    display: none;
+  }
+
+  .stats-compare-table--mobile,
+  .stat-comparison-table--mobile,
+  .battle-prep-stats-table--mobile {
+    display: block;
+  }
+}
+
 .battle-prep-panel h3,
 .battle-prep-card h4 {
   margin: 0;
@@ -1729,16 +1858,77 @@ ul {
   scroll-margin-top: 3.5rem;
 }
 
-.search-result-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
+.search-category-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
 }
 
-.search-result-filters .tab-btn {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
+.search-category-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 4.25rem;
+  padding: 0.5rem 0.35rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.search-category-tab:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-soft));
+}
+
+.search-category-tab.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg-soft));
+  color: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.search-category-tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.search-category-tab-label {
+  display: block;
+}
+
+.search-category-tab-count {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--text) 75%, var(--muted));
+}
+
+.search-category-tab.active .search-category-tab-count {
+  color: var(--accent);
+}
+
+@media (max-width: 520px) {
+  .search-category-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .search-category-tab {
+    min-height: 3.75rem;
+  }
 }
 
 .search-input {
@@ -2319,11 +2509,27 @@ button.evolution-card {
 
 .coverage-matrix .matrix-member-col,
 .coverage-matrix .matrix-team-col {
-  width: 2.5rem;
-  min-width: 2.5rem;
-  max-width: 4.5rem;
+  width: 3.5rem;
+  min-width: 3.5rem;
+  max-width: 5rem;
   padding: 0.35rem 0.2rem;
   vertical-align: bottom;
+}
+
+.coverage-matrix .matrix-member-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.coverage-matrix .matrix-member-sprite {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .coverage-matrix .matrix-team-col {
@@ -2337,7 +2543,9 @@ button.evolution-card {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.68rem;
-  max-width: 4.25rem;
+  max-width: 100%;
+  width: 100%;
+  text-align: center;
 }
 
 .coverage-matrix .matrix-type-label {
@@ -2583,7 +2791,20 @@ button.evolution-card {
   }
 
   .card {
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  /* overflow-x: auto alone forces overflow-y to auto and traps page scroll on touch */
+  .table-wrap {
+    overflow-x: auto;
+    overflow-y: clip;
+    overscroll-behavior-x: contain;
+  }
+
+  .stats-compare-mobile thead .stats-compare-mobile-pokemon,
+  .stats-compare-mobile .stats-compare-mobile-corner {
+    position: static;
+    box-shadow: none;
   }
 
   .section-header {
@@ -2630,8 +2851,13 @@ button.evolution-card {
 
   .coverage-matrix .matrix-member-col,
   .coverage-matrix .matrix-team-col {
-    min-width: 2.25rem;
-    max-width: 3.25rem;
+    min-width: 3.25rem;
+    max-width: 4rem;
+  }
+
+  .coverage-matrix .matrix-member-sprite {
+    width: 2.75rem;
+    height: 2.75rem;
   }
 
   .table-pokemon {
@@ -2679,8 +2905,8 @@ button.evolution-card {
   }
 
   .mobile-bottom-dock {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: stretch;
     position: fixed;
     bottom: 0;
@@ -2693,61 +2919,24 @@ button.evolution-card {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  .mobile-bottom-nav-item {
-    display: flex;
-    flex: 1;
+  .mobile-bottom-dock > .icon-nav-item,
+  .mobile-bottom-dock .icon-nav-item {
     flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     gap: 0.15rem;
+    width: auto;
     min-width: 0;
     padding: 0.35rem 0.25rem;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--muted);
     text-align: center;
-  }
-
-  .mobile-bottom-nav-item:hover {
-    background: var(--bg-soft);
-    color: var(--text);
-  }
-
-  .mobile-team-nav-item.active {
-    background: color-mix(in srgb, var(--primary) 16%, var(--bg-soft));
-    border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
-    color: var(--text);
+    white-space: nowrap;
   }
 
   .mobile-bottom-dock .icon-nav-rail {
-    position: static;
-    top: auto;
-    flex: 2;
-    flex-direction: row;
-    justify-content: space-around;
-    align-self: stretch;
-    min-width: 0;
-    width: auto;
-    height: auto;
-    padding: 0.35rem 0.5rem 0.35rem 0;
-    border-right: none;
-    border-top: none;
-    background: transparent;
-    backdrop-filter: none;
-    z-index: auto;
+    display: contents;
   }
 
-  .mobile-bottom-dock .icon-nav-rail:hover {
-    width: 100%;
-  }
-
-  .mobile-bottom-dock .icon-nav-item {
-    flex: 1;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0.15rem;
-    padding: 0.35rem 0.25rem;
+  .mobile-bottom-dock .icon-nav-rail .icon-nav-item {
     min-width: 0;
   }
 
@@ -2800,7 +2989,7 @@ button.evolution-card {
 }
 
 @media (min-width: 901px) {
-  .mobile-bottom-nav-item,
+  .mobile-bottom-dock,
   .sidebar-drawer,
   .drawer-backdrop {
     display: none;

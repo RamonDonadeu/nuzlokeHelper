@@ -75,6 +75,7 @@ export function TypeAnalysis({ team }: TypeAnalysisProps) {
         return {
           slotId: member.slotId,
           name: member.nickname ?? member.displayName,
+          sprite: member.sprite,
           defenderTypes,
           typesMissing: defenderTypes.length === 0,
         }
@@ -125,7 +126,13 @@ function DefenseCoverageView({
   teamMoveTypes,
 }: {
   t: (key: string, vars?: Record<string, string | number>) => string
-  members: Array<{ slotId: string; name: string; defenderTypes: PokemonType[]; typesMissing?: boolean }>
+  members: Array<{
+    slotId: string
+    name: string
+    sprite: string
+    defenderTypes: PokemonType[]
+    typesMissing?: boolean
+  }>
   coverage: ReturnType<typeof getDefensiveCoverage>
   teamMoveTypes: PokemonType[]
 }) {
@@ -268,7 +275,7 @@ function DefenseCoverageView({
   )
 }
 
-function CoverageMatrix<M extends { slotId: string; name: string }>({
+function CoverageMatrix<M extends { slotId: string; name: string; sprite: string }>({
   title,
   hintLabel,
   hintText,
@@ -304,9 +311,17 @@ function CoverageMatrix<M extends { slotId: string; name: string }>({
               </th>
               {members.map((member) => (
                 <th key={member.slotId} className="matrix-member-col" scope="col">
-                  <span className="matrix-member-name" title={member.name}>
-                    {member.name}
-                  </span>
+                  <div className="matrix-member-head">
+                    <img
+                      src={member.sprite}
+                      alt=""
+                      className="matrix-member-sprite"
+                      loading="lazy"
+                    />
+                    <span className="matrix-member-name" title={member.name}>
+                      {member.name}
+                    </span>
+                  </div>
                 </th>
               ))}
             </tr>

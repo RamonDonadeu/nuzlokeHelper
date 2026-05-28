@@ -9,10 +9,14 @@ import {
   memberHasCustomBuild,
   natureStatModifiers,
 } from '@/lib/stats'
-import { STAT_KEYS, STAT_LABELS, totalStats } from '@/types/pokemon'
+import { totalStats } from '@/types/pokemon'
 import { useI18n } from '@/i18n'
 import { CustomStatMarker } from '@/features/team/components/CustomStatMarker'
 import { InfoTooltip } from '@/shared/components/InfoTooltip'
+import {
+  StatsComparisonTable,
+  type StatsCompareRow,
+} from '@/shared/components/StatsComparisonTable'
 
 interface StatComparisonProps {
   team: PokemonSlot[]
@@ -107,6 +111,54 @@ function natureCellClass(member: PokemonSlot, key: keyof PokemonStats): string |
   return undefined
 }
 
+function rowClassForComparisonRow(
+  row: ComparisonRow,
+  strongest: StrongestMember | null,
+  threatenedSlotIds: ReadonlySet<string> | undefined,
+): string {
+  if (row.kind === 'candidate') return 'candidate-row'
+  const isStrongest = strongest !== null && row.member.slotId === strongest.member.slotId
+  const isThreatened = threatenedSlotIds?.has(row.member.slotId) ?? false
+  return [isStrongest ? 'strongest-row' : '', isThreatened ? 'threatened-row' : '']
+    .filter(Boolean)
+    .join(' ')
+}
+
+function toTableRows(
+  comparisonRows: ComparisonRow[],
+  candidate: PokemonSummary | undefined,
+  strongest: StrongestMember | null,
+  threatenedSlotIds: ReadonlySet<string> | undefined,
+): StatsCompareRow[] {
+  const tableRows: StatsCompareRow[] = []
+  for (const row of comparisonRows) {
+    if (row.kind === 'candidate') {
+      if (!candidate) continue
+      tableRows.push({
+        id: 'candidate',
+        kind: 'candidate',
+        sprite: candidate.sprite,
+        ariaLabel: candidate.displayName,
+        rowClass: rowClassForComparisonRow(row, strongest, threatenedSlotIds),
+        stats: row.stats,
+        total: row.total,
+      })
+      continue
+    }
+    tableRows.push({
+      id: row.member.slotId,
+      kind: 'member',
+      member: row.member,
+      sprite: row.member.sprite,
+      ariaLabel: memberLabel(row.member),
+      rowClass: rowClassForComparisonRow(row, strongest, threatenedSlotIds),
+      stats: row.stats,
+      total: row.total,
+    })
+  }
+  return tableRows
+}
+
 export function StatComparison({
   candidate,
   team,
@@ -133,6 +185,7 @@ export function StatComparison({
 
   const totalDiffVsStrongest = strongest ? candidateTotal - strongest.total : 0
   const scaledStatsHint = t('compare.scaledStatsHint', { level: levelCap })
+  const rows = toTableRows(comparisonRows, candidate, strongest, threatenedSlotIds)
 
   return (
     <section className="card">
@@ -165,93 +218,65 @@ export function StatComparison({
       </div>
 
       {comparisonTeam.length > 0 && (
-        <>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Pokémon</th>
-                  {STAT_KEYS.map((key) => (
-                    <th key={key}>{STAT_LABELS[key]}</th>
-                  ))}
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonRows.map((row) => {
-                  if (row.kind === 'candidate') {
-                    if (!candidate) return null
-                    return (
-                      <tr key="candidate" className="candidate-row">
-                        <td>
-                          <div className="table-pokemon">
-                            <img src={candidate.sprite} alt="" />
-                            <span>
-                              {candidate.displayName}
-                              <span className="tag candidate-tag">{t('compare.searched')}</span>
-                            </span>
-                          </div>
-                        </td>
-                        {STAT_KEYS.map((key) => {
-                          const diff = strongest ? row.stats[key] - strongest.stats[key] : 0
-                          return (
-                            <td key={key} className={strongest ? diffClass(diff) : undefined}>
-                              {row.stats[key]}
-                            </td>
-                          )
-                        })}
-                        <td className={strongest ? diffClass(totalDiffVsStrongest) : undefined}>
-                          {row.total}
-                        </td>
-                      </tr>
-                    )
-                  }
-
-                  const { member, stats, total: memberTotal } = row
-                  const isStrongest = strongest !== null && member.slotId === strongest.member.slotId
-                  const isThreatened = threatenedSlotIds?.has(member.slotId) ?? false
-                  const hasCustomBuild = memberHasCustomBuild(member)
-                  const rowClass = [
-                    isStrongest ? 'strongest-row' : '',
-                    isThreatened ? 'threatened-row' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')
-                  return (
-                    <tr key={member.slotId} className={rowClass || undefined}>
-                      <td>
-                        <div className="table-pokemon">
-                          <img src={member.sprite} alt="" />
-                          <span>
-                            {memberLabel(member)}
-                            {isThreatened && (
-                              <span className="tag tag-warning">{t('matchup.threatWarning')}</span>
-                            )}
-                            {hasCustomBuild && (
-                              <span className="tag custom-build-tag">{t('compare.customBuild')}</span>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                      {STAT_KEYS.map((key) => {
-                          const natureClass = natureCellClass(member, key)
-                          return (
-                          <td key={key} className={natureClass}>
-                            {stats[key]}
-                            {hasCustomStat(member, key) && (
-                              <CustomStatMarker label={t('compare.customStatLegend')} />
-                            )}
-                          </td>
-                          )
-                        })}
-                      <td>{memberTotal}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
+        <StatsComparisonTable
+          rows={rows}
+          labels={{ pokemon: 'Pokémon', total: 'Total' }}
+          renderPokemonCell={(row) => {
+            if (row.kind === 'candidate') {
+              return (
+                <span>
+                  {row.ariaLabel}
+                  <span className="tag candidate-tag">{t('compare.searched')}</span>
+                </span>
+              )
+            }
+            const member = row.member
+            if (!member) return <span>{row.ariaLabel}</span>
+            const isThreatened = threatenedSlotIds?.has(member.slotId) ?? false
+            const hasCustomBuild = memberHasCustomBuild(member)
+            return (
+              <span>
+                {row.ariaLabel}
+                {isThreatened && (
+                  <span className="tag tag-warning">{t('matchup.threatWarning')}</span>
+                )}
+                {hasCustomBuild && (
+                  <span className="tag custom-build-tag">{t('compare.customBuild')}</span>
+                )}
+              </span>
+            )
+          }}
+          renderStatCell={(row, statKey) => {
+            if (row.kind === 'candidate') {
+              return row.stats[statKey]
+            }
+            const member = row.member
+            if (!member) return row.stats[statKey]
+            return (
+              <>
+                {row.stats[statKey]}
+                {hasCustomStat(member, statKey) && (
+                  <CustomStatMarker label={t('compare.customStatLegend')} />
+                )}
+              </>
+            )
+          }}
+          statCellClassName={(row, statKey) => {
+            if (row.kind === 'candidate') {
+              const diff = strongest ? row.stats[statKey] - strongest.stats[statKey] : 0
+              return strongest ? diffClass(diff) : undefined
+            }
+            const member = row.member
+            return member ? natureCellClass(member, statKey) : undefined
+          }}
+          renderTotalCell={(row) => row.total}
+          totalCellClassName={(row) => {
+            if (row.kind === 'candidate' && strongest) {
+              return diffClass(totalDiffVsStrongest)
+            }
+            return undefined
+          }}
+        />
       )}
     </section>
   )

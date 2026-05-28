@@ -7,10 +7,14 @@ import {
   hasCustomIv,
   memberHasCustomBuild,
 } from '@/lib/stats'
-import { STAT_KEYS, STAT_LABELS, totalStats } from '@/types/pokemon'
+import { totalStats } from '@/types/pokemon'
 import { useI18n } from '@/i18n'
 import { CustomStatMarker } from '@/features/team/components/CustomStatMarker'
 import { InfoTooltip } from '@/shared/components/InfoTooltip'
+import {
+  StatsComparisonTable,
+  type StatsCompareRow,
+} from '@/shared/components/StatsComparisonTable'
 
 interface PCComparisonProps {
   box: PokemonSlot[]
@@ -103,10 +107,33 @@ function hasCustomStat(member: PokemonSlot, key: keyof PokemonStats): boolean {
   return hasCustomIv(member, key) || hasCustomEv(member, key)
 }
 
+function rowClassForPcRow(row: ComparisonRow, strongestTeam: StrongestMember | null): string {
+  if (row.source === 'pc') return 'pc-comparison-row'
+  const isStrongestTeam =
+    strongestTeam !== null && row.member.slotId === strongestTeam.member.slotId
+  return isStrongestTeam ? 'strongest-row' : 'pc-comparison-team-row'
+}
+
+function toCompareRows(
+  rows: ComparisonRow[],
+  strongestTeam: StrongestMember | null,
+): StatsCompareRow[] {
+  return rows.map((row) => ({
+    id: `${row.source}-${row.member.slotId}`,
+    sprite: row.member.sprite,
+    ariaLabel: memberLabel(row.member),
+    rowClass: rowClassForPcRow(row, strongestTeam),
+    stats: row.stats,
+    total: row.total,
+    source: row.source,
+    member: row.member,
+  }))
+}
+
 export function PCComparison({ box, team, levelCap }: PCComparisonProps) {
   const { t } = useI18n()
   const [showBaseStats, setShowBaseStats] = useState(false)
-  const rows = useMemo(
+  const comparisonRows = useMemo(
     () => buildRows(box, team, levelCap, showBaseStats),
     [box, team, levelCap, showBaseStats],
   )
@@ -118,6 +145,17 @@ export function PCComparison({ box, team, levelCap }: PCComparisonProps) {
     ? t('compare.baseStatsHint')
     : t('compare.scaledStatsHint', { level: levelCap })
   const hasComparisonContent = box.length > 0 || team.length > 0
+  const rows = toCompareRows(comparisonRows, strongestTeam)
+
+  const statDiff = (row: StatsCompareRow, statKey: keyof PokemonStats): number | null => {
+    if (row.source !== 'pc' || !strongestTeam) return null
+    return row.stats[statKey] - strongestTeam.stats[statKey]
+  }
+
+  const totalDiff = (row: StatsCompareRow): number | null => {
+    if (row.source !== 'pc' || !strongestTeam) return null
+    return row.total - strongestTeam.total
+  }
 
   return (
     <section className="card pc-comparison">
@@ -140,84 +178,56 @@ export function PCComparison({ box, team, levelCap }: PCComparisonProps) {
       </div>
 
       {hasComparisonContent && (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Pokémon</th>
-                {STAT_KEYS.map((key) => (
-                  <th key={key}>{STAT_LABELS[key]}</th>
-                ))}
-                <th>{t('compare.total')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                  const { source, member, stats, total: rowTotal } = row
-                  const isPc = source === 'pc'
-                  const isStrongestTeam =
-                    strongestTeam !== null && member.slotId === strongestTeam.member.slotId
-                  const hasCustomBuild = memberHasCustomBuild(member)
-                  const totalDiffVsTeamStrongest =
-                    isPc && strongestTeam ? rowTotal - strongestTeam.total : 0
-
-                  const rowClass = isPc
-                    ? 'pc-comparison-row'
-                    : isStrongestTeam
-                      ? 'strongest-row'
-                      : 'pc-comparison-team-row'
-
-                  return (
-                    <tr key={`${source}-${member.slotId}`} className={rowClass}>
-                      <td>
-                        <div className="table-pokemon">
-                          <img src={member.sprite} alt="" />
-                          <span>
-                            {memberLabel(member)}
-                            <span className={`tag ${isPc ? 'pc-tag' : 'team-tag'}`}>
-                              {isPc ? t('compare.pcTag') : t('compare.teamTag')}
-                            </span>
-                            {hasCustomBuild && (
-                              <span className="tag custom-build-tag">{t('compare.customBuild')}</span>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                      {STAT_KEYS.map((key) => {
-                        const diff =
-                          isPc && strongestTeam ? stats[key] - strongestTeam.stats[key] : null
-
-                        return (
-                          <td
-                            key={key}
-                            className={diff !== null ? diffClass(diff) : undefined}
-                          >
-                            {stats[key]}
-                            {!showBaseStats && hasCustomStat(member, key) && (
-                              <CustomStatMarker label={t('compare.customStatLegend')} />
-                            )}
-                          </td>
-                        )
-                      })}
-                      <td
-                        className={
-                          isPc && strongestTeam ? diffClass(totalDiffVsTeamStrongest) : undefined
-                        }
-                      >
-                        {rowTotal}
-                        {isPc && strongestTeam && (
-                          <span className="pc-comparison-diff muted">
-                            {' '}
-                            ({formatSignedDiff(totalDiffVsTeamStrongest)})
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-            </tbody>
-          </table>
-        </div>
+        <StatsComparisonTable
+          rows={rows}
+          labels={{ pokemon: 'Pokémon', total: t('compare.total') }}
+          renderPokemonCell={(row) => {
+            const isPc = row.source === 'pc'
+            const hasCustomBuild = row.member ? memberHasCustomBuild(row.member) : false
+            return (
+              <span>
+                {row.ariaLabel}
+                <span className={`tag ${isPc ? 'pc-tag' : 'team-tag'}`}>
+                  {isPc ? t('compare.pcTag') : t('compare.teamTag')}
+                </span>
+                {hasCustomBuild && (
+                  <span className="tag custom-build-tag">{t('compare.customBuild')}</span>
+                )}
+              </span>
+            )
+          }}
+          renderStatCell={(row, statKey) => (
+            <>
+              {row.stats[statKey]}
+              {!showBaseStats && row.member && hasCustomStat(row.member, statKey) && (
+                <CustomStatMarker label={t('compare.customStatLegend')} />
+              )}
+            </>
+          )}
+          statCellClassName={(row, statKey) => {
+            const diff = statDiff(row, statKey)
+            return diff !== null ? diffClass(diff) : undefined
+          }}
+          renderTotalCell={(row) => {
+            const diff = totalDiff(row)
+            const isPc = row.source === 'pc'
+            return (
+              <>
+                {row.total}
+                {isPc && strongestTeam && diff !== null && (
+                  <span className="pc-comparison-diff muted">
+                    {' '}
+                    ({formatSignedDiff(diff)})
+                  </span>
+                )}
+              </>
+            )
+          }}
+          totalCellClassName={(row) => {
+            const diff = totalDiff(row)
+            return diff !== null ? diffClass(diff) : undefined
+          }}
+        />
       )}
     </section>
   )

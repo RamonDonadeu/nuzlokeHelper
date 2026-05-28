@@ -17,6 +17,7 @@ import { StatComparison } from '@/features/search/components/StatComparison'
 import { BattleView } from '@/features/battle/components/BattleView'
 import { TeamPanel } from '@/features/team/components/TeamPanel'
 import { TeamInfoView } from '@/features/team/components/TeamInfoView'
+import { TeamView } from '@/features/team/components/TeamView'
 import { ToastProvider, useToast } from '@/shared/components/Toast'
 import { I18nProvider, useI18n } from '@/i18n'
 import { usePokemonDetails } from '@/features/search/hooks/usePokemonDetails'
@@ -40,7 +41,9 @@ import {
 import { findSlotInProfile } from '@/types/profile'
 
 type Tab = 'types' | 'pc' | 'battle'
-type SearchResultFilter = 'all' | 'pokemon' | 'moves' | 'abilities' | 'items'
+type SearchResultFilter = 'pokemon' | 'moves' | 'abilities' | 'items'
+
+const SEARCH_CATEGORY_ORDER: SearchResultFilter[] = ['pokemon', 'moves', 'abilities', 'items']
 
 export default function App() {
   const profiles = useProfiles()
@@ -98,16 +101,16 @@ function AppContent({
   const location = useLocation()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-  const [searchResultFilter, setSearchResultFilter] = useState<SearchResultFilter>('all')
+  const [searchResultFilter, setSearchResultFilter] = useState<SearchResultFilter>('pokemon')
   const [searchOverrideName, setSearchOverrideName] = useState<string | null>(null)
   const [searchOverrideMove, setSearchOverrideMove] = useState<string | null>(null)
   const [searchOverrideAbility, setSearchOverrideAbility] = useState<string | null>(null)
   const [searchOverrideItem, setSearchOverrideItem] = useState<string | null>(null)
   const [confirmSendAllToPC, setConfirmSendAllToPC] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [teamDrawerOpen, setTeamDrawerOpen] = useState(false)
   const searchSectionRef = useRef<HTMLElement>(null)
   const isSearchRoute = location.pathname === '/search'
+  const showTeamInfoOnSearch = isSearchRoute && query.trim().length < 2
 
   const buildSearchPath = useCallback((q: string) => {
     const trimmed = q.trim()
@@ -154,17 +157,21 @@ function AppContent({
   const pcSlotId = pcDetailMatch?.params.pokemonId ?? null
   const selectedSlotId = teamSlotId ?? pcSlotId
   const isBattleRoute = location.pathname === '/battle'
-  const activeTab: Tab =
-    location.pathname === '/pc' || Boolean(pcSlotId)
-      ? 'pc'
-      : isBattleRoute
-        ? 'battle'
-        : 'types'
+  const isTeamRoute = location.pathname === '/team' || Boolean(teamSlotId)
   const isTeamInfoRoute =
     location.pathname === '/team-info' ||
     location.pathname === '/' ||
-    location.pathname === '/team-typing'
-
+    location.pathname === '/team-typing' ||
+    showTeamInfoOnSearch
+  const activeTab: Tab | null = isTeamRoute
+    ? null
+    : location.pathname === '/pc' || Boolean(pcSlotId)
+      ? 'pc'
+      : isBattleRoute
+        ? 'battle'
+        : isTeamInfoRoute
+          ? 'types'
+          : null
   const scrollSearchToTop = useCallback(() => {
     searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
@@ -175,7 +182,6 @@ function AppContent({
     results,
     bestMatch,
     isPending: searchPending,
-    searchedQuery,
   } = usePokemonSearch(query)
   const moveSearch = useMoveSearch(query, locale, query.trim().length >= 2)
   const abilitySearch = useAbilitySearch(query, locale, query.trim().length >= 2)
@@ -205,7 +211,7 @@ function AppContent({
   const searchMatchup = useSearchMatchup(team, searchPokemon)
 
   useEffect(() => {
-    setSearchResultFilter('all')
+    setSearchResultFilter('pokemon')
     setSearchOverrideName(null)
     setSearchOverrideMove(null)
     setSearchOverrideAbility(null)
@@ -229,12 +235,7 @@ function AppContent({
   }
 
   const handleMobileTeamNav = () => {
-    if (isTeamInfoRoute) {
-      navigate(buildSearchPath(query))
-      setTeamDrawerOpen(true)
-      return
-    }
-    setTeamDrawerOpen(true)
+    navigate('/team')
   }
 
   const otherMatches =
@@ -344,38 +345,59 @@ function AppContent({
 
   const showSearchResults = isSearchRoute && query.trim().length >= 2
 
-  const hasPokemonResults = results.length > 0
-  const hasMoveResults = moveSearch.results.length > 0
-  const hasAbilityResults = abilitySearch.results.length > 0
-  const hasItemResults = itemSearch.results.length > 0
-  const showSearchFilters =
+  const pokemonMatchCount = results.length
+  const moveMatchCount = moveSearch.results.length
+  const abilityMatchCount = abilitySearch.results.length
+  const itemMatchCount = itemSearch.results.length
+
+  const searchCategoryCounts: Record<SearchResultFilter, number> = {
+    pokemon: pokemonMatchCount,
+    moves: moveMatchCount,
+    abilities: abilityMatchCount,
+    items: itemMatchCount,
+  }
+
+  const searchCategoryPending: Record<SearchResultFilter, boolean> = {
+    pokemon: searchPending,
+    moves: moveSearch.isPending,
+    abilities: abilitySearch.isPending,
+    items: itemSearch.isPending,
+  }
+
+  const searchesSettled =
     showSearchResults &&
-    (hasPokemonResults || hasMoveResults || hasAbilityResults || hasItemResults) &&
     !searchPending &&
     !moveSearch.isPending &&
     !abilitySearch.isPending &&
     !itemSearch.isPending
 
-  const showPokemonResults =
-    searchResultFilter === 'all' || searchResultFilter === 'pokemon'
-  const showMoveResults = searchResultFilter === 'all' || searchResultFilter === 'moves'
-  const showAbilityResults = searchResultFilter === 'all' || searchResultFilter === 'abilities'
-  const showItemResults = searchResultFilter === 'all' || searchResultFilter === 'items'
+  useEffect(() => {
+    if (!searchesSettled) return
+    const activeCount = searchCategoryCounts[searchResultFilter]
+    if (activeCount > 0) return
+    const firstWithMatches = SEARCH_CATEGORY_ORDER.find((key) => searchCategoryCounts[key] > 0)
+    if (firstWithMatches) {
+      setSearchResultFilter(firstWithMatches)
+    }
+  }, [
+    searchesSettled,
+    searchResultFilter,
+    pokemonMatchCount,
+    moveMatchCount,
+    abilityMatchCount,
+    itemMatchCount,
+  ])
 
-  const togglePokemonFilter = () => {
-    setSearchResultFilter((prev) => (prev === 'pokemon' ? 'all' : 'pokemon'))
-  }
+  const showPokemonResults = searchResultFilter === 'pokemon'
+  const showMoveResults = searchResultFilter === 'moves'
+  const showAbilityResults = searchResultFilter === 'abilities'
+  const showItemResults = searchResultFilter === 'items'
 
-  const toggleMoveFilter = () => {
-    setSearchResultFilter((prev) => (prev === 'moves' ? 'all' : 'moves'))
-  }
-
-  const toggleAbilityFilter = () => {
-    setSearchResultFilter((prev) => (prev === 'abilities' ? 'all' : 'abilities'))
-  }
-
-  const toggleItemFilter = () => {
-    setSearchResultFilter((prev) => (prev === 'items' ? 'all' : 'items'))
+  const searchCategoryLabels: Record<SearchResultFilter, string> = {
+    pokemon: t('search.filterPokemon'),
+    moves: t('search.filterMoves'),
+    abilities: t('search.filterAbilities'),
+    items: t('search.filterItems'),
   }
 
   const otherMoveMatches =
@@ -391,24 +413,22 @@ function AppContent({
       ? itemSearch.results.filter((result) => result.canonicalName !== selectedItemName)
       : itemSearch.results.slice(1)
 
-  const sidebar = (
-    <>
-      <TeamPanel
-        team={team}
-        levelCap={activeProfile.settings.levelCap}
-        selectedSlotId={selectedSlotId}
-        onSelectSlot={handleSelectSlot}
-        onUpdateLevelCap={setLevelCap}
-        onMoveAllToCap={() => void moveAllToCap()}
-        onSendAllToPC={handleSendAllToPC}
-        onLevelUp={(id) => void levelUpSlot(id)}
-        onLevelDown={levelDownSlot}
-        onMoveToBox={handleMoveTeamToPC}
-        onMarkDead={moveToDeath}
-        onEvolve={(id) => void requestEvolution(id)}
-      />
-    </>
-  )
+  const teamPanelProps = {
+    team,
+    levelCap: activeProfile.settings.levelCap,
+    selectedSlotId,
+    onSelectSlot: (slotId: string) => handleSelectSlot(slotId),
+    onUpdateLevelCap: setLevelCap,
+    onMoveAllToCap: () => void moveAllToCap(),
+    onSendAllToPC: handleSendAllToPC,
+    onLevelUp: (id: string) => void levelUpSlot(id),
+    onLevelDown: levelDownSlot,
+    onMoveToBox: handleMoveTeamToPC,
+    onMarkDead: moveToDeath,
+    onEvolve: (id: string) => void requestEvolution(id),
+  }
+
+  const sidebar = <TeamPanel {...teamPanelProps} />
 
   return (
     <div className="app-shell">
@@ -443,16 +463,9 @@ function AppContent({
       <div className="app-body">
         <div className="app-main-area">
           <div className={`app-layout${isBattleRoute ? ' app-layout-battle' : ''}`}>
-            {!isBattleRoute && (
-              <SidebarDrawer
-                open={teamDrawerOpen && !isTeamInfoRoute}
-                onOpenChange={(open) => {
-                  if (!isTeamInfoRoute) setTeamDrawerOpen(open)
-                }}
-              >
-                {sidebar}
-              </SidebarDrawer>
-            )}
+            <SidebarDrawer open={false} onOpenChange={() => {}}>
+              {sidebar}
+            </SidebarDrawer>
 
             <main className="main-content">
           <div className="main-search-bar">
@@ -471,49 +484,52 @@ function AppContent({
               path="/search"
               element={
                 <>
+                  {showTeamInfoOnSearch && (
+                    <TeamInfoView team={team} levelCap={activeProfile.settings.levelCap} />
+                  )}
                   {showSearchResults && (
             <section ref={searchSectionRef} className="card search-section">
-              {showSearchFilters && (
+              {showSearchResults && (
                 <div
-                  className="search-result-filters"
-                  role="group"
+                  className="search-category-tabs"
+                  role="tablist"
                   aria-label={t('search.filterLabel')}
                 >
-                  <button
-                    type="button"
-                    className={`tab-btn ${showPokemonResults ? 'active' : ''}`}
-                    aria-pressed={showPokemonResults}
-                    onClick={togglePokemonFilter}
-                  >
-                    {t('search.filterPokemon')}
-                  </button>
-                  <button
-                    type="button"
-                    className={`tab-btn ${showMoveResults ? 'active' : ''}`}
-                    aria-pressed={showMoveResults}
-                    onClick={toggleMoveFilter}
-                  >
-                    {t('search.filterMoves')}
-                  </button>
-                  <button
-                    type="button"
-                    className={`tab-btn ${showAbilityResults ? 'active' : ''}`}
-                    aria-pressed={showAbilityResults}
-                    onClick={toggleAbilityFilter}
-                  >
-                    {t('search.filterAbilities')}
-                  </button>
-                  <button
-                    type="button"
-                    className={`tab-btn ${showItemResults ? 'active' : ''}`}
-                    aria-pressed={showItemResults}
-                    onClick={toggleItemFilter}
-                  >
-                    {t('search.filterItems')}
-                  </button>
+                  {SEARCH_CATEGORY_ORDER.map((category) => {
+                    const count = searchCategoryCounts[category]
+                    const pending = searchCategoryPending[category]
+                    const disabled = !pending && count === 0
+                    const isActive = searchResultFilter === category
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        role="tab"
+                        id={`search-tab-${category}`}
+                        aria-selected={isActive}
+                        aria-controls={`search-panel-${category}`}
+                        aria-disabled={disabled}
+                        disabled={disabled}
+                        className={`search-category-tab ${isActive ? 'active' : ''}`}
+                        onClick={() => setSearchResultFilter(category)}
+                      >
+                        <span className="search-category-tab-label">
+                          {searchCategoryLabels[category]}
+                        </span>
+                        <span className="search-category-tab-count" aria-hidden="true">
+                          {pending ? '…' : count}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
+              <div
+                role="tabpanel"
+                id={`search-panel-${searchResultFilter}`}
+                aria-labelledby={`search-tab-${searchResultFilter}`}
+              >
               {showPokemonResults && query.trim().length >= 2 && searchPending && (
                 <p className="muted search-status">{t('search.searching')}</p>
               )}
@@ -658,15 +674,7 @@ function AppContent({
                 </div>
               )}
 
-              {searchedQuery.length >= 2 &&
-                !searchPending &&
-                !moveSearch.isPending &&
-                !abilitySearch.isPending &&
-                !itemSearch.isPending &&
-                (showPokemonResults && results.length === 0) &&
-                (showMoveResults && moveSearch.results.length === 0) &&
-                (showAbilityResults && abilitySearch.results.length === 0) &&
-                (showItemResults && itemSearch.results.length === 0) && (
+              {searchesSettled && searchCategoryCounts[searchResultFilter] === 0 && (
                 <p className="muted">{t('search.noResults')}</p>
               )}
 
@@ -687,6 +695,7 @@ function AppContent({
                   />
                 </>
               )}
+              </div>
             </section>
                   )}
                 </>
@@ -700,6 +709,7 @@ function AppContent({
             />
             <Route path="/" element={<Navigate to="/team-info" replace />} />
             <Route path="/team-typing" element={<Navigate to="/team-info" replace />} />
+            <Route path="/team" element={<TeamView {...teamPanelProps} />} />
             <Route
               path="/team/:slotId"
               element={
@@ -716,13 +726,13 @@ function AppContent({
                     }
                     onBack={() => {
                       const returnTo = (location.state as { returnTo?: string } | null)?.returnTo
-                      navigate(returnTo ?? buildSearchPath(query))
+                      navigate(returnTo ?? '/team')
                     }}
                     onSave={(patch) => updateSlot(selectedSlotInfo.slot.slotId, patch, selectedSlotInfo.list)}
                     onEvolve={(id) => void requestEvolution(id)}
                   />
                 ) : (
-                  <Navigate to="/search" replace />
+                  <Navigate to="/team" replace />
                 )
               }
             />
@@ -788,26 +798,25 @@ function AppContent({
           </div>
         </div>
 
-        <div className="mobile-bottom-dock">
-          {!isBattleRoute && (
-            <button
-              type="button"
-              className={`mobile-bottom-nav-item mobile-team-nav-item${teamDrawerOpen && !isTeamInfoRoute ? ' active' : ''}`}
-              onClick={handleMobileTeamNav}
-              aria-label={t('mobile.openTeam')}
-            >
-              <span className="icon-nav-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                </svg>
-              </span>
-              <span className="icon-nav-label">{t('mobile.teamNav')}</span>
-            </button>
-          )}
+        <nav className="mobile-bottom-dock" aria-label={t('nav.main')}>
+          <button
+            type="button"
+            className={`icon-nav-item mobile-team-nav-item${isTeamRoute ? ' active' : ''}`}
+            onClick={handleMobileTeamNav}
+            aria-label={t('mobile.teamNav')}
+            aria-current={isTeamRoute ? 'page' : undefined}
+          >
+            <span className="icon-nav-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+              </svg>
+            </span>
+            <span className="icon-nav-label">{t('mobile.teamNav')}</span>
+          </button>
           <IconNavRail activeTab={activeTab} onTabNavigate={handleTabClick} />
-        </div>
+        </nav>
       </div>
 
       <ProfileSettingsModal

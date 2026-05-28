@@ -4,11 +4,15 @@ import { calculateAllStats, comparisonNatureForMember } from '@/lib/stats'
 import type { PokemonStats } from '@/types/pokemon'
 import { STAT_KEYS, totalStats } from '@/types/pokemon'
 import { clampPokemonLevel, type PokemonSlot } from '@/types/profile'
+import {
+  StatsComparisonTable,
+  type StatsCompareRow,
+  type StatsCompareSortKey,
+} from '@/shared/components/StatsComparisonTable'
 
 const STAT_DEFAULTS = { ivWhenUnset: 0, evWhenUnset: 0 } as const
 const ROSTER_SIZE = 6
 
-type SortKey = keyof PokemonStats | 'name' | 'level' | 'total'
 type SortDir = 'asc' | 'desc'
 type PrepStatsSource = 'team' | 'pc' | 'enemy'
 
@@ -69,7 +73,7 @@ function buildPrepStatsRows(
   return rows
 }
 
-function compareRows(a: PrepStatsRow, b: PrepStatsRow, sortKey: SortKey, sortDir: SortDir): number {
+function compareRows(a: PrepStatsRow, b: PrepStatsRow, sortKey: StatsCompareSortKey, sortDir: SortDir): number {
   const mult = sortDir === 'asc' ? 1 : -1
   if (sortKey === 'name') {
     const aName = (a.slot.nickname ?? a.slot.displayName).toLowerCase()
@@ -106,15 +110,30 @@ interface BattlePrepStatsTableProps {
 
 export function BattlePrepStatsTable({ team, pc, enemySlots, levelCap }: BattlePrepStatsTableProps) {
   const { t } = useI18n()
-  const [sortKey, setSortKey] = useState<SortKey>('name')
+  const [sortKey, setSortKey] = useState<StatsCompareSortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
-  const rows = useMemo(() => {
+  const prepRows = useMemo(() => {
     const built = buildPrepStatsRows(team, pc, enemySlots, levelCap)
     return [...built].sort((a, b) => compareRows(a, b, sortKey, sortDir))
   }, [enemySlots, levelCap, pc, sortDir, sortKey, team])
 
-  const handleSort = (key: SortKey) => {
+  const rows: StatsCompareRow[] = useMemo(
+    () =>
+      prepRows.map((row) => ({
+        id: row.slot.slotId,
+        sprite: row.slot.sprite,
+        ariaLabel: row.slot.nickname ?? row.slot.displayName,
+        rowClass: ROW_CLASS_BY_SOURCE[row.source],
+        stats: row.stats,
+        total: totalStats(row.stats),
+        level: row.level,
+        sideLabel: t(SIDE_LABEL_KEYS[row.source]),
+      })),
+    [prepRows, t],
+  )
+
+  const handleSort = (key: StatsCompareSortKey) => {
     if (sortKey === key) {
       setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'))
       return
@@ -123,7 +142,7 @@ export function BattlePrepStatsTable({ team, pc, enemySlots, levelCap }: BattleP
     setSortDir(key === 'name' ? 'asc' : 'desc')
   }
 
-  const sortIndicator = (key: SortKey) => {
+  const sortIndicator = (key: StatsCompareSortKey) => {
     if (sortKey !== key) return ''
     return sortDir === 'asc' ? ' ↑' : ' ↓'
   }
@@ -137,67 +156,38 @@ export function BattlePrepStatsTable({ team, pc, enemySlots, levelCap }: BattleP
     speed: 'battle.prepStat_speed',
   }
 
+  const statLabels = Object.fromEntries(
+    STAT_KEYS.map((key) => [key, t(statLabelKeys[key])]),
+  ) as Record<keyof PokemonStats, string>
+
   return (
-    <>
-      {rows.length === 0 ? (
-        <p className="muted">{t('battle.prepStatsEmpty')}</p>
-      ) : (
-        <div className="table-wrap battle-prep-stats-table">
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <button type="button" className="battle-prep-sort-btn" onClick={() => handleSort('name')}>
-                    {t('battle.prepStatsPokemon')}
-                    {sortIndicator('name')}
-                  </button>
-                </th>
-                <th>{t('battle.prepStatsSide')}</th>
-                <th>
-                  <button type="button" className="battle-prep-sort-btn" onClick={() => handleSort('level')}>
-                    {t('battle.prepStatsLevel')}
-                    {sortIndicator('level')}
-                  </button>
-                </th>
-                {STAT_KEYS.map((key) => (
-                  <th key={key}>
-                    <button type="button" className="battle-prep-sort-btn" onClick={() => handleSort(key)}>
-                      {t(statLabelKeys[key])}
-                      {sortIndicator(key)}
-                    </button>
-                  </th>
-                ))}
-                <th>
-                  <button type="button" className="battle-prep-sort-btn" onClick={() => handleSort('total')}>
-                    {t('battle.statsTotal')}
-                    {sortIndicator('total')}
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.slot.slotId} className={ROW_CLASS_BY_SOURCE[row.source]}>
-                  <td>
-                    <div className="table-pokemon">
-                      <img src={row.slot.sprite} alt="" loading="lazy" />
-                      <span>{row.slot.nickname ?? row.slot.displayName}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="tag battle-prep-roster-tag">{t(SIDE_LABEL_KEYS[row.source])}</span>
-                  </td>
-                  <td>{row.level}</td>
-                  {STAT_KEYS.map((key) => (
-                    <td key={key}>{row.stats[key]}</td>
-                  ))}
-                  <td>{totalStats(row.stats)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </>
+    <StatsComparisonTable
+      rows={rows}
+      emptyMessage={t('battle.prepStatsEmpty')}
+      tableClassName="battle-prep-stats-table"
+      labels={{
+        pokemon: t('battle.prepStatsPokemon'),
+        total: t('battle.statsTotal'),
+        level: t('battle.prepStatsLevel'),
+        side: t('battle.prepStatsSide'),
+      }}
+      statLabels={statLabels}
+      showLevelColumn
+      showSideColumn
+      sort={{ sortKey, onSort: handleSort, sortIndicator }}
+      mobileCorner={
+        <button
+          type="button"
+          className="battle-prep-sort-btn stats-compare-sort-btn--corner"
+          onClick={() => handleSort('name')}
+          aria-label={t('battle.prepStatsPokemon')}
+        >
+          <span aria-hidden="true">{sortIndicator('name') || '↕'}</span>
+        </button>
+      }
+      renderPokemonCell={(row) => <span>{row.ariaLabel}</span>}
+      renderStatCell={(row, key) => row.stats[key]}
+      renderTotalCell={(row) => row.total}
+    />
   )
 }

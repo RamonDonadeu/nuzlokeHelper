@@ -105,7 +105,7 @@ export const en: TranslationKey = {
     searchingAbilities: 'Searching abilities...',
     searchingItems: 'Searching items...',
     noResults: 'No matches found.',
-    filterLabel: 'Filter search results',
+    filterLabel: 'Search categories',
     filterPokemon: 'Pokémon',
     filterMoves: 'Moves',
     filterAbilities: 'Abilities',

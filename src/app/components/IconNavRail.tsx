@@ -4,7 +4,7 @@ import { useI18n } from '@/i18n'
 type Tab = 'types' | 'pc' | 'battle'
 
 interface IconNavRailProps {
-  activeTab: Tab
+  activeTab: Tab | null
   onTabNavigate: (tab: Tab) => void
 }
 
