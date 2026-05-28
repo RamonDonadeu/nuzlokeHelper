@@ -468,16 +468,18 @@ function AppContent({
             </SidebarDrawer>
 
             <main className="main-content">
-          <div className="main-search-bar">
-            <input
-              type="search"
-              className="search-input"
-              placeholder={t('search.placeholder')}
-              value={query}
-              onChange={(event) => handleSearchChange(event.target.value)}
-              aria-label={t('search.title')}
-            />
-          </div>
+          {!isBattleRoute && (
+            <div className="main-search-bar">
+              <input
+                type="search"
+                className="search-input"
+                placeholder={t('search.placeholder')}
+                value={query}
+                onChange={(event) => handleSearchChange(event.target.value)}
+                aria-label={t('search.title')}
+              />
+            </div>
+          )}
 
           <Routes>
             <Route

@@ -18,16 +18,26 @@ import type { PokemonSlot } from '@/types/profile'
 
 type PrepView = 'attacks' | 'stats'
 
+export type BattlePrepPanelMode = 'full' | 'attacks-only' | 'stats-only'
+
 interface BattlePrepPanelProps {
   team: PokemonSlot[]
   pc: PokemonSlot[]
   enemySlots: Array<PokemonSlot | null>
   levelCap: number
   started: boolean
+  mode?: BattlePrepPanelMode
 }
 
-export function BattlePrepPanel({ team, pc, enemySlots, levelCap, started }: BattlePrepPanelProps) {
-  const [prepView, setPrepView] = useState<PrepView>('attacks')
+export function BattlePrepPanel({
+  team,
+  pc,
+  enemySlots,
+  levelCap,
+  started,
+  mode = 'full',
+}: BattlePrepPanelProps) {
+  const [prepView, setPrepView] = useState<PrepView>(mode === 'stats-only' ? 'stats' : 'attacks')
   const { t } = useI18n()
   const enemies = useMemo(
     () => enemySlots.filter((slot): slot is PokemonSlot => slot !== null),
@@ -86,23 +96,32 @@ export function BattlePrepPanel({ team, pc, enemySlots, levelCap, started }: Bat
     [teamDamagingMoveTypes],
   )
 
-  if (started || team.length === 0 || enemies.length === 0) return null
+  if (team.length === 0 || enemies.length === 0) return null
+  if (started && mode !== 'stats-only') return null
+
+  const showAttacks = mode === 'full' ? prepView === 'attacks' : mode === 'attacks-only'
+  const showStats = mode === 'full' ? prepView === 'stats' : mode === 'stats-only'
+  const showViewToggle = mode === 'full'
 
   return (
-    <section className="card battle-prep-panel">
+    <section
+      className={`card battle-prep-panel${mode === 'stats-only' ? ' battle-prep-panel--stats-only' : ''}`}
+    >
       <div className="battle-prep-panel-head">
-        <h3>{prepView === 'attacks' ? t('battle.prepTitle') : t('battle.prepStatsTitle')}</h3>
-        {prepView === 'attacks' ? (
-          <button type="button" className="btn btn-sm" onClick={() => setPrepView('stats')}>
-            {t('battle.prepStatsCompare')}
-          </button>
-        ) : (
-          <button type="button" className="btn btn-sm" onClick={() => setPrepView('attacks')}>
-            {t('battle.prepBackToAttacks')}
-          </button>
-        )}
+        <h3>{showStats ? t('battle.prepStatsTitle') : t('battle.prepTitle')}</h3>
+        {showViewToggle ? (
+          showAttacks ? (
+            <button type="button" className="btn btn-sm" onClick={() => setPrepView('stats')}>
+              {t('battle.prepStatsCompare')}
+            </button>
+          ) : (
+            <button type="button" className="btn btn-sm" onClick={() => setPrepView('attacks')}>
+              {t('battle.prepBackToAttacks')}
+            </button>
+          )
+        ) : null}
       </div>
-      {prepView === 'stats' ? (
+      {showStats ? (
         <div className="battle-prep-panel-body">
           <BattlePrepStatsTable
             team={team}
@@ -111,7 +130,7 @@ export function BattlePrepPanel({ team, pc, enemySlots, levelCap, started }: Bat
             levelCap={levelCap}
           />
         </div>
-      ) : (
+      ) : showAttacks ? (
       <div className="battle-prep-grid">
         <article className="battle-prep-card">
           <div className="battle-prep-card-head">
@@ -230,7 +249,7 @@ export function BattlePrepPanel({ team, pc, enemySlots, levelCap, started }: Bat
           </div>
         </article>
       </div>
-      )}
+      ) : null}
     </section>
   )
 }

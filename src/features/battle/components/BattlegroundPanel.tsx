@@ -1,7 +1,9 @@
+import { BattleDoubleBattleToggle } from '@/features/battle/components/BattleDoubleBattleToggle'
 import { BattlegroundSlotDetail } from '@/features/battle/components/BattlegroundSlotDetail'
+import { BattlegroundStats } from '@/features/battle/components/BattlegroundStats'
 import type { PokemonSlot } from '@/types/profile'
 import { useI18n } from '@/i18n'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 interface BattlegroundPanelProps {
   started: boolean
@@ -132,6 +134,14 @@ export function BattlegroundPanel({
   const shownRight = activeRight.slice(0, activeSlots)
   const allyActives = shownLeft.filter((slot): slot is PokemonSlot => slot !== null)
   const enemyActives = shownRight.filter((slot): slot is PokemonSlot => slot !== null)
+  const showCombinedStats = doubleBattle && activeSlots === 2
+  const statParticipants = useMemo(
+    () => [
+      ...shownLeft.map((slot) => ({ slot, side: 'team' as const })),
+      ...shownRight.map((slot) => ({ slot, side: 'enemy' as const })),
+    ],
+    [shownLeft, shownRight],
+  )
 
   const replacements = useMemo(() => {
     if (!switchPopup) return []
@@ -171,32 +181,28 @@ export function BattlegroundPanel({
         <button type="button" className="btn" onClick={onClear}>
           {t('battle.clear')}
         </button>
-        <label className="toggle-switch">
-          <input
-            type="checkbox"
-            checked={doubleBattle}
-            disabled={started}
-            onChange={(event) => onDoubleBattleChange(event.target.checked)}
-          />
-          <span className="toggle-switch-track" aria-hidden="true" />
-          <span className="toggle-switch-label">{t('battle.doubleBattle')}</span>
-        </label>
+        <BattleDoubleBattleToggle
+          checked={doubleBattle}
+          disabled={started}
+          onChange={onDoubleBattleChange}
+        />
       </div>
 
       {started ? (
         <>
-          <div className="battle-battleground">
-            <div className="battle-active-side">
-              {shownLeft.map((slot, index) => (
+          <div
+            className={`battle-battleground battle-battleground--${activeSlots === 2 ? 'doubles' : 'singles'}`}
+          >
+            {Array.from({ length: activeSlots }, (_, index) => (
+              <Fragment key={`active-row-${index}`}>
                 <ActivePokemonCard
-                  key={`left-${index}`}
                   title={
                     activeSlots === 2
                       ? t('battle.activeSlot', { n: index + 1 })
                       : t('battle.yourActive')
                   }
-                  slot={slot}
-                  canAct={Boolean(slot)}
+                  slot={shownLeft[index] ?? null}
+                  canAct={Boolean(shownLeft[index])}
                   noPokemonLeft={!leftHasAlivePokemon}
                   onSwitch={() => {
                     onSelectLeftSlot(index)
@@ -205,20 +211,14 @@ export function BattlegroundPanel({
                   onFaint={() => onFaintLeft(index)}
                   onSelect={() => onSelectLeftSlot(index)}
                 />
-              ))}
-            </div>
-            <div className="battle-vs">VS</div>
-            <div className="battle-active-side">
-              {shownRight.map((slot, index) => (
                 <ActivePokemonCard
-                  key={`right-${index}`}
                   title={
                     activeSlots === 2
                       ? t('battle.activeSlot', { n: index + 1 })
                       : t('battle.enemyActive')
                   }
-                  slot={slot}
-                  canAct={Boolean(slot)}
+                  slot={shownRight[index] ?? null}
+                  canAct={Boolean(shownRight[index])}
                   noPokemonLeft={!rightHasAlivePokemon}
                   onSwitch={() => {
                     onSelectRightSlot(index)
@@ -227,11 +227,16 @@ export function BattlegroundPanel({
                   onFaint={() => onFaintRight(index)}
                   onSelect={() => onSelectRightSlot(index)}
                 />
-              ))}
-            </div>
+              </Fragment>
+            ))}
           </div>
 
           <div className="battleground-slot-details">
+            {showCombinedStats ? (
+              <section className="battleground-slot-detail battleground-slot-detail--stats-only">
+                <BattlegroundStats participants={statParticipants} />
+              </section>
+            ) : null}
             {Array.from({ length: activeSlots }, (_, index) => (
               <BattlegroundSlotDetail
                 key={`slot-detail-${index}`}
@@ -243,6 +248,7 @@ export function BattlegroundPanel({
                 doubleBattle={doubleBattle}
                 allyActives={allyActives}
                 enemyActives={enemyActives}
+                showStats={!showCombinedStats}
               />
             ))}
           </div>

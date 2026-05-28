@@ -11,7 +11,10 @@ import { BattlePokemonEditorModal } from '@/features/battle/components/BattlePok
 import { BattlePcSwitchDialog } from '@/features/battle/components/BattlePcSwitchDialog'
 import { EnemyTeamImportDialog } from '@/features/battle/components/EnemyTeamImportDialog'
 import { BattlePrepPanel } from '@/features/battle/components/BattlePrepPanel'
+import { BattleMobileShell, type BattleMobileTab } from '@/features/battle/components/BattleMobileShell'
+import { BattleMobileRosters } from '@/features/battle/components/BattleMobileRosters'
 import { sortPcByTotalStats } from '@/features/battle/lib/sortPcByTotalStats'
+import { useIsMobileLayout } from '@/shared/hooks/useMediaQuery'
 import {
   buildPlayerThreatCountMap,
   buildThreatCountMap,
@@ -111,9 +114,108 @@ export function BattleView({
 
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]
   const editingAllySlot = allyEditorIndex === null ? null : team[allyEditorIndex] ?? null
+  const isMobileLayout = useIsMobileLayout()
+  const hasRosterForBattle = team.length > 0 && enemies.length > 0
+  const showPrepTab = !battle.started && hasRosterForBattle
+  const showStatsTab = hasRosterForBattle
+  const [mobileTab, setMobileTab] = useState<BattleMobileTab>(() =>
+    team.length > 0 && enemies.length > 0 ? 'prep' : 'rosters',
+  )
+
+  useEffect(() => {
+    if (!isMobileLayout) return
+    if (battle.started) {
+      setMobileTab('fight')
+    }
+  }, [battle.started, isMobileLayout])
+
+  useEffect(() => {
+    if (!isMobileLayout || showPrepTab) return
+    if (mobileTab === 'prep') {
+      setMobileTab(showStatsTab ? 'stats' : 'rosters')
+    }
+  }, [isMobileLayout, mobileTab, showPrepTab, showStatsTab])
+
+  const handlePcMemberClick = (slotId: string) => {
+    if (battle.started) return
+    if (team.length >= MAX_TEAM_SIZE) {
+      setPcSwitchSlotId(slotId)
+      return
+    }
+    onMovePcToTeam(slotId)
+  }
+
+  const handleTeamSlotClick = (index: number) => {
+    if (battle.started || battle.doubleBattle) {
+      battle.selectLeft(index)
+      return
+    }
+    const slot = team[index]
+    if (slot) setAllyEditorIndex(index)
+  }
+
+  const handleEnemySlotClick = (index: number) => {
+    if (battle.started || battle.doubleBattle) {
+      battle.selectRight(index)
+      return
+    }
+    battle.openEnemyEditor(index)
+  }
+
+  const battlegroundPanel = (
+    <BattlegroundPanel
+      started={battle.started}
+      activeLeft={battle.activeLeftSlots}
+      activeRight={battle.activeRightSlots}
+      activeLeftIndices={battle.activeLeftIndices}
+      activeRightIndices={battle.activeRightIndices}
+      faintedLeftIndices={battle.faintedLeftIndices}
+      faintedRightIndices={battle.faintedRightIndices}
+      leftHasAlivePokemon={battle.leftHasAlivePokemon}
+      rightHasAlivePokemon={battle.rightHasAlivePokemon}
+      doubleBattle={battle.doubleBattle}
+      onDoubleBattleChange={battle.setDoubleBattle}
+      onSelectLeftSlot={battle.setSelectedLeftActiveSlot}
+      onSelectRightSlot={battle.setSelectedRightActiveSlot}
+      onSwitchLeft={battle.switchLeftSlot}
+      onSwitchRight={battle.switchRightSlot}
+      onFaintLeft={battle.faintLeftSlot}
+      onFaintRight={battle.faintRightSlot}
+      onStartFight={() => {
+        battle.startFight()
+        if (isMobileLayout) setMobileTab('fight')
+      }}
+      onClear={battle.clearBattle}
+      team={leftSlots}
+      enemyTeam={battle.enemySlots}
+    />
+  )
+
+  const prepPanel = (
+    <BattlePrepPanel
+      team={team}
+      pc={pc}
+      enemySlots={battle.enemySlots}
+      levelCap={levelCap}
+      started={battle.started}
+      mode={isMobileLayout ? 'attacks-only' : 'full'}
+    />
+  )
+
+  const statsPanel = (
+    <BattlePrepPanel
+      team={team}
+      pc={pc}
+      enemySlots={battle.enemySlots}
+      levelCap={levelCap}
+      started={battle.started}
+      mode="stats-only"
+    />
+  )
 
   return (
-    <div className="battle-view">
+    <>
+    <div className="battle-view battle-view--desktop">
       <BattleTeamColumn
         title={t('battle.yourTeam')}
         side="left"
@@ -127,56 +229,12 @@ export function BattleView({
         pcMembers={sortedPc}
         pcClickDisabled={battle.started}
         pcClickDisabledTitle={t('battle.pcDisabledDuringFight')}
-        onPcMemberClick={(slotId) => {
-          if (battle.started) return
-          if (team.length >= MAX_TEAM_SIZE) {
-            setPcSwitchSlotId(slotId)
-            return
-          }
-          onMovePcToTeam(slotId)
-        }}
-        onFilledSlotClick={(index) => {
-          if (battle.started) {
-            battle.selectLeft(index)
-            return
-          }
-          const slot = team[index]
-          if (slot) setAllyEditorIndex(index)
-        }}
+        onPcMemberClick={handlePcMemberClick}
+        onFilledSlotClick={handleTeamSlotClick}
       />
       <div className="battle-center-column">
-        <BattlegroundPanel
-          started={battle.started}
-          activeLeft={battle.activeLeftSlots}
-          activeRight={battle.activeRightSlots}
-          activeLeftIndices={battle.activeLeftIndices}
-          activeRightIndices={battle.activeRightIndices}
-          faintedLeftIndices={battle.faintedLeftIndices}
-          faintedRightIndices={battle.faintedRightIndices}
-          leftHasAlivePokemon={battle.leftHasAlivePokemon}
-          rightHasAlivePokemon={battle.rightHasAlivePokemon}
-          doubleBattle={battle.doubleBattle}
-          onDoubleBattleChange={battle.setDoubleBattle}
-          onSelectLeftSlot={battle.setSelectedLeftActiveSlot}
-          onSelectRightSlot={battle.setSelectedRightActiveSlot}
-          onSwitchLeft={battle.switchLeftSlot}
-          onSwitchRight={battle.switchRightSlot}
-          onFaintLeft={battle.faintLeftSlot}
-          onFaintRight={battle.faintRightSlot}
-          onStartFight={battle.startFight}
-          onClear={battle.clearBattle}
-          team={leftSlots}
-          enemyTeam={battle.enemySlots}
-        />
-        {!battle.started ? (
-          <BattlePrepPanel
-            team={team}
-            pc={pc}
-            enemySlots={battle.enemySlots}
-            levelCap={levelCap}
-            started={battle.started}
-          />
-        ) : null}
+        {battlegroundPanel}
+        {!battle.started ? prepPanel : null}
       </div>
       <BattleTeamColumn
         title={t('battle.enemyTeamTitle')}
@@ -188,13 +246,7 @@ export function BattleView({
         threatCountsBySlotId={enemyThreatCountsBySlotId}
         threatTotalCount={playerRoster.length}
         threatBadgeVariant="offensive"
-        onFilledSlotClick={(index) => {
-          if (battle.started) {
-            battle.selectRight(index)
-            return
-          }
-          battle.openEnemyEditor(index)
-        }}
+        onFilledSlotClick={handleEnemySlotClick}
         onEmptySlotClick={battle.started ? undefined : battle.openEnemyEditor}
         actions={
           battle.started ? null : (
@@ -204,6 +256,45 @@ export function BattleView({
           )
         }
       />
+    </div>
+
+    {isMobileLayout ? (
+      <BattleMobileShell
+        activeTab={mobileTab}
+        onTabChange={setMobileTab}
+        showPrepTab={showPrepTab}
+        showStatsTab={showStatsTab}
+        fightPanel={battlegroundPanel}
+        rostersPanel={
+          <BattleMobileRosters
+            teamSlots={leftSlots}
+            enemySlots={battle.enemySlots}
+            pcMembers={sortedPc}
+            activeLeftIndices={battle.activeLeftIndices}
+            activeRightIndices={battle.activeRightIndices}
+            faintedLeftIndices={battle.faintedLeftIndices}
+            faintedRightIndices={battle.faintedRightIndices}
+            selectedLeftActiveSlot={battle.selectedLeftActiveSlot}
+            selectedRightActiveSlot={battle.selectedRightActiveSlot}
+            threatCountsBySlotId={threatCountsBySlotId}
+            enemyThreatCountsBySlotId={enemyThreatCountsBySlotId}
+            enemyThreatTotal={enemies.length}
+            playerThreatTotal={playerRoster.length}
+            battleStarted={battle.started}
+            doubleBattle={battle.doubleBattle}
+            onDoubleBattleChange={battle.setDoubleBattle}
+            onTeamSlotClick={handleTeamSlotClick}
+            onEnemySlotClick={handleEnemySlotClick}
+            onEnemyEmptyClick={battle.openEnemyEditor}
+            onPcMemberClick={handlePcMemberClick}
+            onImportEnemy={() => setImportOpen(true)}
+          />
+        }
+        prepPanel={showPrepTab ? prepPanel : null}
+        statsPanel={showStatsTab ? statsPanel : null}
+      />
+    ) : null}
+
       <BattlePokemonEditorModal
         key={
           battle.editorOpen
@@ -264,6 +355,6 @@ export function BattleView({
           setPcSwitchSlotId(null)
         }}
       />
-    </div>
+    </>
   )
 }

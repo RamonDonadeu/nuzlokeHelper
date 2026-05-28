@@ -10,6 +10,7 @@ interface BattlegroundSlotDetailProps {
   doubleBattle?: boolean
   allyActives?: PokemonSlot[]
   enemyActives?: PokemonSlot[]
+  showStats?: boolean
 }
 
 export function BattlegroundSlotDetail({
@@ -19,13 +20,21 @@ export function BattlegroundSlotDetail({
   doubleBattle,
   allyActives,
   enemyActives,
+  showStats = true,
 }: BattlegroundSlotDetailProps) {
   if (!left && !right) return null
 
   return (
     <section className="battleground-slot-detail">
       {slotLabel ? <h4 className="battleground-slot-detail-title">{slotLabel}</h4> : null}
-      <BattlegroundStats left={left} right={right} />
+      {showStats ? (
+        <BattlegroundStats
+          participants={[
+            { slot: left, side: 'team' },
+            { slot: right, side: 'enemy' },
+          ]}
+        />
+      ) : null}
       <BattlegroundAbilityItem left={left} right={right} />
       <BattlegroundMoves
         left={left}
