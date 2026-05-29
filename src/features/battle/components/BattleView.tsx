@@ -198,7 +198,7 @@ export function BattleView({
       enemySlots={battle.enemySlots}
       levelCap={levelCap}
       started={battle.started}
-      mode={isMobileLayout ? 'attacks-only' : 'full'}
+      defaultTab="enemy"
     />
   )
 
@@ -210,6 +210,7 @@ export function BattleView({
       levelCap={levelCap}
       started={battle.started}
       mode="stats-only"
+      defaultTab="stats"
     />
   )
 

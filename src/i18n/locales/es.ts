@@ -278,9 +278,9 @@ export const es: TranslationKey = {
     yourTeam: 'Tu equipo',
     pcRoster: 'PC',
     threatCount:
-      '{{count}} de {{total}} rivales hacen 2× o más a este Pokémon (movimientos dañinos configurados, o estimación STAB si no hay movimientos)',
+      '{{count}} de {{total}} rivales hacen 2× o más a este Pokémon con un movimiento dañino configurado',
     threatCountHint:
-      '{{count}} de {{total}} rivales pueden hacer 2× o más a este Pokémon. Usa los movimientos dañinos configurados de cada rival, o una estimación STAB si no tienen movimientos.',
+      '{{count}} de {{total}} rivales pueden hacer 2× o más a este Pokémon. Solo usa los movimientos dañinos configurados de cada rival.',
     enemyThreatCount:
       '{{count}} de {{total}} de tu equipo pueden hacer 2× o más a este rival con un movimiento dañino configurado',
     enemyThreatCountHint:
@@ -353,6 +353,54 @@ export const es: TranslationKey = {
     importFailureHeader: 'Estos Pokémon no se pudieron importar:',
     importFailureLine: '{{name}}: especie no encontrada (probado: {{slugs}}).',
     prepTitle: 'Preparación de batalla',
+    prepTabsLabel: 'Vistas de preparación de batalla',
+    prepTabEnemy: 'Detalles rivales',
+    prepTabWeakness: 'Debilidades',
+    prepTabAttack: 'Ataques',
+    prepTabStats: 'Stats',
+    prepIncludePc: 'Incluir PC',
+    prepEnemyTypesTitle: 'Tipos rivales',
+    prepEnemyTypesHint:
+      'Tipos, habilidad, objeto y movimientos de cada rival. Pasa el cursor sobre habilidad, objeto o movimiento para ver detalles.',
+    prepTypesColumn: 'Tipos',
+    prepWeakToColumn: 'Débil a',
+    prepAbilityColumn: 'Habilidad',
+    prepItemColumn: 'Objeto',
+    prepEnemyMovesColumn: 'Ataques',
+    prepWeak4x: 'Débil 4× a',
+    prepWeak2x: 'Débil 2× a',
+    prepOffenseSummaryTitle: 'Tipos de ataque rivales',
+    prepOffenseSummaryHint: 'Cuántos movimientos dañinos configurados de cada tipo hay en el equipo rival.',
+    prepOffenseSummaryEmpty:
+      'No hay movimientos dañinos rivales configurados—añade movimientos en cada rival para analizar amenazas.',
+    prepEnemyNoMoves:
+      '{{names}} no tienen movimientos configurados—añade sus ataques para analizar amenazas y ofensiva.',
+    prepAtRiskTitle: 'Tus Pokémon en riesgo',
+    prepAtRiskHint: 'Tu plantilla frente a movimientos dañinos rivales. Amenazas 4× y 2× por separado.',
+    prepAtRiskHintGrouped:
+      'Color por peor golpe recibido: verde 1× (seguro), amarillo 2×, rojo 4×. Agrupado por rival amenazante. Débil / Muy débil = cuántos rivales te hacen 2×+.',
+    prepEnemyMoveCount: '{{count}} movimientos',
+    prepThreatenedByCount: '{{count}} rivales pueden hacer 2× o más a este Pokémon.',
+    prepThreatSummaryMeta: '{{count}} rivales amenazantes — pulsa para ver',
+    prepOffenseTitle: 'Tu cobertura ofensiva',
+    prepOffenseHintGrouped:
+      'Color por rivales con 2×+: rojo = 0 (malo), amarillo = 1–2 (regular), verde = 3–4 (bueno). Insignias Malo / Regular / Bueno / Estrella: 0, 1–2, 3–4 o 5+ rivales cubiertos.',
+    prepHitsSummaryMeta: '{{count}} de {{total}} rivales — pulsa para ver',
+    prepCoversEnemyCount: 'Supereficaz contra {{count}} rivales.',
+    prepNoOffensiveCoverage: 'Ningún movimiento dañino hace 2× o más a ningún rival.',
+    prepHit4x: '4× efectivo vs',
+    prepHit2x: '2× efectivo vs',
+    prepOffensiveSeveritybad: 'Malo',
+    prepOffensiveSeverityregular: 'Regular',
+    prepOffensiveSeveritygood: 'Bueno',
+    prepOffensiveSeveritysuperstar: 'Estrella',
+    prepYourMovesTitle: 'Tus movimientos',
+    prepYourMovesHint: 'Movimientos configurados en tu plantilla (equipo, o equipo + PC si está activo).',
+    prepNoMovesOnMember: 'Sin movimientos configurados.',
+    prepMoveNotDamaging: 'estado / desconocido',
+    prepAnswersTitle: 'Respuestas supereficaces',
+    prepAnswersHint: 'Tus movimientos dañinos que hacen 2× o 4× a cada rival.',
+    prepStatsExpand: 'Comparación de stats',
     prepThreatsTitle: 'Defensa frente a ataques rivales',
     prepThreatsHintLabel: 'Cómo funciona la vulnerabilidad defensiva',
     prepThreatsHint:
@@ -361,9 +409,6 @@ export const es: TranslationKey = {
     prepCoverageHintLabel: 'Cómo funciona la cobertura ofensiva',
     prepCoverageHint:
       'Los movimientos dañinos de tu equipo frente a la tipificación defensiva de cada rival (tipos de especie). Solo cuentan los movimientos del editor—los tipos de especie no se usan como ataques.',
-    prepStabFallbackNote:
-      'Sin movimientos en {{names}}—se usa estimación STAB desde tipos de especie hasta configurar movimientos.',
-    prepStabFallbackTag: 'STAB est.',
     prepEnemyConfigureMoves:
       '{{names}} tienen movimientos pero no se resolvió ningún ataque dañino—revisa los nombres.',
     prepNoMajorThreats: 'Ningún ataque rival configurado hace 2× o más a este Pokémon.',

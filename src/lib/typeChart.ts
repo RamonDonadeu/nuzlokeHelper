@@ -206,6 +206,26 @@ export function getDefensiveWeaknesses(defenderTypes: readonly unknown[]): Pokem
   return ALL_TYPES.filter((attackType) => isDefensivelyWeak(defenderTypes, attackType))
 }
 
+export interface DefensiveWeaknessGroups {
+  quadruple: PokemonType[]
+  double: PokemonType[]
+}
+
+/** Super-effective attacking types split into 4× and 2× vs these defender types. */
+export function getDefensiveWeaknessGroups(defenderTypes: readonly unknown[]): DefensiveWeaknessGroups {
+  const quadruple: PokemonType[] = []
+  const double: PokemonType[] = []
+
+  for (const attackType of ALL_TYPES) {
+    const multiplier = getDefensiveMultiplier(defenderTypes, attackType)
+    if (multiplier === null || multiplier < 2) continue
+    if (multiplier >= 4) quadruple.push(attackType)
+    else double.push(attackType)
+  }
+
+  return { quadruple, double }
+}
+
 export interface DefensiveCoverage {
   /** Per attacking type: damage multiplier each member takes (null = types unknown). */
   memberMatrix: Array<{
