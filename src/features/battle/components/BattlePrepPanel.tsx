@@ -451,11 +451,9 @@ export function BattlePrepPanel({
                   const threatSeverity = rosterThreatSeverity(uniqueThreateningEnemies)
                   const rowTone = rosterVulnerabilityRowBackgroundClass(uniqueThreateningEnemies)
 
-                  const defaultOpen = threatSeverity === 'out'
-
                   return (
                     <li key={row.member.slotId} className={`battle-prep-row ${rowTone}`}>
-                      <details className="battle-prep-row-details" open={defaultOpen}>
+                      <details className="battle-prep-row-details">
                         <summary className="battle-prep-row-summary">
                           <span className="battle-prep-row-chevron" aria-hidden />
                           <img src={row.member.sprite} alt="" loading="lazy" className="battle-prep-row-sprite" />
@@ -549,11 +547,9 @@ export function BattlePrepPanel({
                       enemies.length,
                       hasDamagingMoves,
                     )
-                    const defaultOpen = rowTone === 'battle-prep-row--danger'
-
                     return (
                       <li key={row.member.slotId} className={`battle-prep-row ${rowTone}`}>
-                        <details className="battle-prep-row-details" open={defaultOpen}>
+                        <details className="battle-prep-row-details">
                           <summary className="battle-prep-row-summary">
                             <span className="battle-prep-row-chevron" aria-hidden />
                             <img src={row.member.sprite} alt="" loading="lazy" className="battle-prep-row-sprite" />
