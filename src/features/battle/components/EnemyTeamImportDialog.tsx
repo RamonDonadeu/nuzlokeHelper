@@ -12,6 +12,7 @@ interface EnemyTeamImportDialogProps {
   open: boolean
   levelCap: number
   hasExistingEnemyTeam: boolean
+  knownSlots?: PokemonSlot[]
   onClose: () => void
   onImport: (team: PokemonSlot[], mode: 'replace' | 'append') => void
 }
@@ -20,6 +21,7 @@ export function EnemyTeamImportDialog({
   open,
   levelCap,
   hasExistingEnemyTeam,
+  knownSlots,
   onClose,
   onImport,
 }: EnemyTeamImportDialogProps) {
@@ -52,7 +54,7 @@ export function EnemyTeamImportDialog({
         showErrorToast(t('battle.importInvalidPaste'))
         return
       }
-      const result = await showdownSetsToSlots(sets, levelCap)
+      const result = await showdownSetsToSlots(sets, levelCap, { knownSlots })
       if (result.slots.length === 0) {
         setFailures(result.failures)
         setError(t('battle.importNoResolvedPokemon'))

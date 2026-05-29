@@ -51,6 +51,18 @@ interface PokeApiSpeciesVarieties {
 }
 
 let pokemonListCache: NamedPokemonListItem[] | null = null
+const pokemonSummaryCache = new Map<string, PokemonSummary>()
+const pokemonSummaryInflight = new Map<string, Promise<PokemonSummary>>()
+
+function pokemonCacheKey(identifier: string | number): string {
+  return String(identifier).trim().toLowerCase()
+}
+
+function rememberPokemonSummary(summary: PokemonSummary): PokemonSummary {
+  pokemonSummaryCache.set(pokemonCacheKey(summary.name), summary)
+  pokemonSummaryCache.set(pokemonCacheKey(summary.id), summary)
+  return summary
+}
 
 function parseStats(stats: PokeApiStat[]): PokemonStats {
   const byName = Object.fromEntries(stats.map((s) => [s.stat.name, s.base_stat]))
@@ -144,8 +156,24 @@ export async function fetchPokemon(
   identifier: string | number,
   options?: { signal?: AbortSignal },
 ): Promise<PokemonSummary> {
-  const { data, alternateFormNames } = await fetchPokemonResource(identifier, options)
-  return { ...toSummary(data), alternateFormNames }
+  const cacheKey = pokemonCacheKey(identifier)
+  const cached = pokemonSummaryCache.get(cacheKey)
+  if (cached) return cached
+
+  const pending = pokemonSummaryInflight.get(cacheKey)
+  if (pending) return pending
+
+  const promise = (async () => {
+    try {
+      const { data, alternateFormNames } = await fetchPokemonResource(identifier, options)
+      return rememberPokemonSummary({ ...toSummary(data), alternateFormNames })
+    } finally {
+      pokemonSummaryInflight.delete(cacheKey)
+    }
+  })()
+
+  pokemonSummaryInflight.set(cacheKey, promise)
+  return promise
 }
 
 /** Showdown-style regional suffixes → PokeAPI form slugs (e.g. weezing-galarian → weezing-galar). */
@@ -210,7 +238,7 @@ async function fetchRegionalVarietyFromSpecies(
     if (!match) return null
 
     const data = await fetchJson<PokeApiPokemon>(match.pokemon.url, options?.signal)
-    return toSummary(data)
+    return rememberPokemonSummary(toSummary(data))
   } catch {
     return null
   }

@@ -182,7 +182,7 @@ function AppContent({
     results,
     bestMatch,
     isPending: searchPending,
-  } = usePokemonSearch(query)
+  } = usePokemonSearch(isSearchRoute ? query : '')
   const moveSearch = useMoveSearch(query, locale, query.trim().length >= 2)
   const abilitySearch = useAbilitySearch(query, locale, query.trim().length >= 2)
   const itemSearch = useItemSearch(query, locale, query.trim().length >= 2)

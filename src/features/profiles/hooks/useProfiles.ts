@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PokemonSummary } from '@/types/pokemon'
 import type {
   AppPersistedState,
@@ -25,7 +25,7 @@ import {
   type EvolutionOption,
 } from '@/lib/evolution'
 import { fetchPokemon } from '@/lib/pokeapi'
-import { normalizePokemonTypes } from '@/lib/pokemonTypes'
+import { hasValidPokemonTypes, normalizePokemonTypes } from '@/lib/pokemonTypes'
 import { loadAppState, saveAppState } from '@/lib/storage'
 import { defaultNature } from '@/lib/stats'
 import type { ParsedShowdownSet } from '@/lib/showdown'
@@ -84,6 +84,7 @@ async function enrichEvolutionOptions(
 export function useProfiles() {
   const [state, setState] = useState<AppPersistedState>(() => loadAppState())
   const [pendingEvolution, setPendingEvolution] = useState<EvolutionChoice | null>(null)
+  const hydratedTypeSlotIdsRef = useRef(new Set<string>())
 
   useEffect(() => {
     saveAppState(state)
@@ -94,14 +95,29 @@ export function useProfiles() {
     [state],
   )
 
-  useEffect(() => {
-    const slotsToHydrate: Array<{ slotId: string; name: string; list: SlotListName }> = []
+  const slotsMissingTypesKey = useMemo(() => {
+    const entries: string[] = []
     for (const list of ['team', 'box', 'deathBox', 'opponentTeam'] as const) {
       for (const slot of activeProfile[list]) {
-        if (normalizePokemonTypes(slot.types).length === 0 && slot.name.trim()) {
-          slotsToHydrate.push({ slotId: slot.slotId, name: slot.name, list })
+        if (!hasValidPokemonTypes(slot.types) && slot.name.trim()) {
+          entries.push([list, slot.slotId, slot.name].join('\x1f'))
         }
       }
+    }
+    return entries.sort().join('\x1e')
+  }, [activeProfile])
+
+  useEffect(() => {
+    if (!slotsMissingTypesKey) return
+
+    const slotsToHydrate: Array<{ slotId: string; name: string; list: SlotListName }> = []
+    for (const entry of slotsMissingTypesKey.split('\x1e')) {
+      const [list, slotId, ...nameParts] = entry.split('\x1f')
+      const name = nameParts.join('\x1f')
+      if (!list || !slotId || !name) continue
+      if (hydratedTypeSlotIdsRef.current.has(slotId)) continue
+      hydratedTypeSlotIdsRef.current.add(slotId)
+      slotsToHydrate.push({ slotId, name, list: list as SlotListName })
     }
     if (slotsToHydrate.length === 0) return
 
@@ -143,7 +159,7 @@ export function useProfiles() {
     return () => {
       cancelled = true
     }
-  }, [activeProfile])
+  }, [slotsMissingTypesKey])
 
   const generation = useMemo(
     () => getProfileGeneration(activeProfile.settings),
@@ -534,7 +550,13 @@ export function useProfiles() {
   const importShowdown = useCallback(
     async (text: string, target: 'team' | 'opponentTeam') => {
       const sets = parseShowdownPaste(text)
-      const { slots } = await showdownSetsToSlots(sets, activeProfile.settings.levelCap)
+      const knownSlots = [
+        ...activeProfile.team,
+        ...activeProfile.box,
+        ...activeProfile.deathBox,
+        ...activeProfile.opponentTeam,
+      ]
+      const { slots } = await showdownSetsToSlots(sets, activeProfile.settings.levelCap, { knownSlots })
 
       setState((s) =>
         updateActiveProfile(s, (p) => {
@@ -546,7 +568,7 @@ export function useProfiles() {
         }),
       )
     },
-    [activeProfile.settings.levelCap],
+    [activeProfile.box, activeProfile.deathBox, activeProfile.opponentTeam, activeProfile.settings.levelCap, activeProfile.team],
   )
 
   const setOpponentTeam = useCallback((slots: PokemonSlot[]) => {

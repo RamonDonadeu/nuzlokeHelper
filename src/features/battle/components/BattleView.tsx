@@ -112,6 +112,8 @@ export function BattleView({
     return buildPlayerThreatCountMap(enemies, team, teamDamagingMoveTypes)
   }, [enemies, team, teamDamagingMoveTypes])
 
+  const importKnownSlots = useMemo(() => [...team, ...pc, ...enemies], [enemies, pc, team])
+
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]
   const editingAllySlot = allyEditorIndex === null ? null : team[allyEditorIndex] ?? null
   const isMobileLayout = useIsMobileLayout()
@@ -342,6 +344,7 @@ export function BattleView({
         open={importOpen}
         levelCap={levelCap}
         hasExistingEnemyTeam={battle.enemySlots.some((slot) => slot !== null)}
+        knownSlots={importKnownSlots}
         onClose={() => setImportOpen(false)}
         onImport={battle.importEnemyTeam}
       />

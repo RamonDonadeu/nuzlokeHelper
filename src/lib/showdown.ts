@@ -1,4 +1,4 @@
-import type { PokemonStats } from '@/types/pokemon'
+import type { PokemonStats, PokemonSummary } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 import { defaultNature } from '@/lib/stats'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'
@@ -72,25 +72,30 @@ function parseItem(raw?: string): string | undefined {
 }
 
 function isSetHeaderLine(line: string): boolean {
-  if (!line || line.startsWith('-')) return false
+  if (!line || isMoveLine(line)) return false
   if (SET_DETAIL_PREFIX.test(line)) return false
   if (parseNatureLine(line)) return false
-  return true
+
+  const trimmed = line.trim()
+  // Nickname (Species) [@ Item] — common in tracker exports
+  if (/^.+\([^)]+\)(?:\s@(?:\s.*)?)?$/.test(trimmed)) return true
+  // Species @ Item, Species @, or other @ headers
+  if (/@/.test(trimmed)) return true
+  return false
+}
+
+function isMoveLine(line: string): boolean {
+  return line.startsWith('-') || line.startsWith('–') || line.startsWith('—')
+}
+
+function parseMoveName(line: string): string {
+  return line.replace(/^[-–—]\s*/, '').trim()
 }
 
 /** Split a Showdown paste into one block per Pokémon. */
 export function splitShowdownBlocks(text: string): string[] {
   const normalized = text.replace(/\r\n/g, '\n').trim()
   if (!normalized) return []
-
-  const blankSeparated = normalized
-    .split(/\n\s*\n/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-
-  if (blankSeparated.length > 1) {
-    return blankSeparated
-  }
 
   const lines = normalized.split('\n')
   const blocks: string[] = []
@@ -171,6 +176,8 @@ export function parseShowdownPaste(text: string): ParsedShowdownSet[] {
       moves: [],
     }
 
+    let pastDetails = false
+
     for (const line of lines.slice(1)) {
       if (line.startsWith('Ability:')) {
         set.ability = line.slice('Ability:'.length).trim()
@@ -185,8 +192,12 @@ export function parseShowdownPaste(text: string): ParsedShowdownSet[] {
         const nature = parseNatureLine(line)
         if (nature) {
           set.nature = nature
-        } else if (line.startsWith('-')) {
-          set.moves.push(line.slice(1).trim())
+          pastDetails = true
+        } else if (isMoveLine(line)) {
+          set.moves.push(parseMoveName(line))
+          pastDetails = true
+        } else if (pastDetails) {
+          set.moves.push(line.trim())
         }
       }
     }
@@ -216,14 +227,53 @@ export interface ShowdownImportResult {
   failures: ShowdownImportFailure[]
 }
 
+export interface ShowdownImportOptions {
+  /** Existing roster slots to resolve species without PokeAPI requests. */
+  knownSlots?: PokemonSlot[]
+}
+
 function importFailureLabel(set: ParsedShowdownSet): string {
   if (set.nickname) return set.nickname
   return set.name.replace(/-/g, ' ')
 }
 
+function summaryFromKnownSlot(slot: PokemonSlot): PokemonSummary {
+  return {
+    id: slot.currentSpeciesId ?? slot.speciesId,
+    name: slot.name,
+    displayName: slot.displayName,
+    types: normalizePokemonTypes(slot.types),
+    stats: slot.baseStats,
+    abilities: [],
+    sprite: slot.sprite,
+    speciesUrl: '',
+  }
+}
+
+function findKnownSlotForImport(name: string, knownSlots?: PokemonSlot[]): PokemonSlot | null {
+  if (!knownSlots?.length) return null
+  const candidates = new Set(pokemonSlugCandidates(name))
+  for (const slot of knownSlots) {
+    if (candidates.has(slot.name)) return slot
+  }
+  return null
+}
+
+async function resolveImportPokemon(
+  name: string,
+  knownSlots?: PokemonSlot[],
+): Promise<{ pokemon: PokemonSummary; slug: string }> {
+  const known = findKnownSlotForImport(name, knownSlots)
+  if (known && normalizePokemonTypes(known.types).length > 0) {
+    return { pokemon: summaryFromKnownSlot(known), slug: known.name }
+  }
+  return fetchPokemonForImport(name)
+}
+
 export async function showdownSetsToSlots(
   sets: ParsedShowdownSet[],
   defaultLevel = 5,
+  options?: ShowdownImportOptions,
 ): Promise<ShowdownImportResult> {
   const slots: PokemonSlot[] = []
   const failures: ShowdownImportFailure[] = []
@@ -231,7 +281,7 @@ export async function showdownSetsToSlots(
   for (const set of sets) {
     const triedSlugs = pokemonSlugCandidates(set.name)
     try {
-      const { pokemon } = await fetchPokemonForImport(set.name)
+      const { pokemon } = await resolveImportPokemon(set.name, options?.knownSlots)
       slots.push({
         slotId: newSlotId(),
         speciesId: pokemon.id,
