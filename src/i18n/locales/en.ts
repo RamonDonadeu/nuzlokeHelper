@@ -394,7 +394,11 @@ export const en: TranslationKey = {
     prepAtRiskTitle: 'Your Pokémon at risk',
     prepAtRiskHint: 'Your roster vs enemy damaging moves. 4× and 2× threats are listed separately.',
     prepAtRiskHintGrouped:
-      'Each Pokémon is color-coded by worst hit taken: green 1× (safe), yellow 2×, red 4×. Grouped by threatening enemy. Weak / Very weak = how many enemies hit you for 2×+.',
+      'Color by enemies that hit you for 2×+: green = 0 (superstar), blue = 1–2 (good), yellow = 3–4, red = 5+. Superstar / Good / Weak / You’re out badges: 0, 1–2, 3–4, or 5+ threatening enemies. Details still grouped by enemy and move.',
+    prepDefensiveSeveritysuperstar: 'Superstar',
+    prepDefensiveSeveritygood: 'Good',
+    prepDefensiveSeverityweak: 'Weak',
+    prepDefensiveSeverityout: "You're out",
     prepEnemyMoveCount: '{{count}} moves',
     prepThreatenedByCount: '{{count}} enemy Pokémon can hit this one for 2× or more.',
     prepThreatSummaryMeta: '{{count}} threatening enemies — tap to expand',

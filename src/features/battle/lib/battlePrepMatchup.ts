@@ -1,5 +1,5 @@
 import { fetchMoveDetails, getCachedMoveDetails, isDamagingMove, resolveMoveTypes } from '@/lib/moveTypes'
-import { getDefensiveMultiplier, multiplierTier } from '@/lib/typeChart'
+import { getDefensiveMultiplier } from '@/lib/typeChart'
 import type { PokemonType } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 
@@ -73,27 +73,29 @@ export function groupThreatsByEnemy(threats: MoveThreat[]): EnemyThreatGroup[] {
   )
 }
 
-/** How threatened a roster member is by enemy count (not by move multiplier). */
-export type RosterThreatSeverity = 'weak' | 'double'
+/** How threatened a roster member is by unique enemies hitting for 2×+. */
+export type RosterThreatSeverity = 'superstar' | 'good' | 'weak' | 'out'
 
-export function rosterThreatSeverity(threateningEnemyCount: number): RosterThreatSeverity | null {
-  if (threateningEnemyCount <= 0) return null
-  if (threateningEnemyCount > 4) return 'double'
-  return 'weak'
+/** Badge tier: 0 superstar, 1–2 good, 3–4 weak, 5+ out. */
+export function rosterThreatSeverity(threateningEnemyCount: number): RosterThreatSeverity {
+  if (threateningEnemyCount <= 0) return 'superstar'
+  if (threateningEnemyCount <= 2) return 'good'
+  if (threateningEnemyCount <= 4) return 'weak'
+  return 'out'
 }
 
-export type RosterVulnerabilityRowTone = 'battle-prep-row--safe' | 'battle-prep-row--caution' | 'battle-prep-row--danger'
+export type RosterVulnerabilityRowTone =
+  | 'battle-prep-row--safe'
+  | 'battle-prep-row--good'
+  | 'battle-prep-row--caution'
+  | 'battle-prep-row--danger'
 
-/** Row background from worst hit taken: green 1×, yellow 2×, red 4× (resists below 2× treated as safe). */
-export function rosterVulnerabilityRowBackgroundClass(
-  worstMultiplier: number,
-  hasThreats: boolean,
-): RosterVulnerabilityRowTone {
-  if (!hasThreats) return 'battle-prep-row--safe'
-  const tier = multiplierTier(worstMultiplier)
-  if (tier === 'x4') return 'battle-prep-row--danger'
-  if (tier === 'x2') return 'battle-prep-row--caution'
-  return 'battle-prep-row--safe'
+/** Row background by threatening enemy count (more enemies = worse). */
+export function rosterVulnerabilityRowBackgroundClass(threateningEnemyCount: number): RosterVulnerabilityRowTone {
+  if (threateningEnemyCount <= 0) return 'battle-prep-row--safe'
+  if (threateningEnemyCount <= 2) return 'battle-prep-row--good'
+  if (threateningEnemyCount <= 4) return 'battle-prep-row--caution'
+  return 'battle-prep-row--danger'
 }
 
 export interface CoverageAnswer {

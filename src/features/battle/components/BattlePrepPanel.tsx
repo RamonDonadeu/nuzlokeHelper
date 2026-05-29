@@ -449,12 +449,9 @@ export function BattlePrepPanel({
                   )
                   const uniqueThreateningEnemies = new Set(row.threats.map((threat) => threat.enemySlotId)).size
                   const threatSeverity = rosterThreatSeverity(uniqueThreateningEnemies)
-                  const rowTone = rosterVulnerabilityRowBackgroundClass(
-                    row.worstMultiplier,
-                    row.threats.length > 0,
-                  )
+                  const rowTone = rosterVulnerabilityRowBackgroundClass(uniqueThreateningEnemies)
 
-                  const defaultOpen = rowTone === 'battle-prep-row--danger'
+                  const defaultOpen = threatSeverity === 'out'
 
                   return (
                     <li key={row.member.slotId} className={`battle-prep-row ${rowTone}`}>
@@ -475,11 +472,11 @@ export function BattlePrepPanel({
                               {formatMultiplier(row.worstMultiplier)}
                             </span>
                           ) : null}
-                          {threatSeverity ? (
-                            <span className={`battle-prep-severity battle-prep-severity-${threatSeverity}`}>
-                              {t(`battle.prepSeverity${threatSeverity}`)}
-                            </span>
-                          ) : null}
+                          <span
+                            className={`battle-prep-severity battle-prep-severity-defense-${threatSeverity}`}
+                          >
+                            {t(`battle.prepDefensiveSeverity${threatSeverity}`)}
+                          </span>
                           <span className="muted battle-prep-summary-meta">
                             {row.threats.length > 0
                               ? t('battle.prepThreatSummaryMeta', { count: uniqueThreateningEnemies })

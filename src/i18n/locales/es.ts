@@ -378,7 +378,11 @@ export const es: TranslationKey = {
     prepAtRiskTitle: 'Tus Pokémon en riesgo',
     prepAtRiskHint: 'Tu plantilla frente a movimientos dañinos rivales. Amenazas 4× y 2× por separado.',
     prepAtRiskHintGrouped:
-      'Color por peor golpe recibido: verde 1× (seguro), amarillo 2×, rojo 4×. Agrupado por rival amenazante. Débil / Muy débil = cuántos rivales te hacen 2×+.',
+      'Color por rivales que te hacen 2×+: verde = 0 (estrella), azul = 1–2 (bueno), amarillo = 3–4, rojo = 5+. Insignias Estrella / Bueno / Débil / Fuera: 0, 1–2, 3–4 o 5+ rivales amenazantes. Detalles agrupados por rival y movimiento.',
+    prepDefensiveSeveritysuperstar: 'Estrella',
+    prepDefensiveSeveritygood: 'Bueno',
+    prepDefensiveSeverityweak: 'Débil',
+    prepDefensiveSeverityout: 'Fuera',
     prepEnemyMoveCount: '{{count}} movimientos',
     prepThreatenedByCount: '{{count}} rivales pueden hacer 2× o más a este Pokémon.',
     prepThreatSummaryMeta: '{{count}} rivales amenazantes — pulsa para ver',
