@@ -275,7 +275,9 @@ export function BattlegroundPanel({
                       onClick={() => handleSelectReplacement(index)}
                     >
                       <img src={slot.sprite} alt={slot.displayName} loading="lazy" />
-                      <span>{slot.nickname ?? slot.displayName}</span>
+                      <span className="battle-team-slot-name" title={slot.nickname ?? slot.displayName}>
+                        {slot.nickname ?? slot.displayName}
+                      </span>
                     </button>
                   </li>
                 ) : null,

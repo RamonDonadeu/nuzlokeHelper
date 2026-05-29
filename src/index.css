@@ -759,6 +759,10 @@ ul {
 
 .battle-team-column-header h3 {
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .battle-team-list {
@@ -772,6 +776,7 @@ ul {
 }
 
 .battle-team-slot {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -787,6 +792,10 @@ ul {
   font-size: 0.8rem;
   text-align: left;
   overflow: hidden;
+}
+
+.battle-team-slot:has(.battle-threat-badge-wrap) {
+  padding-right: 2rem;
 }
 
 .battle-team-slot.active {
@@ -819,11 +828,22 @@ ul {
 }
 
 .battle-team-slot .battle-threat-badge-wrap {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  z-index: 1;
+  flex-shrink: 0;
+  transform: translateY(-50%);
+}
+
+.battle-team-slot .battle-hover-tooltip {
+  display: inline-flex;
   flex-shrink: 0;
 }
 
 .battle-team-slot-name {
-  flex: 1;
+  flex: 1 1 0;
+  width: 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1525,19 +1545,48 @@ ul {
   min-height: 0;
   overflow: hidden;
   grid-template-rows: minmax(0, 1fr);
-  align-items: start;
+  align-items: stretch;
+}
+
+.app-layout-battle .battle-team-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.app-layout-battle .battle-team-column-left > .battle-team-list:not(.battle-pc-list),
+.app-layout-battle .battle-team-column-left > .battle-team-column-header,
+.app-layout-battle .battle-team-column-left > .battle-team-section-title {
+  flex-shrink: 0;
+}
+
+.app-layout-battle .battle-pc-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .app-layout-battle .battle-center-column {
   align-self: stretch;
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
 }
 
 .app-layout-battle .battle-prep-panel {
   flex: 1 1 auto;
+  min-height: 0;
+}
+
+.app-layout-battle .battle-prep-grid {
+  align-items: stretch;
+}
+
+.app-layout-battle .battle-prep-card {
+  max-height: none;
+  height: 100%;
   min-height: 0;
 }
 
@@ -1588,6 +1637,10 @@ ul {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.battle-prep-panel-body.battle-prep-grid {
+  display: grid;
 }
 
 .battle-prep-panel-body .battle-prep-stats-table {
@@ -1771,7 +1824,7 @@ ul {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.6rem;
-  align-items: start;
+  align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -2075,7 +2128,9 @@ ul {
   }
 
   .battle-slot-grid-name {
+    display: block;
     width: 100%;
+    max-width: 100%;
     min-width: 0;
     font-size: 0.72rem;
     font-weight: 600;
@@ -2084,6 +2139,10 @@ ul {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .battle-slot-grid-cell:has(.battle-threat-badge-wrap) .battle-slot-grid-name {
+    padding-inline: 0.15rem;
   }
 
   .battle-slot-grid-cell.active {
@@ -3476,15 +3535,13 @@ button.evolution-card {
     flex: 1;
     min-height: 0;
     grid-template-rows: minmax(0, 1fr);
-    align-items: start;
+    align-items: stretch;
   }
 
   .app-layout-battle .battle-center-column {
     align-self: stretch;
     min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    overflow: hidden;
   }
 
   .desktop-sidebar {

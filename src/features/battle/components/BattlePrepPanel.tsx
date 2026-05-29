@@ -131,7 +131,7 @@ export function BattlePrepPanel({
           />
         </div>
       ) : showAttacks ? (
-      <div className="battle-prep-grid">
+      <div className="battle-prep-panel-body battle-prep-grid">
         <article className="battle-prep-card">
           <div className="battle-prep-card-head">
             <h4>{t('battle.prepThreatsTitle')}</h4>
