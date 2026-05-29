@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BattlePrepMoveLabel } from '@/features/battle/components/BattlePrepMoveLabel'
-import {
-  BattlePrepAbilityCell,
-  BattlePrepItemCell,
-} from '@/features/battle/components/BattlePrepSlotMeta'
+import { BattlePrepRosterDetails } from '@/features/battle/components/BattlePrepRosterDetails'
 import { BattlePrepStatsTable } from '@/features/battle/components/BattlePrepStatsTable'
 import { useProfiles } from '@/features/profiles/hooks/useProfiles'
 import { useAbilityDescriptions } from '@/features/team/hooks/useAbilityDescriptions'
@@ -28,11 +25,7 @@ import {
 } from '@/features/battle/lib/battlePrepMatchup'
 import { resolveAbilitySlug } from '@/lib/localizedNames'
 import type { MoveDetails } from '@/lib/moveTypes'
-import {
-  formatMultiplier,
-  getDefensiveWeaknessGroups,
-  multiplierTier,
-} from '@/lib/typeChart'
+import { formatMultiplier, multiplierTier } from '@/lib/typeChart'
 import type { PokemonType } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 
@@ -60,11 +53,13 @@ function collectPrepMoveNames(
   return [...names]
 }
 
-export type BattlePrepTab = 'enemy' | 'weakness' | 'attack' | 'stats'
+export type BattlePrepTab = 'team' | 'weakness' | 'attack' | 'stats'
 
 export type BattlePrepPanelMode = 'full' | 'stats-only'
 
-const PREP_TAB_ORDER: BattlePrepTab[] = ['enemy', 'weakness', 'attack', 'stats']
+type TeamDetailsView = 'ally' | 'enemy'
+
+const PREP_TAB_ORDER: BattlePrepTab[] = ['team', 'weakness', 'attack', 'stats']
 
 interface BattlePrepPanelProps {
   team: PokemonSlot[]
@@ -80,43 +75,6 @@ function TypeBadge({ type }: { type: PokemonType }) {
   return <span className={`type-badge type-${type}`}>{type}</span>
 }
 
-function WeaknessTypes({ quadruple, double }: { quadruple: PokemonType[]; double: PokemonType[] }) {
-  const { t } = useI18n()
-
-  if (quadruple.length === 0 && double.length === 0) {
-    return <span className="muted">—</span>
-  }
-
-  return (
-    <div className="battle-prep-weakness-groups">
-      {quadruple.length > 0 ? (
-        <div className="battle-prep-weakness-group">
-          <span className="battle-prep-weakness-label">{t('battle.prepWeak4x')}</span>
-          <ul className="battle-prep-type-list">
-            {quadruple.map((type) => (
-              <li key={`4-${type}`}>
-                <TypeBadge type={type} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      {double.length > 0 ? (
-        <div className="battle-prep-weakness-group">
-          <span className="battle-prep-weakness-label">{t('battle.prepWeak2x')}</span>
-          <ul className="battle-prep-type-list">
-            {double.map((type) => (
-              <li key={`2-${type}`}>
-                <TypeBadge type={type} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
 export function BattlePrepPanel({
   team,
   pc,
@@ -128,8 +86,9 @@ export function BattlePrepPanel({
 }: BattlePrepPanelProps) {
   const { t, locale } = useI18n()
   const { versionGroup } = useProfiles()
-  const initialTab = defaultTab ?? (mode === 'stats-only' ? 'stats' : 'enemy')
+  const initialTab = defaultTab ?? (mode === 'stats-only' ? 'stats' : 'team')
   const [activeTab, setActiveTab] = useState<BattlePrepTab>(initialTab)
+  const [teamDetailsView, setTeamDetailsView] = useState<TeamDetailsView>('ally')
   const [includePc, setIncludePc] = useState(false)
 
   useEffect(() => {
@@ -146,6 +105,7 @@ export function BattlePrepPanel({
   const pcSlotIds = useMemo(() => new Set(pc.map((slot) => slot.slotId)), [pc])
 
   const [enemyDamagingMoveTypes, setEnemyDamagingMoveTypes] = useState<Map<string, PokemonType>>(new Map())
+  const [teamDamagingMoveTypes, setTeamDamagingMoveTypes] = useState<Map<string, PokemonType>>(new Map())
   const [rosterDamagingMoveTypes, setRosterDamagingMoveTypes] = useState<Map<string, PokemonType>>(new Map())
 
   useEffect(() => {
@@ -159,6 +119,18 @@ export function BattlePrepPanel({
       cancelled = true
     }
   }, [enemies])
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const moveTypes = await resolveDamagingMoveTypes(uniqueNonEmptyMoves(team))
+      if (!cancelled) setTeamDamagingMoveTypes(moveTypes)
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [team])
 
   useEffect(() => {
     let cancelled = false
@@ -223,11 +195,23 @@ export function BattlePrepPanel({
     [enemies, enemyDamagingMoveTypes],
   )
 
+  const teamOffenseSummary = useMemo(
+    () => summarizeEnemyAttackTypes(team, teamDamagingMoveTypes),
+    [team, teamDamagingMoveTypes],
+  )
+
   const enemiesMissingMoves = useMemo(() => enemiesWithNoMoves(enemies), [enemies])
 
   const unconfiguredMoveEnemies = useMemo(
     () => enemiesWithUnconfiguredMoves(enemies, enemyDamagingMoveTypes),
     [enemies, enemyDamagingMoveTypes],
+  )
+
+  const teamMissingMoves = useMemo(() => enemiesWithNoMoves(team), [team])
+
+  const unconfiguredTeamMoves = useMemo(
+    () => enemiesWithUnconfiguredMoves(team, teamDamagingMoveTypes),
+    [team, teamDamagingMoveTypes],
   )
 
   const hasRosterMoves = useMemo(() => hasConfiguredTeamMoves(roster), [roster])
@@ -242,18 +226,18 @@ export function BattlePrepPanel({
   )
   const { detailsByName: moveDetailsByName, loading: moveDetailsLoading } = useMovesDetails(prepMoveNames)
 
-  const enemyAbilitySlugs = useMemo(() => {
+  const rosterDetailAbilitySlugs = useMemo(() => {
     const slugs: string[] = []
-    for (const enemy of enemies) {
-      if (!enemy.ability) continue
-      const slug = resolveAbilitySlug(enemy.ability)
+    for (const slot of [...team, ...enemies]) {
+      if (!slot.ability) continue
+      const slug = resolveAbilitySlug(slot.ability)
       if (slug) slugs.push(slug)
     }
     return [...new Set(slugs)]
-  }, [enemies])
+  }, [enemies, team])
 
-  const { descriptions: enemyAbilityDescriptions } = useAbilityDescriptions(
-    enemyAbilitySlugs,
+  const { descriptions: rosterDetailAbilityDescriptions } = useAbilityDescriptions(
+    rosterDetailAbilitySlugs,
     locale,
     versionGroup,
   )
@@ -262,7 +246,7 @@ export function BattlePrepPanel({
   if (started && mode !== 'stats-only') return null
 
   const prepTabLabels: Record<BattlePrepTab, string> = {
-    enemy: t('battle.prepTabEnemy'),
+    team: t('battle.prepTabTeam'),
     weakness: t('battle.prepTabWeakness'),
     attack: t('battle.prepTabAttack'),
     stats: t('battle.prepTabStats'),
@@ -320,116 +304,62 @@ export function BattlePrepPanel({
           activeTab === 'stats' ? ' battle-prep-panel-body--stats-tab' : ''
         }`}
       >
-        {activeTab === 'enemy' ? (
+        {activeTab === 'team' ? (
           <>
-          <section className="battle-prep-section">
-            <h4 className="battle-prep-section-title">{t('battle.prepEnemyTypesTitle')}</h4>
-            <p className="muted battle-prep-section-hint">{t('battle.prepEnemyTypesHint')}</p>
-            {enemiesMissingMoves.length > 0 ? (
-              <p className="muted battle-prep-note battle-prep-warning">
-                {t('battle.prepEnemyNoMoves', {
-                  names: enemiesMissingMoves.map((e) => e.nickname ?? e.displayName).join(', '),
-                })}
-              </p>
-            ) : null}
-            {unconfiguredMoveEnemies.length > 0 ? (
-              <p className="muted battle-prep-note battle-prep-warning">
-                {t('battle.prepEnemyConfigureMoves', {
-                  names: unconfiguredMoveEnemies.map((e) => e.nickname ?? e.displayName).join(', '),
-                })}
-              </p>
-            ) : null}
-            <div className="battle-prep-table-wrap">
-              <table className="battle-prep-enemy-table">
-                <thead>
-                  <tr>
-                    <th>{t('battle.prepStatsPokemon')}</th>
-                    <th>{t('battle.prepTypesColumn')}</th>
-                    <th>{t('battle.prepWeakToColumn')}</th>
-                    <th>{t('battle.prepAbilityColumn')}</th>
-                    <th>{t('battle.prepItemColumn')}</th>
-                    <th>{t('battle.prepEnemyMovesColumn')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {enemies.map((enemy) => {
-                    const weaknesses = getDefensiveWeaknessGroups(enemy.types)
-                    const configuredMoves = (enemy.moves ?? []).map((move) => move.trim()).filter(Boolean)
-
-                    return (
-                      <tr key={enemy.slotId}>
-                        <td className="battle-prep-enemy-name">
-                          <div className="battle-prep-enemy-name-inner">
-                            <img src={enemy.sprite} alt="" loading="lazy" />
-                            <span>{enemy.nickname ?? enemy.displayName}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <ul className="battle-prep-type-list">
-                            {enemy.types.map((type) => (
-                              <li key={type}>
-                                <TypeBadge type={type} />
-                              </li>
-                            ))}
-                          </ul>
-                        </td>
-                        <td>
-                          <WeaknessTypes quadruple={weaknesses.quadruple} double={weaknesses.double} />
-                        </td>
-                        <td className="battle-prep-enemy-meta-cell">
-                          <div className="battle-prep-enemy-cell-inner">
-                            <BattlePrepAbilityCell
-                              slot={enemy}
-                              abilityDescriptions={enemyAbilityDescriptions}
-                            />
-                          </div>
-                        </td>
-                        <td className="battle-prep-enemy-meta-cell">
-                          <div className="battle-prep-enemy-cell-inner">
-                            <BattlePrepItemCell slot={enemy} />
-                          </div>
-                        </td>
-                        <td className="battle-prep-enemy-moves">
-                          {configuredMoves.length > 0 ? (
-                            <ul className="battle-prep-enemy-move-list">
-                              {configuredMoves.map((moveName) => (
-                                <li key={moveName}>
-                                  <BattlePrepMoveLabel
-                                    moveName={moveName}
-                                    details={moveDetailsByName[moveName]}
-                                    loading={moveDetailsLoading}
-                                  />
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div
+              className="battle-prep-details-switch"
+              role="group"
+              aria-label={t('battle.prepTeamDetailsSwitchLabel')}
+            >
+              <button
+                type="button"
+                className={`btn btn-sm${teamDetailsView === 'ally' ? ' btn-primary' : ''}`}
+                aria-pressed={teamDetailsView === 'ally'}
+                onClick={() => setTeamDetailsView('ally')}
+              >
+                {t('battle.prepYourTeam')}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm${teamDetailsView === 'enemy' ? ' btn-primary' : ''}`}
+                aria-pressed={teamDetailsView === 'enemy'}
+                onClick={() => setTeamDetailsView('enemy')}
+              >
+                {t('battle.prepEnemyTeam')}
+              </button>
             </div>
-          </section>
 
-          <section className="battle-prep-section">
-            <h4 className="battle-prep-section-title">{t('battle.prepOffenseSummaryTitle')}</h4>
-            <p className="muted battle-prep-section-hint">{t('battle.prepOffenseSummaryHint')}</p>
-            {enemyOffenseSummary.length > 0 ? (
-              <ul className="battle-prep-offense-chips">
-                {enemyOffenseSummary.map(({ attackType, count }) => (
-                  <li key={attackType}>
-                    <TypeBadge type={attackType} />
-                    <span className="battle-prep-offense-count">×{count}</span>
-                  </li>
-                ))}
-              </ul>
+            {teamDetailsView === 'ally' ? (
+              <BattlePrepRosterDetails
+                members={team}
+                abilityDescriptions={rosterDetailAbilityDescriptions}
+                moveDetailsByName={moveDetailsByName}
+                moveDetailsLoading={moveDetailsLoading}
+                typesTitle={t('battle.prepYourTeamTypesTitle')}
+                typesHint={t('battle.prepYourTeamTypesHint')}
+                missingMovesNames={teamMissingMoves.map((m) => m.nickname ?? m.displayName)}
+                unconfiguredNames={unconfiguredTeamMoves.map((m) => m.nickname ?? m.displayName)}
+                offenseTitle={t('battle.prepYourOffenseSummaryTitle')}
+                offenseHint={t('battle.prepYourOffenseSummaryHint')}
+                offenseSummary={teamOffenseSummary}
+                offenseEmpty={t('battle.prepYourOffenseSummaryEmpty')}
+              />
             ) : (
-              <p className="muted">{t('battle.prepOffenseSummaryEmpty')}</p>
+              <BattlePrepRosterDetails
+                members={enemies}
+                abilityDescriptions={rosterDetailAbilityDescriptions}
+                moveDetailsByName={moveDetailsByName}
+                moveDetailsLoading={moveDetailsLoading}
+                typesTitle={t('battle.prepEnemyTypesTitle')}
+                typesHint={t('battle.prepEnemyTypesHint')}
+                missingMovesNames={enemiesMissingMoves.map((m) => m.nickname ?? m.displayName)}
+                unconfiguredNames={unconfiguredMoveEnemies.map((m) => m.nickname ?? m.displayName)}
+                offenseTitle={t('battle.prepOffenseSummaryTitle')}
+                offenseHint={t('battle.prepOffenseSummaryHint')}
+                offenseSummary={enemyOffenseSummary}
+                offenseEmpty={t('battle.prepOffenseSummaryEmpty')}
+              />
             )}
-          </section>
           </>
         ) : null}
 

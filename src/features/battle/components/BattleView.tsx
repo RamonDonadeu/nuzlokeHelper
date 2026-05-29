@@ -198,7 +198,7 @@ export function BattleView({
       enemySlots={battle.enemySlots}
       levelCap={levelCap}
       started={battle.started}
-      defaultTab="enemy"
+      defaultTab="team"
     />
   )
 

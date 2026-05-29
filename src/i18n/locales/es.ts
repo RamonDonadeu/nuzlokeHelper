@@ -354,7 +354,22 @@ export const es: TranslationKey = {
     importFailureLine: '{{name}}: especie no encontrada (probado: {{slugs}}).',
     prepTitle: 'Preparación de batalla',
     prepTabsLabel: 'Vistas de preparación de batalla',
-    prepTabEnemy: 'Detalles rivales',
+    prepTabTeam: 'Detalles del equipo',
+    prepTeamDetailsSwitchLabel: 'Qué plantilla mostrar',
+    prepYourTeam: 'Tu equipo',
+    prepEnemyTeam: 'Rivales',
+    prepYourTeamTypesTitle: 'Tipos de tu equipo',
+    prepYourTeamTypesHint:
+      'Tipos, habilidad, objeto y movimientos de cada miembro. Pasa el cursor sobre habilidad, objeto o movimiento para ver detalles.',
+    prepYourOffenseSummaryTitle: 'Tus tipos de ataque',
+    prepYourOffenseSummaryHint: 'Cuántos movimientos dañinos configurados de cada tipo hay en tu equipo.',
+    prepYourOffenseSummaryEmpty:
+      'No hay movimientos dañinos en tu equipo—añade movimientos para analizar la cobertura.',
+    prepRosterNoMoves:
+      '{{names}} no tienen movimientos configurados—añade sus ataques para analizar amenazas y ofensiva.',
+    prepRosterConfigureMoves:
+      '{{names}} tienen movimientos pero no se resolvió ningún ataque dañino—revisa los nombres.',
+    prepMovesColumn: 'Ataques',
     prepTabWeakness: 'Debilidades',
     prepTabAttack: 'Ataques',
     prepTabStats: 'Stats',

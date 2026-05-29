@@ -1694,6 +1694,13 @@ ul {
   margin-bottom: 0.35rem;
 }
 
+.battle-prep-details-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem;
+}
+
 .battle-center-column > .battle-panel {
   flex-shrink: 0;
 }
