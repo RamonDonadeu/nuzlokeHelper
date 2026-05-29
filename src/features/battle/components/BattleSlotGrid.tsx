@@ -88,7 +88,9 @@ export function BattleSlotGrid({
                   />
                 ) : null}
               </span>
-              <span className="battle-slot-grid-name">{slot.nickname ?? slot.displayName}</span>
+              <span className="battle-slot-grid-name" title={slot.nickname ?? slot.displayName}>
+                {slot.nickname ?? slot.displayName}
+              </span>
             </button>
           </li>
         )

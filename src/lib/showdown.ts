@@ -2,7 +2,7 @@ import type { PokemonStats } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
 import { defaultNature } from '@/lib/stats'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'
-import { fetchPokemon } from '@/lib/pokeapi'
+import { fetchPokemonForImport, pokemonSlugCandidates } from '@/lib/pokeapi'
 import { canonicalAbilityName } from '@/lib/localizedNames'
 
 const STAT_ALIASES: Record<string, keyof PokemonStats> = {
@@ -197,16 +197,33 @@ export function parseShowdownPaste(text: string): ParsedShowdownSet[] {
   return sets
 }
 
+export interface ShowdownImportFailure {
+  label: string
+  speciesSlug: string
+  triedSlugs: string[]
+}
+
+export interface ShowdownImportResult {
+  slots: PokemonSlot[]
+  failures: ShowdownImportFailure[]
+}
+
+function importFailureLabel(set: ParsedShowdownSet): string {
+  if (set.nickname) return set.nickname
+  return set.name.replace(/-/g, ' ')
+}
+
 export async function showdownSetsToSlots(
   sets: ParsedShowdownSet[],
   defaultLevel = 5,
-): Promise<PokemonSlot[]> {
+): Promise<ShowdownImportResult> {
   const slots: PokemonSlot[] = []
+  const failures: ShowdownImportFailure[] = []
 
   for (const set of sets) {
+    const triedSlugs = pokemonSlugCandidates(set.name)
     try {
-      const normalized = set.name.toLowerCase().replace(/\s+/g, '-')
-      const pokemon = await fetchPokemon(normalized)
+      const { pokemon } = await fetchPokemonForImport(set.name)
       slots.push({
         slotId: crypto.randomUUID(),
         speciesId: pokemon.id,
@@ -226,11 +243,15 @@ export async function showdownSetsToSlots(
         moves: set.moves.length > 0 ? set.moves.slice(0, 4) : undefined,
       })
     } catch {
-      // skip unknown species
+      failures.push({
+        label: importFailureLabel(set),
+        speciesSlug: set.name,
+        triedSlugs,
+      })
     }
   }
 
-  return slots
+  return { slots, failures }
 }
 
 export function slotToShowdown(slot: PokemonSlot): string {

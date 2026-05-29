@@ -148,6 +148,48 @@ export async function fetchPokemon(
   return { ...toSummary(data), alternateFormNames }
 }
 
+/** Showdown-style regional suffixes → PokeAPI form slugs (e.g. weezing-galarian → weezing-galar). */
+const REGIONAL_SUFFIX_ALIASES: Record<string, string> = {
+  galarian: 'galar',
+  alolan: 'alola',
+  hisuian: 'hisui',
+  paldean: 'paldea',
+}
+
+export function pokemonSlugCandidates(slug: string): string[] {
+  const normalized = slug.trim().toLowerCase().replace(/\s+/g, '-')
+  const candidates = [normalized]
+
+  for (const [long, short] of Object.entries(REGIONAL_SUFFIX_ALIASES)) {
+    const suffix = `-${long}`
+    if (normalized.endsWith(suffix)) {
+      candidates.push(`${normalized.slice(0, -suffix.length)}-${short}`)
+    }
+  }
+
+  return [...new Set(candidates)]
+}
+
+/** Tries regional aliases and other slug variants used in Showdown exports. */
+export async function fetchPokemonForImport(
+  identifier: string,
+  options?: { signal?: AbortSignal },
+): Promise<{ pokemon: PokemonSummary; slug: string }> {
+  const candidates = pokemonSlugCandidates(identifier)
+  let lastError: unknown
+
+  for (const slug of candidates) {
+    try {
+      const pokemon = await fetchPokemon(slug, options)
+      return { pokemon, slug }
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`Pokémon not found: ${identifier}`)
+}
+
 /** Resolve species types for team slots, fetching from PokeAPI when stored types are missing. */
 export async function resolveTeamSpeciesTypes(
   members: Array<{ slotId: string; name: string; types: unknown }>,

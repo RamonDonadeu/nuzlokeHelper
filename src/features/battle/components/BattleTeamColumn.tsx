@@ -74,7 +74,9 @@ function TeamSlotRow({
         }}
       >
         <img src={slot.sprite} alt={slot.displayName} loading="lazy" />
-        <span className="battle-team-slot-name">{slot.nickname ?? slot.displayName}</span>
+        <span className="battle-team-slot-name" title={slot.nickname ?? slot.displayName}>
+          {slot.nickname ?? slot.displayName}
+        </span>
         {threatCount !== undefined && threatTotalCount > 0 && threatBadgeVariant ? (
           <BattleThreatBadge
             count={threatCount}
@@ -120,7 +122,9 @@ function PcMemberRow({
         }}
       >
         <img src={slot.sprite} alt={slot.displayName} loading="lazy" />
-        <span className="battle-team-slot-name">{slot.nickname ?? slot.displayName}</span>
+        <span className="battle-team-slot-name" title={slot.nickname ?? slot.displayName}>
+          {slot.nickname ?? slot.displayName}
+        </span>
         {threatTotalCount > 0 ? (
           <BattleThreatBadge
             count={threatCount}

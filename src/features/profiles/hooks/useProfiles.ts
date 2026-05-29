@@ -534,7 +534,7 @@ export function useProfiles() {
   const importShowdown = useCallback(
     async (text: string, target: 'team' | 'opponentTeam') => {
       const sets = parseShowdownPaste(text)
-      const slots = await showdownSetsToSlots(sets, activeProfile.settings.levelCap)
+      const { slots } = await showdownSetsToSlots(sets, activeProfile.settings.levelCap)
 
       setState((s) =>
         updateActiveProfile(s, (p) => {

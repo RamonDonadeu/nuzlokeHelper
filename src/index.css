@@ -739,6 +739,9 @@ ul {
 
 .battle-team-column {
   padding: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .battle-team-column h3 {
@@ -761,6 +764,7 @@ ul {
 .battle-team-list {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .battle-team-list li {
@@ -772,6 +776,8 @@ ul {
   align-items: center;
   gap: 0.4rem;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 2.55rem;
   padding: 0.35rem 0.45rem;
   border-radius: 8px;
@@ -780,6 +786,7 @@ ul {
   color: var(--text);
   font-size: 0.8rem;
   text-align: left;
+  overflow: hidden;
 }
 
 .battle-team-slot.active {
@@ -808,6 +815,10 @@ ul {
   width: 32px;
   height: 32px;
   image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.battle-team-slot .battle-threat-badge-wrap {
   flex-shrink: 0;
 }
 
@@ -1437,6 +1448,21 @@ ul {
   font-size: 0.88rem;
 }
 
+.battle-import-failures {
+  margin: 0;
+  padding: 0 0 0 1rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--negative);
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.battle-import-failures li {
+  line-height: 1.35;
+}
+
 .battle-pc-switch-modal {
   width: min(100%, 420px);
   display: grid;
@@ -2016,12 +2042,15 @@ ul {
     justify-content: flex-start;
     gap: 0.3rem;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     min-height: 5.5rem;
     padding: 0.45rem 0.35rem 0.4rem;
     border-radius: 10px;
     border: 1px solid var(--border);
     background: var(--bg-soft);
     color: var(--text);
+    overflow: hidden;
   }
 
   .battle-slot-grid-media {
