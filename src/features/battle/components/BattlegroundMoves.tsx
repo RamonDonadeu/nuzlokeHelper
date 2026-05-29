@@ -10,6 +10,7 @@ import {
   fetchMoveDetails,
   getCachedMoveDetails,
   getMoveDescription,
+  isDamagingMove,
   type MoveDetails,
 } from '@/lib/moveTypes'
 import { formatMultiplier, getDefensiveMultiplier } from '@/lib/typeChart'
@@ -41,19 +42,24 @@ function MoveTargetIcons({
   targets,
   moveType,
   perspective,
+  showEffectiveness,
 }: {
   targets: PokemonSlot[]
   moveType: PokemonType
   perspective: MovePerspective
+  showEffectiveness: boolean
 }) {
   return (
     <div className="battleground-move-targets" aria-hidden="true">
       {targets.map((target) => {
-        const multiplier = getDefensiveMultiplier(target.types, moveType)
-        const effectClass =
-          perspective === 'offensive'
+        const multiplier = showEffectiveness
+          ? getDefensiveMultiplier(target.types, moveType)
+          : null
+        const effectClass = showEffectiveness
+          ? perspective === 'offensive'
             ? offensiveMoveEffectClass(multiplier)
             : incomingMoveEffectClass(multiplier)
+          : 'battleground-move-target-neutral'
         const label = target.nickname ?? target.displayName
         return (
           <span
@@ -103,14 +109,19 @@ function MoveGrid({
 
         const details = detailsByName.get(moveName) ?? null
         const moveType = details?.type ?? null
+        const isStatus = details !== null && !isDamagingMove(details)
+        const isDamaging = details !== null && isDamagingMove(details)
         const multiplier =
-          moveType && defenderTypes.length > 0
+          isDamaging && moveType && defenderTypes.length > 0
             ? getDefensiveMultiplier(defenderTypes, moveType)
             : null
-        const effectClass =
-          perspective === 'offensive'
-            ? offensiveMoveEffectClass(multiplier)
-            : incomingMoveEffectClass(multiplier)
+        const effectClass = isStatus
+          ? 'battleground-move-status'
+          : isDamaging
+            ? perspective === 'offensive'
+              ? offensiveMoveEffectClass(multiplier)
+              : incomingMoveEffectClass(multiplier)
+            : 'battle-move-eff-unknown'
         const description = details ? getMoveDescription(details, locale) : ''
         const displayName = displayMoveName(moveName, locale)
         const powerLabel =
@@ -134,11 +145,12 @@ function MoveGrid({
                 <span className={`type-badge type-${moveType ?? 'unknown'}`}>
                   {moveType ?? '?'}
                 </span>
-                {showTargetIcons && moveType ? (
+                {showTargetIcons && moveType && isDamaging ? (
                   <MoveTargetIcons
                     targets={defenderTargets!}
                     moveType={moveType}
                     perspective={perspective}
+                    showEffectiveness
                   />
                 ) : multiplier !== null ? (
                   <span className="battleground-move-mult">{formatMultiplier(multiplier)}</span>

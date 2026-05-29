@@ -1219,6 +1219,25 @@ ul {
   border-style: dashed;
 }
 
+.battleground-move-cell.battleground-move-status {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.battleground-move-cell.battleground-move-status .muted {
+  color: #64748b;
+}
+
+.battleground-move-cell.battleground-move-status .type-badge {
+  opacity: 0.95;
+}
+
+.battleground-move-target-neutral {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
 .battle-editor-modal {
   width: min(100%, 480px);
   max-height: min(90vh, 720px);
