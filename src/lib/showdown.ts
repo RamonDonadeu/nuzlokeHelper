@@ -3,15 +3,28 @@ import type { PokemonSlot } from '@/types/profile'
 import { defaultNature } from '@/lib/stats'
 import { normalizePokemonTypes } from '@/lib/pokemonTypes'
 import { fetchPokemon } from '@/lib/pokeapi'
+import { canonicalAbilityName } from '@/lib/localizedNames'
 
 const STAT_ALIASES: Record<string, keyof PokemonStats> = {
   HP: 'hp',
+  Hp: 'hp',
+  hp: 'hp',
   Atk: 'attack',
+  atk: 'attack',
   Def: 'defense',
+  def: 'defense',
   SpA: 'specialAttack',
+  Spa: 'specialAttack',
+  spa: 'specialAttack',
   SpD: 'specialDefense',
+  Spd: 'specialDefense',
+  spd: 'specialDefense',
   Spe: 'speed',
+  spe: 'speed',
 }
+
+const SET_DETAIL_PREFIX =
+  /^(Level|Ability|EVs|IVs|Shiny|Gender|Tera Type|Happiness|Ball|Language):/i
 
 export interface ParsedShowdownSet {
   name: string
@@ -26,38 +39,116 @@ export interface ParsedShowdownSet {
 }
 
 function parseStatLine(line: string, prefix: 'EVs' | 'IVs'): Partial<PokemonStats> | undefined {
-  if (!line.startsWith(`${prefix}:`)) return undefined
+  if (!line.toLowerCase().startsWith(`${prefix.toLowerCase()}:`)) return undefined
   const stats: Partial<PokemonStats> = {}
-  const body = line.slice(prefix.length + 1).trim()
+  const colon = line.indexOf(':')
+  const body = line.slice(colon + 1).trim()
   for (const part of body.split('/')) {
-    const match = part.trim().match(/^(\d+)\s+(\w+)/)
+    const match = part.trim().match(/^(\d+)\s+([A-Za-z]+)/)
     if (!match) continue
     const value = Number(match[1])
-    const key = STAT_ALIASES[match[2]]
+    const key = STAT_ALIASES[match[2]] ?? STAT_ALIASES[match[2].charAt(0).toUpperCase() + match[2].slice(1)]
     if (key) stats[key] = value
   }
   return Object.keys(stats).length > 0 ? stats : undefined
 }
 
+function parseNatureLine(line: string): string | undefined {
+  if (line.startsWith('Nature:')) {
+    return line.slice('Nature:'.length).trim()
+  }
+  const suffixMatch = line.match(/^(.+?)\s+Nature$/i)
+  if (suffixMatch) {
+    return suffixMatch[1].trim()
+  }
+  return undefined
+}
+
+function parseItem(raw?: string): string | undefined {
+  if (!raw) return undefined
+  const trimmed = raw.trim()
+  if (!trimmed || /^none$/i.test(trimmed)) return undefined
+  return trimmed
+}
+
+function isSetHeaderLine(line: string): boolean {
+  if (!line || line.startsWith('-')) return false
+  if (SET_DETAIL_PREFIX.test(line)) return false
+  if (parseNatureLine(line)) return false
+  return true
+}
+
+/** Split a Showdown paste into one block per Pokémon. */
+export function splitShowdownBlocks(text: string): string[] {
+  const normalized = text.replace(/\r\n/g, '\n').trim()
+  if (!normalized) return []
+
+  const blankSeparated = normalized
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+
+  if (blankSeparated.length > 1) {
+    return blankSeparated
+  }
+
+  const lines = normalized.split('\n')
+  const blocks: string[] = []
+  let current: string[] = []
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+    if (!line) {
+      if (current.length > 0) {
+        blocks.push(current.join('\n'))
+        current = []
+      }
+      continue
+    }
+
+    if (current.length > 0 && isSetHeaderLine(line)) {
+      blocks.push(current.join('\n'))
+      current = [line]
+      continue
+    }
+
+    current.push(line)
+  }
+
+  if (current.length > 0) {
+    blocks.push(current.join('\n'))
+  }
+
+  return blocks
+}
+
+function parseHeaderLine(header: string): Pick<ParsedShowdownSet, 'name' | 'nickname' | 'item'> {
+  const nicknameMatch = header.match(/^(.+?)\s*\(([^)]+)\)(?:\s*@\s*(.+))?$/)
+  if (nicknameMatch) {
+    return {
+      nickname: nicknameMatch[1].trim(),
+      name: nicknameMatch[2].trim().toLowerCase().replace(/\s+/g, '-'),
+      item: parseItem(nicknameMatch[3]),
+    }
+  }
+
+  const [namePart, itemPart] = header.split('@')
+  return {
+    name: namePart.trim().toLowerCase().replace(/\s+/g, '-'),
+    item: parseItem(itemPart),
+  }
+}
+
 export function parseShowdownPaste(text: string): ParsedShowdownSet[] {
-  const blocks = text.split(/\n(?=[^\s-])/).map((block) => block.trim()).filter(Boolean)
   const sets: ParsedShowdownSet[] = []
 
-  for (const block of blocks) {
+  for (const block of splitShowdownBlocks(text)) {
     const lines = block.split('\n').map((line) => line.trim()).filter(Boolean)
     if (lines.length === 0) continue
 
-    const header = lines[0]
-    const nicknameMatch = header.match(/^(.+?)\s*\((.+?)\)/)
-    const nameLine = nicknameMatch ? nicknameMatch[2].trim() : header.split('@')[0].trim()
-
-    const nickname = nicknameMatch ? nicknameMatch[1].trim() : undefined
-    const item = header.includes('@') ? header.split('@')[1]?.trim() : undefined
-
+    const header = parseHeaderLine(lines[0])
     const set: ParsedShowdownSet = {
-      name: nameLine.toLowerCase().replace(/\s+/g, '-'),
-      nickname,
-      item,
+      ...header,
       moves: [],
     }
 
@@ -65,17 +156,19 @@ export function parseShowdownPaste(text: string): ParsedShowdownSet[] {
       if (line.startsWith('Ability:')) {
         set.ability = line.slice('Ability:'.length).trim()
       } else if (line.startsWith('Level:')) {
-        set.level = Number(line.slice('Level:'.length).trim())
-      } else if (line.startsWith('Nature:')) {
-        set.nature = line.slice('Nature:'.length).trim()
-      } else if (line.startsWith('EVs:')) {
+        const level = Number(line.slice('Level:'.length).trim())
+        if (Number.isFinite(level)) set.level = level
+      } else if (line.toLowerCase().startsWith('evs:')) {
         set.evs = parseStatLine(line, 'EVs')
-      } else if (line.startsWith('IVs:')) {
+      } else if (line.toLowerCase().startsWith('ivs:')) {
         set.ivs = parseStatLine(line, 'IVs')
-      } else if (line.startsWith('-')) {
-        set.moves.push(line.slice(1).trim())
-      } else if (line.startsWith('Shiny:') || line.startsWith('Gender:') || line.startsWith('Tera Type:')) {
-        // ignore
+      } else {
+        const nature = parseNatureLine(line)
+        if (nature) {
+          set.nature = nature
+        } else if (line.startsWith('-')) {
+          set.moves.push(line.slice(1).trim())
+        }
       }
     }
 
@@ -109,7 +202,7 @@ export async function showdownSetsToSlots(
         ivs: set.ivs,
         evs: set.evs,
         nature: set.nature ?? defaultNature(),
-        ability: set.ability,
+        ability: set.ability ? canonicalAbilityName(set.ability) : undefined,
         item: set.item,
         moves: set.moves.length > 0 ? set.moves.slice(0, 4) : undefined,
       })
@@ -123,10 +216,15 @@ export async function showdownSetsToSlots(
 
 export function slotToShowdown(slot: PokemonSlot): string {
   const lines: string[] = []
+  const headerName = slot.displayName
   const header = slot.nickname
-    ? `${slot.nickname} (${slot.displayName})`
-    : slot.displayName
+    ? `${slot.nickname} (${headerName})${slot.item ? ` @ ${slot.item}` : ''}`
+    : `${headerName}${slot.item ? ` @ ${slot.item}` : ''}`
   lines.push(header)
+
+  if (slot.ability) {
+    lines.push(`Ability: ${slot.ability}`)
+  }
 
   if (slot.level && slot.level !== 100) {
     lines.push(`Level: ${slot.level}`)
@@ -153,11 +251,7 @@ export function slotToShowdown(slot: PokemonSlot): string {
   }
 
   if (slot.nature) {
-    lines.push(`Nature: ${slot.nature}`)
-  }
-
-  if (slot.ability) {
-    lines.push(`Ability: ${slot.ability}`)
+    lines.push(`${slot.nature} Nature`)
   }
 
   for (const move of slot.moves ?? []) {
@@ -174,4 +268,3 @@ export function slotsToShowdownPaste(slots: PokemonSlot[]): string {
 export function normalizeSpeciesName(input: string): string {
   return input.trim().toLowerCase().replace(/\s+/g, '-')
 }
-

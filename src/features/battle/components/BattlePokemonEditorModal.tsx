@@ -360,6 +360,7 @@ export function BattlePokemonEditorModal({
         types: pokemon.types,
         baseStats: pokemon.stats,
         sprite: pokemon.sprite,
+        nickname: existingSlot?.nickname,
         level: safeLevel,
         nature: nature || defaultNature(),
         ivs: parseStatDraft(ivDraft),
