@@ -282,9 +282,9 @@ export const es: TranslationKey = {
     threatCountHint:
       '{{count}} de {{total}} rivales pueden hacer 2× o más a este Pokémon. Usa los movimientos dañinos configurados de cada rival, o una estimación STAB si no tienen movimientos.',
     enemyThreatCount:
-      '{{count}} de {{total}} de tus Pokémon pueden hacer 2× o más a este rival con un movimiento dañino configurado',
+      '{{count}} de {{total}} de tu equipo pueden hacer 2× o más a este rival con un movimiento dañino configurado',
     enemyThreatCountHint:
-      '{{count}} de {{total}} de tus Pokémon del equipo y PC tienen un movimiento dañino configurado que es supereficaz (2× o más) contra este rival.',
+      '{{count}} de {{total}} de los Pokémon de tu equipo tienen un movimiento dañino configurado que es supereficaz (2× o más) contra este rival.',
     pcNotOnTeam: 'No está en tu equipo — añádelo desde la pestaña PC para usarlo en combate',
     pcDisabledDuringFight: 'Los cambios del PC solo están disponibles antes de iniciar el combate',
     switchPcTitle: 'Cambiar con el equipo',

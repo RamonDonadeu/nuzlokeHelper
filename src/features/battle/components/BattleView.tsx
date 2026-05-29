@@ -93,14 +93,14 @@ export function BattleView({
   useEffect(() => {
     let cancelled = false
     const run = async () => {
-      const moveTypes = await resolveDamagingMoveTypes(uniqueNonEmptyMoves(playerRoster))
+      const moveTypes = await resolveDamagingMoveTypes(uniqueNonEmptyMoves(team))
       if (!cancelled) setTeamDamagingMoveTypes(moveTypes)
     }
     void run()
     return () => {
       cancelled = true
     }
-  }, [playerRoster])
+  }, [team])
 
   const threatCountsBySlotId = useMemo(() => {
     if (enemies.length === 0) return new Map<string, number>()
@@ -108,9 +108,9 @@ export function BattleView({
   }, [enemies, enemyDamagingMoveTypes, playerRoster])
 
   const enemyThreatCountsBySlotId = useMemo(() => {
-    if (enemies.length === 0 || playerRoster.length === 0) return new Map<string, number>()
-    return buildPlayerThreatCountMap(enemies, playerRoster, teamDamagingMoveTypes)
-  }, [enemies, playerRoster, teamDamagingMoveTypes])
+    if (enemies.length === 0 || team.length === 0) return new Map<string, number>()
+    return buildPlayerThreatCountMap(enemies, team, teamDamagingMoveTypes)
+  }, [enemies, team, teamDamagingMoveTypes])
 
   const editingSlot = battle.editorIndex === null ? null : battle.enemySlots[battle.editorIndex]
   const editingAllySlot = allyEditorIndex === null ? null : team[allyEditorIndex] ?? null
@@ -244,7 +244,7 @@ export function BattleView({
         faintedIndices={battle.faintedRightIndices}
         selectedActiveSlot={battle.selectedRightActiveSlot}
         threatCountsBySlotId={enemyThreatCountsBySlotId}
-        threatTotalCount={playerRoster.length}
+        threatTotalCount={team.length}
         threatBadgeVariant="offensive"
         onFilledSlotClick={handleEnemySlotClick}
         onEmptySlotClick={battle.started ? undefined : battle.openEnemyEditor}
@@ -279,7 +279,7 @@ export function BattleView({
             threatCountsBySlotId={threatCountsBySlotId}
             enemyThreatCountsBySlotId={enemyThreatCountsBySlotId}
             enemyThreatTotal={enemies.length}
-            playerThreatTotal={playerRoster.length}
+            playerThreatTotal={team.length}
             battleStarted={battle.started}
             doubleBattle={battle.doubleBattle}
             onDoubleBattleChange={battle.setDoubleBattle}

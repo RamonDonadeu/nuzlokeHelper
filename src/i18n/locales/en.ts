@@ -300,9 +300,9 @@ export const en: TranslationKey = {
     threatCountHint:
       '{{count}} of {{total}} enemies can hit this Pokémon for 2× or more. Uses each enemy’s configured damaging moves, or a STAB type estimate when they have no moves.',
     enemyThreatCount:
-      '{{count}} of {{total}} of your Pokémon can hit this enemy for 2× or more with a configured damaging move',
+      '{{count}} of {{total}} of your team can hit this enemy for 2× or more with a configured damaging move',
     enemyThreatCountHint:
-      '{{count}} of {{total}} of your team and PC Pokémon have a configured damaging move that is super effective (2× or more) against this enemy.',
+      '{{count}} of {{total}} of your team Pokémon have a configured damaging move that is super effective (2× or more) against this enemy.',
     pcNotOnTeam: 'Not on your team — add from PC tab to use in battle',
     pcDisabledDuringFight: 'PC changes are only available before the fight starts',
     switchPcTitle: 'Switch with team',
