@@ -862,9 +862,14 @@ ul {
 }
 
 .battle-pc-list {
+  align-content: start;
   max-height: min(40vh, 320px);
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.battle-pc-list li {
+  align-self: start;
 }
 
 .battle-pc-slot.disabled {
@@ -1196,22 +1201,22 @@ ul {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.15rem;
+  gap: 0.2rem;
   flex-shrink: 0;
 }
 
 .battleground-move-target {
   display: inline-flex;
-  padding: 1px;
-  border-radius: 4px;
+  padding: 2px;
+  border-radius: 5px;
   border: 1px solid var(--border);
   line-height: 0;
   background: var(--bg-elevated);
 }
 
 .battleground-move-target img {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   image-rendering: pixelated;
   display: block;
 }
@@ -1251,13 +1256,13 @@ ul {
 }
 
 .battleground-move-cell.battleground-move-status {
-  background: #f1f5f9;
-  color: #0f172a;
-  border-color: #cbd5e1;
+  background: color-mix(in srgb, var(--muted) 14%, var(--bg-soft));
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--muted) 32%, var(--border));
 }
 
 .battleground-move-cell.battleground-move-status .muted {
-  color: #64748b;
+  color: var(--muted);
 }
 
 .battleground-move-cell.battleground-move-status .type-badge {
@@ -1265,8 +1270,8 @@ ul {
 }
 
 .battleground-move-target-neutral {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--muted) 10%, var(--bg-elevated));
 }
 
 .battle-editor-modal {
@@ -1553,18 +1558,31 @@ ul {
   flex-direction: column;
   min-height: 0;
   align-self: stretch;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-layout-battle .battle-team-column-left > .battle-team-list:not(.battle-pc-list),
 .app-layout-battle .battle-team-column-left > .battle-team-column-header,
-.app-layout-battle .battle-team-column-left > .battle-team-section-title {
+.app-layout-battle .battle-team-column-left > .battle-team-section-title,
+.app-layout-battle .battle-team-column-left > .battle-pc-section {
   flex-shrink: 0;
 }
 
-.app-layout-battle .battle-pc-list {
-  flex: 1 1 auto;
+.app-layout-battle .battle-pc-section {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
-  max-height: none;
+  max-height: min(50vh, 420px);
+}
+
+.app-layout-battle .battle-pc-list {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: min(40vh, 320px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1572,7 +1590,10 @@ ul {
 .app-layout-battle .battle-center-column {
   align-self: stretch;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-layout-battle .battle-prep-panel {
@@ -2411,6 +2432,11 @@ ul {
 
   .battle-mobile-panel {
     min-width: 0;
+    overflow: visible;
+  }
+
+  .battle-mobile-panel > .battle-panel {
+    overflow: visible;
   }
 
   .battle-mobile-rosters {
@@ -2507,6 +2533,11 @@ ul {
     margin: 0;
     padding: 0;
     list-style: none;
+    align-content: start;
+  }
+
+  .battle-mobile-roster-section .battle-slot-grid {
+    grid-auto-rows: min-content;
   }
 
   .battle-slot-grid-item {
@@ -3989,7 +4020,10 @@ button.evolution-card {
   .app-layout-battle .battle-center-column {
     align-self: stretch;
     min-height: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .desktop-sidebar {

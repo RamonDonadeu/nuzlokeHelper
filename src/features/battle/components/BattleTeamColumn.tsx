@@ -204,7 +204,7 @@ export function BattleTeamColumn({
           </div>
           <ul className="battle-team-list">{renderSlots()}</ul>
           {pcMembers.length > 0 ? (
-            <>
+            <div className="battle-pc-section">
               <h4 className="battle-team-section-title battle-team-section-title-pc">{t('battle.pcRoster')}</h4>
               <ul className="battle-team-list battle-pc-list">
                 {pcMembers.map((slot) => (
@@ -221,7 +221,7 @@ export function BattleTeamColumn({
                   />
                 ))}
               </ul>
-            </>
+            </div>
           ) : null}
         </>
       ) : (
