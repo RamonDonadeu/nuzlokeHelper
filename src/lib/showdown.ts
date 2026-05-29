@@ -123,7 +123,10 @@ export function splitShowdownBlocks(text: string): string[] {
 }
 
 function parseHeaderLine(header: string): Pick<ParsedShowdownSet, 'name' | 'nickname' | 'item'> {
-  const nicknameMatch = header.match(/^(.+?)\s*\(([^)]+)\)(?:\s*@\s*(.+))?$/)
+  const trimmed = header.trim()
+
+  // Nickname (Species) @ Item — item is optional (including bare trailing @)
+  const nicknameMatch = trimmed.match(/^(.+?)\s*\(([^)]+)\)(?:\s*@(?:\s*(.*))?)?$/)
   if (nicknameMatch) {
     return {
       nickname: nicknameMatch[1].trim(),
@@ -132,10 +135,26 @@ function parseHeaderLine(header: string): Pick<ParsedShowdownSet, 'name' | 'nick
     }
   }
 
-  const [namePart, itemPart] = header.split('@')
+  const atIndex = trimmed.indexOf('@')
+  if (atIndex >= 0) {
+    const namePart = trimmed.slice(0, atIndex).trim()
+    const itemPart = trimmed.slice(atIndex + 1).trim()
+    const parenFallback = namePart.match(/^(.+?)\s*\(([^)]+)\)$/)
+    if (parenFallback) {
+      return {
+        nickname: parenFallback[1].trim(),
+        name: parenFallback[2].trim().toLowerCase().replace(/\s+/g, '-'),
+        item: parseItem(itemPart),
+      }
+    }
+    return {
+      name: namePart.toLowerCase().replace(/\s+/g, '-'),
+      item: parseItem(itemPart),
+    }
+  }
+
   return {
-    name: namePart.trim().toLowerCase().replace(/\s+/g, '-'),
-    item: parseItem(itemPart),
+    name: trimmed.toLowerCase().replace(/\s+/g, '-'),
   }
 }
 
