@@ -47,6 +47,7 @@ function buildPrepStatsRows(
   pc: PokemonSlot[],
   enemySlots: Array<PokemonSlot | null>,
   levelCap: number,
+  includePc: boolean,
 ): PrepStatsRow[] {
   const rows: PrepStatsRow[] = []
   for (let index = 0; index < ROSTER_SIZE; index++) {
@@ -56,11 +57,13 @@ function buildPrepStatsRows(
       rows.push({ slot, source, level: levelForStats(slot, source, levelCap), stats: statsForSlot(slot, source, levelCap) })
     }
   }
-  for (let index = 0; index < ROSTER_SIZE; index++) {
-    const slot = pc[index]
-    if (slot) {
-      const source = 'pc'
-      rows.push({ slot, source, level: levelForStats(slot, source, levelCap), stats: statsForSlot(slot, source, levelCap) })
+  if (includePc) {
+    for (let index = 0; index < ROSTER_SIZE; index++) {
+      const slot = pc[index]
+      if (slot) {
+        const source = 'pc'
+        rows.push({ slot, source, level: levelForStats(slot, source, levelCap), stats: statsForSlot(slot, source, levelCap) })
+      }
     }
   }
   for (let index = 0; index < ROSTER_SIZE; index++) {
@@ -106,17 +109,24 @@ interface BattlePrepStatsTableProps {
   pc: PokemonSlot[]
   enemySlots: Array<PokemonSlot | null>
   levelCap: number
+  includePc?: boolean
 }
 
-export function BattlePrepStatsTable({ team, pc, enemySlots, levelCap }: BattlePrepStatsTableProps) {
+export function BattlePrepStatsTable({
+  team,
+  pc,
+  enemySlots,
+  levelCap,
+  includePc = false,
+}: BattlePrepStatsTableProps) {
   const { t } = useI18n()
   const [sortKey, setSortKey] = useState<StatsCompareSortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const prepRows = useMemo(() => {
-    const built = buildPrepStatsRows(team, pc, enemySlots, levelCap)
+    const built = buildPrepStatsRows(team, pc, enemySlots, levelCap, includePc)
     return [...built].sort((a, b) => compareRows(a, b, sortKey, sortDir))
-  }, [enemySlots, levelCap, pc, sortDir, sortKey, team])
+  }, [enemySlots, includePc, levelCap, pc, sortDir, sortKey, team])
 
   const rows: StatsCompareRow[] = useMemo(
     () =>

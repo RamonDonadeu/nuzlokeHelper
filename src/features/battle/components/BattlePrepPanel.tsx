@@ -656,11 +656,13 @@ export function BattlePrepPanel({
 
         {activeTab === 'stats' ? (
           <div className="battle-prep-stats-body">
+            {includePcControl}
             <BattlePrepStatsTable
               team={team}
               pc={pc}
               enemySlots={enemySlots}
               levelCap={levelCap}
+              includePc={includePc}
             />
           </div>
         ) : null}
