@@ -201,6 +201,14 @@ export interface ShowdownImportFailure {
   label: string
   speciesSlug: string
   triedSlugs: string[]
+  reason?: string
+}
+
+function newSlotId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `slot-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 export interface ShowdownImportResult {
@@ -225,7 +233,7 @@ export async function showdownSetsToSlots(
     try {
       const { pokemon } = await fetchPokemonForImport(set.name)
       slots.push({
-        slotId: crypto.randomUUID(),
+        slotId: newSlotId(),
         speciesId: pokemon.id,
         currentSpeciesId: pokemon.id,
         name: pokemon.name,
@@ -242,11 +250,12 @@ export async function showdownSetsToSlots(
         item: set.item,
         moves: set.moves.length > 0 ? set.moves.slice(0, 4) : undefined,
       })
-    } catch {
+    } catch (error) {
       failures.push({
         label: importFailureLabel(set),
         speciesSlug: set.name,
         triedSlugs,
+        reason: error instanceof Error ? error.message : undefined,
       })
     }
   }

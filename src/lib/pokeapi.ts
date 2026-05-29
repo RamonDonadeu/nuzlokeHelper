@@ -161,13 +161,59 @@ export function pokemonSlugCandidates(slug: string): string[] {
   const candidates = [normalized]
 
   for (const [long, short] of Object.entries(REGIONAL_SUFFIX_ALIASES)) {
-    const suffix = `-${long}`
-    if (normalized.endsWith(suffix)) {
-      candidates.push(`${normalized.slice(0, -suffix.length)}-${short}`)
+    const longSuffix = `-${long}`
+    if (normalized.endsWith(longSuffix)) {
+      candidates.push(`${normalized.slice(0, -longSuffix.length)}-${short}`)
     }
   }
 
   return [...new Set(candidates)]
+}
+
+function regionalTagFromSlug(slug: string): string | null {
+  for (const [long, short] of Object.entries(REGIONAL_SUFFIX_ALIASES)) {
+    if (slug.endsWith(`-${long}`) || slug.endsWith(`-${short}`)) return short
+  }
+  return null
+}
+
+function baseSpeciesFromSlug(slug: string): string {
+  for (const [long, short] of Object.entries(REGIONAL_SUFFIX_ALIASES)) {
+    const longSuffix = `-${long}`
+    const shortSuffix = `-${short}`
+    if (slug.endsWith(longSuffix)) return slug.slice(0, -longSuffix.length)
+    if (slug.endsWith(shortSuffix)) return slug.slice(0, -shortSuffix.length)
+  }
+  return slug
+}
+
+/** Resolve a regional form via pokemon-species varieties (e.g. weezing + galar → weezing-galar). */
+async function fetchRegionalVarietyFromSpecies(
+  slug: string,
+  options?: { signal?: AbortSignal },
+): Promise<PokemonSummary | null> {
+  const region = regionalTagFromSlug(slug)
+  if (!region) return null
+
+  const base = baseSpeciesFromSlug(slug)
+  if (!base || base === slug) return null
+
+  try {
+    const species = await fetchJson<PokeApiSpeciesVarieties>(
+      `${POKEAPI_BASE}/pokemon-species/${base}`,
+      options?.signal,
+    )
+    const match =
+      species.varieties.find((v) => v.pokemon.name === `${base}-${region}`) ??
+      species.varieties.find((v) => v.pokemon.name.endsWith(`-${region}`) && !v.is_default) ??
+      species.varieties.find((v) => v.pokemon.name.includes(`-${region}`))
+    if (!match) return null
+
+    const data = await fetchJson<PokeApiPokemon>(match.pokemon.url, options?.signal)
+    return toSummary(data)
+  } catch {
+    return null
+  }
 }
 
 /** Tries regional aliases and other slug variants used in Showdown exports. */
@@ -184,6 +230,13 @@ export async function fetchPokemonForImport(
       return { pokemon, slug }
     } catch (error) {
       lastError = error
+    }
+  }
+
+  for (const slug of candidates) {
+    const pokemon = await fetchRegionalVarietyFromSpecies(slug, options)
+    if (pokemon) {
+      return { pokemon, slug: pokemon.name }
     }
   }
 

@@ -33,11 +33,13 @@ export function EnemyTeamImportDialog({
 
   if (!open) return null
 
-  const formatFailure = (failure: ShowdownImportFailure) =>
-    t('battle.importFailureLine', {
+  const formatFailure = (failure: ShowdownImportFailure) => {
+    const line = t('battle.importFailureLine', {
       name: failure.label,
       slugs: failure.triedSlugs.join(', '),
     })
+    return failure.reason ? `${line} (${failure.reason})` : line
+  }
 
   const handleImport = async () => {
     setError(null)
