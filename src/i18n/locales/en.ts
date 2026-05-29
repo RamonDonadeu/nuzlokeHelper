@@ -250,12 +250,12 @@ export const en: TranslationKey = {
     defImmunitiesTitle: 'Immunities (0×)',
     defImmunitiesHint: 'Each member and the attacking types they take no damage from.',
     defImmunitiesEmpty: 'No type immunities on the team.',
-    defUncoveredTitle: 'Uncovered attack types',
-    defUncoveredHintLabel: 'What uncovered attack types mean',
+    defUncoveredTitle: 'Uncovered defender types',
+    defUncoveredHintLabel: 'What uncovered defender types mean',
     defUncoveredHint:
-      'Move types your team cannot hit for 2× damage against a mono-type defender. Based on moves set in the editor—not Pokémon species types. If no moves are configured on any Pokémon, all 18 types appear here.',
+      'Pokémon types (as a mono-type) that none of your configured moves hit for 2× or more—e.g. Water moves cover Fire types. Based on move types in the editor, not your species typings. If no moves are configured, all 18 types appear here.',
     defUncoveredEmpty:
-      'Every attack type on your movesets can hit for super-effective damage against some mono-type.',
+      'Your movesets can hit every mono-type for super-effective damage with at least one move.',
     defMemberMatrix: 'Weaknesses by member',
     defMatrixAttackCol: 'Type',
     defMatrixLegendLabel: 'How to read the weakness matrix',

@@ -232,12 +232,12 @@ export const es: TranslationKey = {
     defImmunitiesTitle: 'Inmunidades (×0)',
     defImmunitiesHint: 'Cada miembro y los tipos atacantes de los que no recibe daño.',
     defImmunitiesEmpty: 'Sin inmunidades de tipo en el equipo.',
-    defUncoveredTitle: 'Tipos de ataque sin cobertura',
-    defUncoveredHintLabel: 'Qué significan los tipos de ataque sin cobertura',
+    defUncoveredTitle: 'Tipos defensor sin cobertura',
+    defUncoveredHintLabel: 'Qué significan los tipos defensor sin cobertura',
     defUncoveredHint:
-      'Tipos de movimiento con los que tu equipo no puede infligir ×2 de daño contra un defensor monotipo. Se basa en los movimientos del editor, no en los tipos de la especie. Si ningún Pokémon tiene movimientos configurados, aparecen los 18 tipos.',
+      'Tipos de Pokémon (como monotipo) que ningún movimiento configurado hace ×2 o más—p. ej. movimientos Agua cubren tipo Fuego. Según los tipos de movimiento en el editor, no los tipos de especie. Sin movimientos configurados, aparecen los 18 tipos.',
     defUncoveredEmpty:
-      'Todos los tipos de ataque de tus movimientos pueden ser supereficaces contra algún mono-tipo.',
+      'Tus movimientos pueden ser supereficaces contra cada monotipo con al menos un ataque.',
     defMemberMatrix: 'Debilidades por miembro',
     defMatrixAttackCol: 'Tipo',
     defMatrixLegendLabel: 'Cómo leer la matriz de debilidades',

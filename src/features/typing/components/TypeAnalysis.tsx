@@ -8,7 +8,7 @@ import {
   defenseTierClass,
   formatMultiplier,
   getDefensiveCoverage,
-  getUncoveredAttackTypes,
+  getUncoveredDefenderTypes,
   getPerMemberDoubleWeaknesses,
   getPerMemberImmunities,
 } from '@/lib/typeChart'
@@ -145,14 +145,14 @@ function DefenseCoverageView({
     () => getPerMemberImmunities(coverage.memberMatrix),
     [coverage.memberMatrix],
   )
-  const uncoveredAttackTypes = useMemo(
-    () => getUncoveredAttackTypes(teamMoveTypes),
+  const uncoveredDefenderTypes = useMemo(
+    () => getUncoveredDefenderTypes(teamMoveTypes),
     [teamMoveTypes],
   )
 
   const hasDoubleWeakness = perMemberDoubleWeak.some((entries) => entries.length > 0)
   const hasImmunities = perMemberImmunities.some((entries) => entries.length > 0)
-  const hasUncoveredAttackTypes = uncoveredAttackTypes.length > 0
+  const hasUncoveredDefenderTypes = uncoveredDefenderTypes.length > 0
 
   return (
     <>
@@ -220,13 +220,13 @@ function DefenseCoverageView({
               text={t('types.defUncoveredHint')}
             />
           </div>
-          {!hasUncoveredAttackTypes ? (
+          {!hasUncoveredDefenderTypes ? (
             <p className="empty-note">{t('types.defUncoveredEmpty')}</p>
           ) : (
             <ul className="coverage-type-badges">
-              {uncoveredAttackTypes.map((attackType) => (
-                <li key={attackType}>
-                  <span className={`type-badge type-${attackType}`}>{attackType}</span>
+              {uncoveredDefenderTypes.map((defenderType) => (
+                <li key={defenderType}>
+                  <span className={`type-badge type-${defenderType}`}>{defenderType}</span>
                 </li>
               ))}
             </ul>
