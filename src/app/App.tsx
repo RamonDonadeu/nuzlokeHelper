@@ -479,7 +479,7 @@ function AppContent({
             </SidebarDrawer>
 
             <main className="main-content">
-          {!isBattleRoute && (
+          {!isBattleRoute && !isMoveLearnRoute && (
             <div className="main-search-bar">
               <input
                 type="search"

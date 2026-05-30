@@ -358,7 +358,8 @@ ul {
   overflow: hidden;
 }
 
-.app-layout-battle {
+.app-layout-battle,
+.app-layout-move-learn {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -4129,11 +4130,13 @@ button.evolution-card {
     margin-bottom: 0.5rem;
   }
 
-  .app-layout.app-layout-battle {
+  .app-layout.app-layout-battle,
+  .app-layout.app-layout-move-learn {
     overflow: hidden;
   }
 
-  .app-layout-battle .main-content {
+  .app-layout-battle .main-content,
+  .app-layout-move-learn .main-content {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
@@ -4180,16 +4183,24 @@ button.evolution-card {
     min-height: 0;
   }
 
-  .app-layout-battle .desktop-sidebar {
+  .app-layout-battle .desktop-sidebar,
+  .app-layout-move-learn .desktop-sidebar {
     display: none;
   }
 
-  .app-layout-battle {
+  .app-layout-battle,
+  .app-layout-move-learn {
     min-height: 0;
   }
 
-  .app-layout-battle .main-content {
+  .app-layout-battle .main-content,
+  .app-layout-move-learn .main-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
+    align-content: stretch;
   }
 
   .app-layout-battle .battle-view {
@@ -5253,18 +5264,6 @@ tr.threatened-row td:first-child {
 }
 
 /* ── Move learn ── */
-.app-layout-move-learn {
-  min-height: 0;
-}
-
-.app-layout-move-learn .main-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  align-content: stretch;
-}
 
 .move-learn-view {
   display: flex;
