@@ -216,6 +216,7 @@ export function MoveLearnView({
                 <MoveLearnMoveGrid
                   items={currentMoveItems}
                   compactLayout="row"
+                  expandOnClick
                   emptyHint={t('editor.noMovesConfigured')}
                 />
               </section>

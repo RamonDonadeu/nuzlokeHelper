@@ -62,6 +62,93 @@ export function MoveLearnMoveGrid({
   }
 
   const showDetailed = expandOnClick ? false : detailed
+  const compactRowExpandable = expandOnClick && compactLayout === 'row' && !showDetailed
+
+  const renderDetailCard = (item: MoveLearnMoveItem) => {
+    const details = detailsByName[item.moveName]
+    const display = displayMoveName(item.moveName, locale)
+    if (details) {
+      return <MoveDetailCard move={details} displayName={display} compact={!fullDetail} />
+    }
+    if (loading) {
+      return <p className="muted">{t('editor.loadingMoves')}</p>
+    }
+    return (
+      <div className="move-detail-grid move-detail-grid-compact">
+        <strong>{display}</strong>
+        <p className="muted">{t('editor.moveDetailsUnavailable')}</p>
+      </div>
+    )
+  }
+
+  const renderCompactChip = (item: MoveLearnMoveItem) => {
+    const details = detailsByName[item.moveName]
+    const display = displayMoveName(item.moveName, locale)
+    const type = details?.type ?? null
+    return (
+      <div className="move-learn-move-compact-top">
+        <strong className="move-learn-move-compact-name">{display}</strong>
+        {type ? (
+          <span className={`type-badge type-${type}`}>{type}</span>
+        ) : (
+          <span className="type-badge type-unknown muted">{t('search.moveUnknown')}</span>
+        )}
+      </div>
+    )
+  }
+
+  if (compactRowExpandable) {
+    const expandedIndex = items.findIndex((item, index) => itemKey(item, index) === expandedKey)
+    const expandedItem = expandedIndex >= 0 ? items[expandedIndex] : null
+
+    return (
+      <div className={['move-learn-current-moves', className].filter(Boolean).join(' ')}>
+        {expandedItem && expandedKey ? (
+          <div
+            id="move-learn-current-detail"
+            className="move-learn-current-detail-panel"
+            role="region"
+            aria-label={displayMoveName(expandedItem.moveName, locale)}
+          >
+            {renderDetailCard(expandedItem)}
+          </div>
+        ) : null}
+        <ul
+          className="move-learn-moves-grid move-learn-moves-grid--compact-row move-learn-moves-grid--current-slots"
+          role="list"
+        >
+          {items.map((item, index) => {
+            const key = itemKey(item, index)
+            const isSelected = expandedKey === key
+            return (
+              <li
+                key={key}
+                className={[
+                  'move-learn-move-cell',
+                  'move-learn-move-cell--compact',
+                  'move-learn-move-cell--current-slot',
+                  isSelected ? 'move-learn-move-cell--expanded' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                role="listitem"
+              >
+                <button
+                  type="button"
+                  className={`move-learn-current-slot${isSelected ? ' active' : ''}`}
+                  aria-expanded={isSelected}
+                  aria-controls={isSelected ? 'move-learn-current-detail' : undefined}
+                  onClick={() => setExpandedKey(isSelected ? null : key)}
+                >
+                  {renderCompactChip(item)}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    )
+  }
 
   return (
     <ul
@@ -69,11 +156,13 @@ export function MoveLearnMoveGrid({
         'move-learn-moves-grid',
         showDetailed
           ? 'move-learn-moves-grid--detailed'
-          : expandOnClick
-            ? 'move-learn-moves-grid--expandable'
-            : compactLayout === 'row'
-              ? 'move-learn-moves-grid--compact-row'
-              : 'move-learn-moves-grid--compact',
+          : compactRowExpandable
+            ? 'move-learn-moves-grid--compact-row move-learn-moves-grid--compact-row-expandable'
+            : expandOnClick
+              ? 'move-learn-moves-grid--expandable'
+              : compactLayout === 'row'
+                ? 'move-learn-moves-grid--compact-row'
+                : 'move-learn-moves-grid--compact',
         className,
       ]
         .filter(Boolean)
