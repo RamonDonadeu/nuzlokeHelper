@@ -317,6 +317,8 @@ export const en: TranslationKey = {
     mobileTabPrep: 'Prep',
     mobileTabStats: 'Stats',
     startFight: 'Start fight',
+    finishBattle: 'Finish battle',
+    restartBattle: 'Restart battle',
     clear: 'Clear',
     clearConfirm: 'Clear the battle and enemy team?',
     enemyTeam: 'Enemy team',

@@ -187,6 +187,11 @@ export function BattleView({
         battle.startFight()
         if (isMobileLayout) setMobileTab('fight')
       }}
+      onFinishBattle={() => {
+        battle.finishBattle()
+        if (isMobileLayout && hasRosterForBattle) setMobileTab('prep')
+      }}
+      onRestartBattle={battle.restartBattle}
       onClear={battle.clearBattle}
       team={leftSlots}
       enemyTeam={battle.enemySlots}

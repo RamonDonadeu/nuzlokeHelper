@@ -34,6 +34,8 @@ interface UseBattleStateResult {
   setSelectedRightActiveSlot: (slot: number) => void
   setActiveTab: (tab: ActiveBattleTab) => void
   startFight: () => void
+  finishBattle: () => void
+  restartBattle: () => void
   clearBattle: () => void
   selectLeft: (index: number) => void
   selectRight: (index: number) => void
@@ -176,6 +178,15 @@ export function useBattleState({
     [enemySlots, faintedRightIndices],
   )
 
+  const resetBattlefield = () => {
+    setActiveLeftIndices(createInitialActiveIndices())
+    setActiveRightIndices(createInitialActiveIndices())
+    setFaintedLeftIndices(new Set())
+    setFaintedRightIndices(new Set())
+    setSelectedLeftActiveSlot(0)
+    setSelectedRightActiveSlot(0)
+  }
+
   const startFight = () => {
     const emptyFainted = new Set<number>()
     setFaintedLeftIndices(emptyFainted)
@@ -189,6 +200,15 @@ export function useBattleState({
     setSelectedLeftActiveSlot(0)
     setSelectedRightActiveSlot(0)
     setStarted(true)
+  }
+
+  const finishBattle = () => {
+    setStarted(false)
+    resetBattlefield()
+  }
+
+  const restartBattle = () => {
+    startFight()
   }
 
   const setDoubleBattle = (value: boolean) => {
@@ -312,12 +332,7 @@ export function useBattleState({
   const clearBattle = () => {
     if (!confirmClear()) return
     setStarted(false)
-    setActiveLeftIndices(createInitialActiveIndices())
-    setActiveRightIndices(createInitialActiveIndices())
-    setFaintedLeftIndices(new Set())
-    setFaintedRightIndices(new Set())
-    setSelectedLeftActiveSlot(0)
-    setSelectedRightActiveSlot(0)
+    resetBattlefield()
     onEnemyTeamChange([])
   }
 
@@ -345,6 +360,8 @@ export function useBattleState({
     setSelectedRightActiveSlot,
     setActiveTab,
     startFight,
+    finishBattle,
+    restartBattle,
     clearBattle,
     selectLeft,
     selectRight,

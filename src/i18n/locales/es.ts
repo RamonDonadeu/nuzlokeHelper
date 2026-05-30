@@ -299,6 +299,8 @@ export const es: TranslationKey = {
     mobileTabPrep: 'Prep',
     mobileTabStats: 'Stats',
     startFight: 'Iniciar combate',
+    finishBattle: 'Terminar combate',
+    restartBattle: 'Reiniciar combate',
     clear: 'Limpiar',
     clearConfirm: '¿Limpiar la batalla y el equipo rival?',
     enemyTeam: 'Equipo rival',

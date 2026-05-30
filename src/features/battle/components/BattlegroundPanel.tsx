@@ -26,6 +26,8 @@ interface BattlegroundPanelProps {
   onFaintLeft: (slot: number) => void
   onFaintRight: (slot: number) => void
   onStartFight: () => void
+  onFinishBattle: () => void
+  onRestartBattle: () => void
   onClear: () => void
 }
 
@@ -125,6 +127,8 @@ export function BattlegroundPanel({
   onFaintLeft,
   onFaintRight,
   onStartFight,
+  onFinishBattle,
+  onRestartBattle,
   onClear,
 }: BattlegroundPanelProps) {
   const { t } = useI18n()
@@ -175,12 +179,25 @@ export function BattlegroundPanel({
   return (
     <section className="card battle-panel">
       <div className="battle-top-controls">
-        <button type="button" className="btn btn-primary" onClick={onStartFight} disabled={started}>
-          {t('battle.startFight')}
-        </button>
-        <button type="button" className="btn" onClick={onClear}>
-          {t('battle.clear')}
-        </button>
+        {started ? (
+          <>
+            <button type="button" className="btn" onClick={onFinishBattle}>
+              {t('battle.finishBattle')}
+            </button>
+            <button type="button" className="btn btn-primary" onClick={onRestartBattle}>
+              {t('battle.restartBattle')}
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="btn btn-primary" onClick={onStartFight}>
+              {t('battle.startFight')}
+            </button>
+            <button type="button" className="btn" onClick={onClear}>
+              {t('battle.clear')}
+            </button>
+          </>
+        )}
         <BattleDoubleBattleToggle
           checked={doubleBattle}
           disabled={started}
