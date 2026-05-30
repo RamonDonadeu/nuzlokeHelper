@@ -15,6 +15,7 @@ import { SidebarDrawer } from '@/app/components/SidebarDrawer'
 import { SearchMatchup } from '@/features/search/components/SearchMatchup'
 import { StatComparison } from '@/features/search/components/StatComparison'
 import { BattleView } from '@/features/battle/components/BattleView'
+import { MoveLearnView } from '@/features/moveLearn/components/MoveLearnView'
 import { TeamPanel } from '@/features/team/components/TeamPanel'
 import { TeamInfoView } from '@/features/team/components/TeamInfoView'
 import { TeamView } from '@/features/team/components/TeamView'
@@ -40,7 +41,7 @@ import {
 } from '@/lib/localizedNames'
 import { findSlotInProfile } from '@/types/profile'
 
-type Tab = 'types' | 'pc' | 'battle'
+type Tab = 'types' | 'pc' | 'battle' | 'moves'
 type SearchResultFilter = 'pokemon' | 'moves' | 'abilities' | 'items'
 
 const SEARCH_CATEGORY_ORDER: SearchResultFilter[] = ['pokemon', 'moves', 'abilities', 'items']
@@ -95,6 +96,7 @@ function AppContent({
   isFull,
   hasMember,
   setOpponentTeam,
+  importProfileRoster,
 }: ReturnType<typeof useProfiles>) {
   const { t, locale } = useI18n()
   const { showToast, showErrorToast } = useToast()
@@ -157,6 +159,7 @@ function AppContent({
   const pcSlotId = pcDetailMatch?.params.pokemonId ?? null
   const selectedSlotId = teamSlotId ?? pcSlotId
   const isBattleRoute = location.pathname === '/battle'
+  const isMoveLearnRoute = location.pathname === '/move-learn'
   const isTeamRoute = location.pathname === '/team' || Boolean(teamSlotId)
   const isTeamInfoRoute =
     location.pathname === '/team-info' ||
@@ -169,9 +172,11 @@ function AppContent({
       ? 'pc'
       : isBattleRoute
         ? 'battle'
-        : isTeamInfoRoute
-          ? 'types'
-          : null
+        : isMoveLearnRoute
+          ? 'moves'
+          : isTeamInfoRoute
+            ? 'types'
+            : null
   const scrollSearchToTop = useCallback(() => {
     searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
@@ -229,6 +234,10 @@ function AppContent({
     }
     if (tab === 'battle') {
       navigate('/battle')
+      return
+    }
+    if (tab === 'moves') {
+      navigate('/move-learn')
       return
     }
     navigate('/team-info')
@@ -462,7 +471,9 @@ function AppContent({
 
       <div className="app-body">
         <div className="app-main-area">
-          <div className={`app-layout${isBattleRoute ? ' app-layout-battle' : ''}`}>
+          <div
+            className={`app-layout${isBattleRoute ? ' app-layout-battle' : ''}${isMoveLearnRoute ? ' app-layout-move-learn' : ''}`}
+          >
             <SidebarDrawer open={false} onOpenChange={() => {}}>
               {sidebar}
             </SidebarDrawer>
@@ -760,6 +771,18 @@ function AppContent({
               }
             />
             <Route
+              path="/move-learn"
+              element={
+                <MoveLearnView
+                  team={team}
+                  box={box}
+                  versionGroup={versionGroup}
+                  settings={activeProfile.settings}
+                  onUpdateMovePools={(partial) => updateSettings(partial)}
+                />
+              }
+            />
+            <Route
               path="/battle"
               element={
                 <BattleView
@@ -831,6 +854,7 @@ function AppContent({
         onDelete={deleteProfile}
         onUpdateSettings={updateSettings}
         onUpdateConfig={updateProfileConfig}
+        onImportRoster={importProfileRoster}
       />
 
       {confirmSendAllToPC && (

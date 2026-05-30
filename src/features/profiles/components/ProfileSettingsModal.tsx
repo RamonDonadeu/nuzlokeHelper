@@ -1,9 +1,16 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { ProfileRosterImportDialog } from '@/features/profiles/components/ProfileRosterImportDialog'
+import { useI18n } from '@/i18n'
+import {
+  downloadProfileRosterExport,
+  profileHasRosterData,
+  type ProfileRosterExport,
+} from '@/lib/profileRosterExport'
+import { GENERATION_OPTIONS, OFFICIAL_VERSION_GROUPS } from '@/lib/versionGroups'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
+import { useToast } from '@/shared/components/Toast'
 import type { ProfileConfig, ProfileSettings, RunProfile } from '@/types/profile'
 import { createDefaultSettings } from '@/types/profile'
-import { useI18n } from '@/i18n'
-import { GENERATION_OPTIONS, OFFICIAL_VERSION_GROUPS } from '@/lib/versionGroups'
 
 interface ProfileSettingsModalProps {
   open: boolean
@@ -15,6 +22,7 @@ interface ProfileSettingsModalProps {
   onDelete: (id: string) => void
   onUpdateSettings: (partial: Partial<ProfileSettings>) => void
   onUpdateConfig: (config: ProfileConfig) => void
+  onImportRoster: (data: ProfileRosterExport) => void
 }
 
 export function ProfileSettingsModal({
@@ -27,14 +35,17 @@ export function ProfileSettingsModal({
   onDelete,
   onUpdateSettings,
   onUpdateConfig,
+  onImportRoster,
 }: ProfileSettingsModalProps) {
   const { t } = useI18n()
+  const { showToast } = useToast()
   const titleId = useId()
   const closeRef = useRef<HTMLButtonElement>(null)
   const [showNew, setShowNew] = useState(false)
   const [newName, setNewName] = useState('')
   const [newKind, setNewKind] = useState<'official' | 'hackrom'>('hackrom')
   const [pendingDeleteProfileId, setPendingDeleteProfileId] = useState<string | null>(null)
+  const [showRosterImport, setShowRosterImport] = useState(false)
 
   const config = activeProfile.settings.config
   const pendingDeleteProfile = pendingDeleteProfileId
@@ -46,19 +57,31 @@ export function ProfileSettingsModal({
       setShowNew(false)
       setNewName('')
       setPendingDeleteProfileId(null)
+      setShowRosterImport(false)
       return
     }
     closeRef.current?.focus()
   }, [open])
 
+  const handleExportRoster = () => {
+    downloadProfileRosterExport(activeProfile)
+    showToast(t('profile.rosterExportSuccess', { name: activeProfile.name }))
+  }
+
   useEffect(() => {
     if (!open) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        if (showRosterImport) {
+          setShowRosterImport(false)
+          return
+        }
+        onClose()
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
+  }, [open, onClose, showRosterImport])
 
   const handleCreate = () => {
     const name = newName.trim() || t('profile.name')
@@ -87,7 +110,10 @@ export function ProfileSettingsModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      onClick={onClose}
+      onClick={() => {
+        if (showRosterImport) return
+        onClose()
+      }}
     >
       <div className="modal card profile-settings-modal" onClick={(event) => event.stopPropagation()}>
         <div className="profile-settings-header">
@@ -236,8 +262,33 @@ export function ProfileSettingsModal({
               {t('profile.allowRevival')}
             </label>
           </section>
+
+          <section className="profile-settings-section">
+            <h3>{t('profile.rosterBackup')}</h3>
+            <p className="muted profile-roster-backup-hint">{t('profile.rosterBackupHint')}</p>
+            <div className="profile-settings-actions">
+              <button type="button" className="btn btn-ghost" onClick={handleExportRoster}>
+                {t('profile.rosterExport')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setShowRosterImport(true)}
+              >
+                {t('profile.rosterImport')}
+              </button>
+            </div>
+          </section>
         </div>
       </div>
+      {showRosterImport && (
+        <ProfileRosterImportDialog
+          open={showRosterImport}
+          hasExistingRoster={profileHasRosterData(activeProfile)}
+          onClose={() => setShowRosterImport(false)}
+          onImport={onImportRoster}
+        />
+      )}
       {pendingDeleteProfile && (
         <ConfirmDialog
           title={t('profile.deleteConfirmTitle')}

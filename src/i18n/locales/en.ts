@@ -2,7 +2,8 @@ export type TranslationKey = {
   appTitle: string
   appSubtitle: string
   common: Record<'confirm' | 'cancel', string>
-  tabs: Record<'types' | 'pc' | 'battle', string>
+  tabs: Record<'types' | 'pc' | 'battle' | 'moves', string>
+  moveLearn: Record<string, string>
   team: Record<string, string>
   box: Record<string, string>
   profile: Record<string, string>
@@ -31,6 +32,7 @@ export const en: TranslationKey = {
     types: 'Team Info',
     pc: 'PC',
     battle: 'Battle',
+    moves: 'Moves',
   },
   team: {
     title: 'Your Team',
@@ -95,6 +97,25 @@ export const en: TranslationKey = {
     create: 'Create',
     cancel: 'Cancel',
     name: 'Profile name',
+    rosterBackup: 'Team & PC backup',
+    rosterBackupHint: 'Export or import your team, PC, death box, and TM/relearn move pools as a JSON file.',
+    rosterExport: 'Export roster',
+    rosterImport: 'Import roster',
+    rosterExportSuccess: 'Roster exported for "{{name}}".',
+    rosterImportTitle: 'Import team & PC',
+    rosterImportHint: 'Load a roster JSON exported from another profile. This replaces the current team, PC, death box, and move pools.',
+    rosterImportChooseFile: 'Choose JSON file',
+    rosterImportPlaceholder: 'Or paste roster JSON here…',
+    rosterImportPreview:
+      'From "{{name}}": {{team}} team, {{box}} PC, {{deathBox}} fainted, {{tms}} TMs, {{relearn}} relearn moves ({{count}} Pokémon total).',
+    rosterImportAction: 'Import roster',
+    rosterImportReplaceConfirm:
+      'Replace the current team, PC, death box, and move pools with the imported data? This cannot be undone.',
+    rosterImportSuccess: 'Imported {{count}} Pokémon from "{{name}}".',
+    rosterImportInvalidJson: 'Invalid JSON. Choose a roster export file or paste valid JSON.',
+    rosterImportInvalidFormat: 'Unrecognized file format. Use a roster export from this app.',
+    rosterImportUnsupportedVersion: 'Unsupported export version. Update the app and try again.',
+    rosterImportEmpty: 'The file has no team, PC, or move pool data to import.',
   },
   search: {
     title: 'Search Pokémon, moves, abilities, or items',
@@ -480,5 +501,39 @@ export const en: TranslationKey = {
     noAbility: '—',
     noItem: '—',
     movesLabel: 'Moves',
+  },
+  moveLearn: {
+    title: 'Move learn',
+    subtitle:
+      'List your TMs, pick a Pokémon, and see TM teachable moves plus relearn options from its PokeAPI level-up learnset.',
+    tmPoolTitle: 'TMs & HMs you have',
+    tmPoolHint: 'Add every TM/HM move available in your bag.',
+    tmPoolEmpty: 'No moves added yet.',
+    tmPoolAttacksCount: '{{count}} moves in your bag',
+    seeAttacks: 'See attacks ({{count}})',
+    hideAttacks: 'Hide attacks',
+    removeMove: 'Remove {{name}}',
+    addMove: 'Add move',
+    movePlaceholder: 'e.g. thunderbolt',
+    rosterTitle: 'Team & PC',
+    emptyRoster: 'Add Pokémon to your team or PC first.',
+    onTeam: 'Team',
+    inBox: 'PC',
+    currentMoves: 'Current moves',
+    showMoveDetails: 'See more details',
+    hideMoveDetails: 'Less detail',
+    expandMove: 'Tap for details',
+    collapseMove: 'Hide details',
+    loadingLearnset: 'Loading learnset…',
+    tmResultsTitle: 'Can learn from your TMs',
+    tmResultsEmpty: 'No TM moves in your list are teachable to this Pokémon.',
+    relearnResultsTitle: 'Can relearn (level-up learnset)',
+    relearnResultsEmpty: 'No level-up moves are relearnable at this level for your game version.',
+    tmUnavailableHint: 'This Pokémon cannot learn these TM moves in your game version.',
+    badgeTm: 'TM',
+    badgeRelearn: 'Relearn',
+    learnedAtLevel: 'Lv {{level}}',
+    alreadyKnown: 'Known',
+    cannotLearnCount: '{{count}} cannot learn',
   },
 }

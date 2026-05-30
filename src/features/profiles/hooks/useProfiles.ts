@@ -29,6 +29,10 @@ import { hasValidPokemonTypes, normalizePokemonTypes } from '@/lib/pokemonTypes'
 import { loadAppState, saveAppState } from '@/lib/storage'
 import { defaultNature } from '@/lib/stats'
 import type { ParsedShowdownSet } from '@/lib/showdown'
+import {
+  applyProfileRosterImport,
+  type ProfileRosterExport,
+} from '@/lib/profileRosterExport'
 import { parseShowdownPaste, showdownSetsToSlots } from '@/lib/showdown'
 
 function touchProfile(profile: RunProfile): RunProfile {
@@ -575,6 +579,13 @@ export function useProfiles() {
     setState((s) => updateActiveProfile(s, (p) => ({ ...p, opponentTeam: slots })))
   }, [])
 
+  const importProfileRoster = useCallback((data: ProfileRosterExport) => {
+    setState((s) =>
+      updateActiveProfile(s, (profile) => applyProfileRosterImport(profile, data)),
+    )
+    setPendingEvolution(null)
+  }, [])
+
   const isFull = activeProfile.team.length >= MAX_TEAM_SIZE
   const hasMember = useCallback(
     (speciesId: number) => activeProfile.team.some((m) => m.currentSpeciesId === speciesId),
@@ -622,6 +633,7 @@ export function useProfiles() {
     dismissEvolution,
     requestEvolution,
     importShowdown,
+    importProfileRoster,
     setOpponentTeam,
     isFull,
     hasMember,

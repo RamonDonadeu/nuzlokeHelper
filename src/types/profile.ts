@@ -22,6 +22,10 @@ export interface ProfileSettings {
   config: ProfileConfig
   levelCap: number
   allowRevival: boolean
+  /** Canonical English move names for TMs/HMs the player owns */
+  moveLearnTMs?: string[]
+  /** Moves offered by the move reminder / relearn NPC */
+  moveLearnRelearnPool?: string[]
 }
 
 export interface PokemonSlot {
