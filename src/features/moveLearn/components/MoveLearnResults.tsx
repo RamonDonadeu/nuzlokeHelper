@@ -10,6 +10,7 @@ interface MoveLearnResultsProps {
   unavailable: string[]
   unavailableHint: string
   sourceLabel: (source: MoveLearnOption['source']) => string
+  onLearn?: (option: MoveLearnOption) => void
 }
 
 export function MoveLearnResults({
@@ -19,6 +20,7 @@ export function MoveLearnResults({
   unavailable,
   unavailableHint,
   sourceLabel,
+  onLearn,
 }: MoveLearnResultsProps) {
   const { locale, t } = useI18n()
 
@@ -33,7 +35,22 @@ export function MoveLearnResults({
   return (
     <section className="move-learn-results-block">
       <h4>{title}</h4>
-      <MoveLearnMoveGrid items={items} expandOnClick emptyHint={emptyHint} />
+      <MoveLearnMoveGrid
+        items={items}
+        expandOnClick
+        emptyHint={emptyHint}
+        onLearn={
+          onLearn
+            ? (item) => {
+                const option = options.find(
+                  (entry) =>
+                    entry.moveName === item.moveName && entry.source === item.source,
+                )
+                if (option) onLearn(option)
+              }
+            : undefined
+        }
+      />
       {unavailable.length > 0 && (
         <details className="move-learn-unavailable">
           <summary>

@@ -42,9 +42,10 @@ export function useSuggestionKeyboard<T>({
         return true
       }
 
-      if (event.key === 'Enter' && highlightedIndex >= 0) {
+      if (event.key === 'Enter') {
         event.preventDefault()
-        onSelect(results[highlightedIndex])
+        const index = highlightedIndex >= 0 ? highlightedIndex : 0
+        onSelect(results[index])
         return true
       }
 

@@ -779,6 +779,7 @@ function AppContent({
                   versionGroup={versionGroup}
                   settings={activeProfile.settings}
                   onUpdateMovePools={(partial) => updateSettings(partial)}
+                  onUpdateSlot={(slotId, patch, list) => updateSlot(slotId, patch, list)}
                 />
               }
             />

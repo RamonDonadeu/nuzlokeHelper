@@ -181,7 +181,12 @@ export const MoveInput = forwardRef<HTMLInputElement, MoveInputProps>(function M
                 setText(displayMoveName(safeValue, locale))
                 return
               }
-              if (event.key === 'Enter' && handleSuggestionKeyDown(event)) {
+              if (
+                (event.key === 'Enter' ||
+                  event.key === 'ArrowDown' ||
+                  event.key === 'ArrowUp') &&
+                handleSuggestionKeyDown(event)
+              ) {
                 return
               }
             }}

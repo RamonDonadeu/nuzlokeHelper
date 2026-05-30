@@ -25,6 +25,8 @@ interface MoveLearnMoveGridProps {
   compactLayout?: 'column' | 'row'
   /** Click a move to toggle its detail card (TM / relearn lists). */
   expandOnClick?: boolean
+  /** Learn this move (opens replace dialog in parent). */
+  onLearn?: (item: MoveLearnMoveItem) => void
 }
 
 function itemKey(item: MoveLearnMoveItem, index: number): string {
@@ -40,6 +42,7 @@ export function MoveLearnMoveGrid({
   renderActions,
   compactLayout = 'column',
   expandOnClick = false,
+  onLearn,
 }: MoveLearnMoveGridProps) {
   const { t, locale } = useI18n()
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
@@ -168,7 +171,7 @@ export function MoveLearnMoveGrid({
                 {detailCard}
               </div>
             ) : expandOnClick ? (
-              <>
+              <div className="move-learn-move-expandable-wrap">
                 <button
                   type="button"
                   className="move-learn-move-expand-trigger"
@@ -180,10 +183,19 @@ export function MoveLearnMoveGrid({
                     {isExpanded ? t('moveLearn.collapseMove') : t('moveLearn.expandMove')}
                   </span>
                 </button>
+                {onLearn && !item.alreadyKnown ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm move-learn-learn-btn"
+                    onClick={() => onLearn(item)}
+                  >
+                    {t('moveLearn.learnMove')}
+                  </button>
+                ) : null}
                 {isExpanded ? (
                   <div className="move-learn-move-expanded-detail">{detailCard}</div>
                 ) : null}
-              </>
+              </div>
             ) : (
               compactBody
             )}

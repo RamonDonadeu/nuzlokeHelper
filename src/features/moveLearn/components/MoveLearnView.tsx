@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { MoveLearnResults } from '@/features/moveLearn/components/MoveLearnResults'
 import { MoveLearnMoveGrid } from '@/features/moveLearn/components/MoveLearnMoveGrid'
 import { MovePoolEditor } from '@/features/moveLearn/components/MovePoolEditor'
+import { LearnMoveReplaceDialog } from '@/features/moveLearn/components/LearnMoveReplaceDialog'
 import { MovePoolAttacksPanel } from '@/features/moveLearn/components/MovePoolAttacksPanel'
+import { applyMoveAtSlot } from '@/features/moveLearn/lib/moveSlots'
 import { usePokemonLearnset } from '@/features/moveLearn/hooks/usePokemonLearnset'
-import { useMoveLearnOptions } from '@/features/moveLearn/hooks/useMoveLearnOptions'
+import { useMoveLearnOptions, type MoveLearnOption } from '@/features/moveLearn/hooks/useMoveLearnOptions'
 import { useI18n } from '@/i18n'
 import { canonicalMoveName } from '@/lib/localizedNames'
-import type { PokemonSlot, ProfileSettings } from '@/types/profile'
+import type { PokemonSlot, ProfileSettings, SlotListName } from '@/types/profile'
 
 interface MoveLearnViewProps {
   team: PokemonSlot[]
@@ -15,6 +17,7 @@ interface MoveLearnViewProps {
   versionGroup: string
   settings: ProfileSettings
   onUpdateMovePools: (partial: Pick<ProfileSettings, 'moveLearnTMs'>) => void
+  onUpdateSlot: (slotId: string, patch: Partial<PokemonSlot>, list: SlotListName) => void
 }
 
 export function MoveLearnView({
@@ -23,11 +26,13 @@ export function MoveLearnView({
   versionGroup,
   settings,
   onUpdateMovePools,
+  onUpdateSlot,
 }: MoveLearnViewProps) {
   const { t } = useI18n()
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [showMoveDetails, setShowMoveDetails] = useState(false)
   const [attacksViewOpen, setAttacksViewOpen] = useState(false)
+  const [pendingLearn, setPendingLearn] = useState<MoveLearnOption | null>(null)
 
   const roster = useMemo(
     () => [
@@ -59,7 +64,20 @@ export function MoveLearnView({
   useEffect(() => {
     setShowMoveDetails(false)
     setAttacksViewOpen(false)
+    setPendingLearn(null)
   }, [selectedSlot?.slotId])
+
+  const handleLearnRequest = (option: MoveLearnOption) => {
+    if (!selectedEntry || option.alreadyKnown) return
+    setPendingLearn(option)
+  }
+
+  const handleConfirmReplace = (slotIndex: number) => {
+    if (!selectedEntry || !pendingLearn) return
+    const moves = applyMoveAtSlot(selectedEntry.slot.moves, slotIndex, pendingLearn.moveName)
+    onUpdateSlot(selectedEntry.slot.slotId, { moves }, selectedEntry.list)
+    setPendingLearn(null)
+  }
 
   const removeTm = (moveName: string) => {
     const key = canonicalMoveName(moveName).toLowerCase()
@@ -186,6 +204,7 @@ export function MoveLearnView({
                     unavailable={analysis.tmUnavailable}
                     unavailableHint={t('moveLearn.tmUnavailableHint')}
                     sourceLabel={sourceLabel}
+                    onLearn={handleLearnRequest}
                   />
                   <MoveLearnResults
                     title={t('moveLearn.relearnResultsTitle')}
@@ -194,6 +213,7 @@ export function MoveLearnView({
                     unavailable={[]}
                     unavailableHint=""
                     sourceLabel={sourceLabel}
+                    onLearn={handleLearnRequest}
                   />
                 </>
               )}
@@ -204,6 +224,18 @@ export function MoveLearnView({
           )}
         </div>
       </div>
+
+      {pendingLearn && selectedSlot && selectedEntry ? (
+        <LearnMoveReplaceDialog
+          pokemonName={selectedSlot.nickname ?? selectedSlot.displayName}
+          newMoveName={pendingLearn.moveName}
+          source={pendingLearn.source}
+          sourceLabel={sourceLabel(pendingLearn.source)}
+          currentMoves={selectedSlot.moves}
+          onConfirm={handleConfirmReplace}
+          onCancel={() => setPendingLearn(null)}
+        />
+      ) : null}
     </section>
   )
 }
