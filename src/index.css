@@ -5939,7 +5939,14 @@ tr.threatened-row td:first-child {
 }
 
 .move-learn-current {
-  margin-bottom: 1rem;
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.move-learn-current h4 {
+  margin: 0 0 0.35rem;
 }
 
 .move-learn-results-block + .move-learn-results-block {

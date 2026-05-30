@@ -30,7 +30,6 @@ export function MoveLearnView({
 }: MoveLearnViewProps) {
   const { t } = useI18n()
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
-  const [showMoveDetails, setShowMoveDetails] = useState(false)
   const [attacksViewOpen, setAttacksViewOpen] = useState(false)
   const [pendingLearn, setPendingLearn] = useState<MoveLearnOption | null>(null)
 
@@ -62,7 +61,6 @@ export function MoveLearnView({
     source === 'tm' ? t('moveLearn.badgeTm') : t('moveLearn.badgeRelearn')
 
   useEffect(() => {
-    setShowMoveDetails(false)
     setAttacksViewOpen(false)
     setPendingLearn(null)
   }, [selectedSlot?.slotId])
@@ -167,29 +165,16 @@ export function MoveLearnView({
                 </div>
               </div>
 
-              <div className="move-learn-detail-scroll">
-              <section className="move-learn-current">
-                <div className="move-learn-section-head">
-                  <h4>{t('moveLearn.currentMoves')}</h4>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm move-learn-details-toggle"
-                    onClick={() => setShowMoveDetails((open) => !open)}
-                    aria-pressed={showMoveDetails}
-                  >
-                    {showMoveDetails
-                      ? t('moveLearn.hideMoveDetails')
-                      : t('moveLearn.showMoveDetails')}
-                  </button>
-                </div>
+              <section className="move-learn-current" aria-label={t('moveLearn.currentMoves')}>
+                <h4>{t('moveLearn.currentMoves')}</h4>
                 <MoveLearnMoveGrid
                   items={currentMoveItems}
-                  detailed={showMoveDetails}
                   compactLayout="row"
                   emptyHint={t('editor.noMovesConfigured')}
                 />
               </section>
 
+              <div className="move-learn-detail-scroll">
               {learnsetLoading && (
                 <p className="muted">{t('moveLearn.loadingLearnset')}</p>
               )}
