@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from '@/i18n'
-import { calculateAllStats, comparisonNatureForMember } from '@/lib/stats'
+import {
+  BATTLE_ALLY_STAT_DEFAULTS,
+  BATTLE_ENEMY_STAT_DEFAULTS,
+  calculateAllStats,
+  comparisonNatureForMember,
+} from '@/lib/stats'
 import type { PokemonStats } from '@/types/pokemon'
 import { STAT_KEYS, totalStats } from '@/types/pokemon'
 import { clampPokemonLevel, type PokemonSlot } from '@/types/profile'
@@ -10,7 +15,6 @@ import {
   type StatsCompareSortKey,
 } from '@/shared/components/StatsComparisonTable'
 
-const STAT_DEFAULTS = { ivWhenUnset: 0, evWhenUnset: 0 } as const
 const ROSTER_SIZE = 6
 
 type SortDir = 'asc' | 'desc'
@@ -32,13 +36,14 @@ function levelForStats(slot: PokemonSlot, source: PrepStatsSource, levelCap: num
 
 function statsForSlot(slot: PokemonSlot, source: PrepStatsSource, levelCap: number): PokemonStats {
   const level = levelForStats(slot, source, levelCap)
+  const defaults = source === 'enemy' ? BATTLE_ENEMY_STAT_DEFAULTS : BATTLE_ALLY_STAT_DEFAULTS
   return calculateAllStats(
     slot.baseStats,
     level,
     slot.ivs,
     slot.evs,
     comparisonNatureForMember(slot),
-    STAT_DEFAULTS,
+    defaults,
   )
 }
 

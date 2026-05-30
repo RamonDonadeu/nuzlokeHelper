@@ -42,6 +42,8 @@ interface BattlePokemonEditorModalProps {
   existingSlot: PokemonSlot | null
   levelCap: number
   allowSpeciesEdit?: boolean
+  /** Pre-filled IV when opening the stats panel (enemy default: 15). */
+  defaultIv?: number
   onClose: () => void
   onSubmit: (slot: PokemonSlot) => void
 }
@@ -50,7 +52,6 @@ type StatDraft = Record<keyof PokemonStats, string>
 type EditorPanel = 'main' | 'stats'
 
 const EMPTY_MOVES = ['', '', '', '']
-const DEFAULT_IV_VALUE = '31'
 const DEFAULT_EV_VALUE = '0'
 
 function statsToDraft(values?: Partial<PokemonStats>): StatDraft {
@@ -77,9 +78,10 @@ function clampStatValue(value: number, max: number): number {
   return Math.max(0, Math.min(max, Math.round(value)))
 }
 
-function createDefaultIvDraft(): StatDraft {
+function createDefaultIvDraft(defaultIv: number): StatDraft {
   const draft = {} as StatDraft
-  for (const key of STAT_KEYS) draft[key] = DEFAULT_IV_VALUE
+  const value = String(defaultIv)
+  for (const key of STAT_KEYS) draft[key] = value
   return draft
 }
 
@@ -108,9 +110,11 @@ export function BattlePokemonEditorModal({
   existingSlot,
   levelCap,
   allowSpeciesEdit = true,
+  defaultIv = 31,
   onClose,
   onSubmit,
 }: BattlePokemonEditorModalProps) {
+  const defaultIvValue = String(defaultIv)
   const { t, locale } = useI18n()
   const maxLevel = Math.min(MAX_LEVEL_CAP, levelCap)
   const defaultLevel = editorDefaultLevel(existingSlot, levelCap)
@@ -293,13 +297,13 @@ export function BattlePokemonEditorModal({
   const natureOptions = sortedNaturesForDisplay(locale)
 
   const openStatsPanel = () => {
-    setIvDraft((prev) => fillEmptyStatDraft(prev, DEFAULT_IV_VALUE))
+    setIvDraft((prev) => fillEmptyStatDraft(prev, defaultIvValue))
     setEvDraft((prev) => fillEmptyStatDraft(prev, DEFAULT_EV_VALUE))
     setPanel('stats')
   }
 
   const resetStatsToDefaults = () => {
-    setIvDraft(createDefaultIvDraft())
+    setIvDraft(createDefaultIvDraft(defaultIv))
     setEvDraft(createDefaultEvDraft())
   }
 
@@ -424,7 +428,7 @@ export function BattlePokemonEditorModal({
                   <h3>{t('editor.ivs')}</h3>
                   <span className="muted">{t('editor.ivRange', { max: MAX_IV })}</span>
                 </div>
-                {renderStatInputs(ivDraft, setIvDraft, MAX_IV, DEFAULT_IV_VALUE)}
+                {renderStatInputs(ivDraft, setIvDraft, MAX_IV, defaultIvValue)}
               </div>
               <div className="editor-section">
                 <div className="editor-section-header">

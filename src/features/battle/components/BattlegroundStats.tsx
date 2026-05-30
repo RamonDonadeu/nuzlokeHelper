@@ -1,11 +1,15 @@
 import { useMemo } from 'react'
 import { useI18n } from '@/i18n'
-import { calculateAllStats, comparisonNatureForMember, natureStatModifiers } from '@/lib/stats'
+import {
+  BATTLE_ALLY_STAT_DEFAULTS,
+  BATTLE_ENEMY_STAT_DEFAULTS,
+  calculateAllStats,
+  comparisonNatureForMember,
+  natureStatModifiers,
+} from '@/lib/stats'
 import type { PokemonStats } from '@/types/pokemon'
 import { STAT_KEYS, STAT_LABELS } from '@/types/pokemon'
 import type { PokemonSlot } from '@/types/profile'
-
-const BATTLE_STAT_DEFAULTS = { ivWhenUnset: 0, evWhenUnset: 0 } as const
 
 export interface BattlegroundStatParticipant {
   slot: PokemonSlot | null
@@ -16,14 +20,14 @@ interface BattlegroundStatsProps {
   participants: BattlegroundStatParticipant[]
 }
 
-function calculatedStatsForSlot(slot: PokemonSlot): PokemonStats {
+function calculatedStatsForSlot(slot: PokemonSlot, side: 'team' | 'enemy'): PokemonStats {
   return calculateAllStats(
     slot.baseStats,
     slot.level,
     slot.ivs,
     slot.evs,
     comparisonNatureForMember(slot),
-    BATTLE_STAT_DEFAULTS,
+    side === 'enemy' ? BATTLE_ENEMY_STAT_DEFAULTS : BATTLE_ALLY_STAT_DEFAULTS,
   )
 }
 
@@ -74,7 +78,9 @@ export function BattlegroundStats({ participants }: BattlegroundStatsProps) {
     () =>
       participants.map((participant) => ({
         participant,
-        stats: participant.slot ? calculatedStatsForSlot(participant.slot) : undefined,
+        stats: participant.slot
+          ? calculatedStatsForSlot(participant.slot, participant.side)
+          : undefined,
         label: participant.slot
           ? (participant.slot.nickname ?? participant.slot.displayName)
           : participant.side === 'team'

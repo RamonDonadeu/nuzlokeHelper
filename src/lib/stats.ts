@@ -138,6 +138,12 @@ export type StatCalcDefaults = {
 
 const DEFAULT_STAT_CALC: Required<StatCalcDefaults> = { ivWhenUnset: 31, evWhenUnset: 0 }
 
+/** Unset IV/EV when comparing or fighting trainer Pokémon (balanced vs player teams). */
+export const BATTLE_ENEMY_STAT_DEFAULTS: StatCalcDefaults = { ivWhenUnset: 15, evWhenUnset: 0 }
+
+/** Unset IV/EV on your side in the battleground (only explicit spreads count). */
+export const BATTLE_ALLY_STAT_DEFAULTS: StatCalcDefaults = { ivWhenUnset: 15, evWhenUnset: 0 }
+
 function statIv(
   slotIv: Partial<PokemonStats> | undefined,
   key: keyof PokemonStats,

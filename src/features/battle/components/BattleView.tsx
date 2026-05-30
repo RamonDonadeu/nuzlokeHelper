@@ -313,6 +313,7 @@ export function BattleView({
         title={t('battle.enemyEditorTitle')}
         existingSlot={editingSlot}
         levelCap={levelCap}
+        defaultIv={15}
         onClose={battle.closeEnemyEditor}
         onSubmit={(slot) => {
           if (battle.editorIndex === null) return
