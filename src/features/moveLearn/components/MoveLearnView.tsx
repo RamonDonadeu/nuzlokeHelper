@@ -30,6 +30,7 @@ export function MoveLearnView({
 }: MoveLearnViewProps) {
   const { t } = useI18n()
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
+  const [rosterQuery, setRosterQuery] = useState('')
   const [attacksViewOpen, setAttacksViewOpen] = useState(false)
   const [pendingLearn, setPendingLearn] = useState<MoveLearnOption | null>(null)
 
@@ -40,6 +41,29 @@ export function MoveLearnView({
     ],
     [team, box],
   )
+
+  const rosterListLabels = useMemo(
+    () => ({ team: t('moveLearn.onTeam'), box: t('moveLearn.inBox') }),
+    [t],
+  )
+
+  const filteredRoster = useMemo(() => {
+    const query = rosterQuery.trim().toLowerCase()
+    if (!query) return roster
+    return roster.filter(({ slot, list }) => {
+      const haystack = [
+        slot.nickname,
+        slot.displayName,
+        slot.name,
+        rosterListLabels[list],
+        String(slot.level),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [roster, rosterListLabels, rosterQuery])
 
   const selectedEntry = useMemo(() => {
     if (selectedSlotId) {
@@ -114,8 +138,24 @@ export function MoveLearnView({
             {roster.length === 0 ? (
               <p className="muted">{t('moveLearn.emptyRoster')}</p>
             ) : (
+              <>
+                <input
+                  type="search"
+                  className="search-input move-learn-roster-search"
+                  value={rosterQuery}
+                  onChange={(event) => setRosterQuery(event.target.value)}
+                  placeholder={t('moveLearn.rosterSearchPlaceholder')}
+                  aria-label={t('moveLearn.rosterSearchLabel')}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                {filteredRoster.length === 0 ? (
+                  <p className="muted move-learn-roster-search-empty">
+                    {t('moveLearn.rosterSearchEmpty')}
+                  </p>
+                ) : (
               <ul className="move-learn-roster-list" role="list">
-                {roster.map(({ slot, list }) => {
+                {filteredRoster.map(({ slot, list }) => {
                   const active =
                     (selectedSlotId ?? roster[0]?.slot.slotId) === slot.slotId
                   return (
@@ -143,6 +183,8 @@ export function MoveLearnView({
                   )
                 })}
               </ul>
+                )}
+              </>
             )}
           </div>
         </aside>
