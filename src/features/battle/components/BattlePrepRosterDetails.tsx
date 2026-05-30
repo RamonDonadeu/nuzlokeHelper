@@ -14,10 +14,6 @@ function TypeBadge({ type }: { type: PokemonType }) {
 function WeaknessTypes({ quadruple, double }: { quadruple: PokemonType[]; double: PokemonType[] }) {
   const { t } = useI18n()
 
-  if (quadruple.length === 0 && double.length === 0) {
-    return <span className="muted">—</span>
-  }
-
   return (
     <div className="battle-prep-weakness-groups">
       {quadruple.length > 0 ? (
@@ -94,32 +90,32 @@ export function BattlePrepRosterDetails({
             {t('battle.prepRosterConfigureMoves', { names: unconfiguredNames.join(', ') })}
           </p>
         ) : null}
-        <div className="battle-prep-table-wrap">
-          <table className="battle-prep-enemy-table">
-            <thead>
-              <tr>
-                <th>{t('battle.prepStatsPokemon')}</th>
-                <th>{t('battle.prepTypesColumn')}</th>
-                <th>{t('battle.prepWeakToColumn')}</th>
-                <th>{t('battle.prepAbilityColumn')}</th>
-                <th>{t('battle.prepItemColumn')}</th>
-                <th>{t('battle.prepMovesColumn')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((member) => {
-                const weaknesses = getDefensiveWeaknessGroups(member.types)
-                const configuredMoves = (member.moves ?? []).map((move) => move.trim()).filter(Boolean)
+        <ul className="battle-prep-roster-list">
+          {members.map((member) => {
+            const weaknesses = getDefensiveWeaknessGroups(member.types)
+            const configuredMoves = (member.moves ?? []).map((move) => move.trim()).filter(Boolean)
+            const hasWeaknesses = weaknesses.quadruple.length > 0 || weaknesses.double.length > 0
+            const hasAbility = Boolean(member.ability?.trim())
+            const hasItem = Boolean(member.item?.trim())
+            const hasLoadout = hasAbility || hasItem
 
-                return (
-                  <tr key={member.slotId}>
-                    <td className="battle-prep-enemy-name">
-                      <div className="battle-prep-enemy-name-inner">
-                        <img src={member.sprite} alt="" loading="lazy" />
-                        <span>{member.nickname ?? member.displayName}</span>
-                      </div>
-                    </td>
-                    <td>
+            return (
+              <li key={member.slotId} className="battle-prep-roster-row">
+                <section
+                  className={[
+                    'battle-prep-roster-info',
+                    !hasLoadout ? 'battle-prep-roster-info--solo' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <div className="battle-prep-roster-pokemon">
+                    <div className="battle-prep-roster-pokemon-head">
+                      <img src={member.sprite} alt="" loading="lazy" className="battle-prep-row-sprite" />
+                      <strong>{member.nickname ?? member.displayName}</strong>
+                    </div>
+                    <div className="battle-prep-roster-field">
+                      <span className="battle-prep-roster-field-label">{t('battle.prepTypesColumn')}</span>
                       <ul className="battle-prep-type-list">
                         {member.types.map((type) => (
                           <li key={type}>
@@ -127,43 +123,61 @@ export function BattlePrepRosterDetails({
                           </li>
                         ))}
                       </ul>
-                    </td>
-                    <td>
-                      <WeaknessTypes quadruple={weaknesses.quadruple} double={weaknesses.double} />
-                    </td>
-                    <td className="battle-prep-enemy-meta-cell">
-                      <div className="battle-prep-enemy-cell-inner">
-                        <BattlePrepAbilityCell slot={member} abilityDescriptions={abilityDescriptions} />
+                    </div>
+                    {hasWeaknesses ? (
+                      <div className="battle-prep-roster-field">
+                        <span className="battle-prep-roster-field-label">{t('battle.prepWeakToColumn')}</span>
+                        <WeaknessTypes quadruple={weaknesses.quadruple} double={weaknesses.double} />
                       </div>
-                    </td>
-                    <td className="battle-prep-enemy-meta-cell">
-                      <div className="battle-prep-enemy-cell-inner">
-                        <BattlePrepItemCell slot={member} />
-                      </div>
-                    </td>
-                    <td className="battle-prep-enemy-moves">
-                      {configuredMoves.length > 0 ? (
-                        <ul className="battle-prep-enemy-move-list">
-                          {configuredMoves.map((moveName) => (
-                            <li key={moveName}>
-                              <BattlePrepMoveLabel
-                                moveName={moveName}
-                                details={moveDetailsByName[moveName]}
-                                loading={moveDetailsLoading}
-                              />
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    ) : null}
+                  </div>
+                  {hasLoadout ? (
+                    <div className="battle-prep-roster-loadout">
+                      {hasAbility ? (
+                        <div className="battle-prep-roster-field">
+                          <span className="battle-prep-roster-field-label">{t('battle.prepAbilityColumn')}</span>
+                          <BattlePrepAbilityCell slot={member} abilityDescriptions={abilityDescriptions} />
+                        </div>
+                      ) : null}
+                      {hasItem ? (
+                        <div className="battle-prep-roster-field">
+                          <span className="battle-prep-roster-field-label">{t('battle.prepItemColumn')}</span>
+                          <BattlePrepItemCell slot={member} />
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </section>
+                <section className="battle-prep-roster-attacks">
+                  {configuredMoves.length > 0 ? (
+                    <ul className="battle-prep-roster-attack-list">
+                      {configuredMoves.map((moveName) => {
+                        const moveType = moveDetailsByName[moveName]?.type ?? null
+
+                        return (
+                          <li key={moveName} className="battle-prep-roster-attack">
+                            {moveType ? (
+                              <TypeBadge type={moveType} />
+                            ) : (
+                              <span className="type-badge type-unknown">?</span>
+                            )}
+                            <BattlePrepMoveLabel
+                              moveName={moveName}
+                              details={moveDetailsByName[moveName]}
+                              loading={moveDetailsLoading}
+                            />
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </section>
+              </li>
+            )
+          })}
+        </ul>
       </section>
 
       <section className="battle-prep-section">

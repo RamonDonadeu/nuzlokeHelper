@@ -1791,6 +1791,105 @@ ul {
   overscroll-behavior-x: contain;
 }
 
+.battle-prep-roster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.battle-prep-roster-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 0.85rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+}
+
+.battle-prep-roster-row:last-child {
+  border-bottom: none;
+}
+
+.battle-prep-roster-info {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.battle-prep-roster-info--solo {
+  grid-template-columns: 1fr;
+}
+
+.battle-prep-roster-pokemon,
+.battle-prep-roster-loadout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.battle-prep-roster-pokemon-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.battle-prep-roster-pokemon-head strong {
+  font-size: 0.85rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.battle-prep-roster-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.battle-prep-roster-field-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.battle-prep-roster-attacks {
+  min-width: 0;
+}
+
+.battle-prep-roster-attack-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.battle-prep-roster-attack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .battle-prep-roster-row {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .battle-prep-roster-info {
+    grid-template-columns: 1fr;
+  }
+}
+
 .battle-prep-enemy-table {
   width: 100%;
   border-collapse: collapse;
@@ -2433,14 +2532,17 @@ ul {
   .battle-mobile-shell {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     gap: 0.75rem;
     min-width: 0;
+    min-height: 0;
   }
 
   .battle-mobile-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.35rem;
+    flex-shrink: 0;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -2469,12 +2571,31 @@ ul {
   }
 
   .battle-mobile-panel {
+    flex: 1 1 auto;
     min-width: 0;
-    overflow: visible;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .battle-mobile-panel > .battle-panel,
+  .battle-mobile-panel > .battle-prep-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
   }
 
   .battle-mobile-panel > .battle-panel {
-    overflow: visible;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .battle-mobile-panel > .battle-prep-panel {
+    display: flex;
+    flex-direction: column;
   }
 
   .battle-mobile-rosters {
@@ -2665,8 +2786,17 @@ ul {
   }
 
   .app-layout-battle .main-content {
-    overflow-y: auto;
-    overflow-x: hidden;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  .app-layout-battle .main-content > .battle-mobile-shell {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .app-layout-battle .battle-view {
@@ -2681,18 +2811,10 @@ ul {
   }
 
   .app-layout-battle .battle-prep-panel {
-    overflow: visible;
-    flex: none;
-    min-height: auto;
-    max-height: none;
-  }
-
-  .battle-mobile-panel .battle-prep-panel {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    max-height: min(72vh, calc(100dvh - 11rem));
     overflow: hidden;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
   }
 
   .battle-prep-sections {
@@ -2830,7 +2952,7 @@ ul {
   }
 
   .battle-prep-panel.battle-prep-panel--stats-only {
-    max-height: min(78vh, calc(100dvh - 9rem));
+    max-height: none;
     overflow: hidden;
   }
 }
@@ -4005,6 +4127,28 @@ button.evolution-card {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 0.5rem;
+  }
+
+  .app-layout.app-layout-battle {
+    overflow: hidden;
+  }
+
+  .app-layout-battle .main-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    gap: 0;
+    align-content: stretch;
+  }
+
+  .battle-mobile-panel > .battle-mobile-rosters {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
