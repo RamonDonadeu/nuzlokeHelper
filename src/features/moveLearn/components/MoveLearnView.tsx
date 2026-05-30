@@ -9,6 +9,7 @@ import { usePokemonLearnset } from '@/features/moveLearn/hooks/usePokemonLearnse
 import { useMoveLearnOptions, type MoveLearnOption } from '@/features/moveLearn/hooks/useMoveLearnOptions'
 import { useI18n } from '@/i18n'
 import { canonicalMoveName } from '@/lib/localizedNames'
+import { OFFICIAL_VERSION_GROUPS } from '@/lib/versionGroups'
 import type { PokemonSlot, ProfileSettings, SlotListName } from '@/types/profile'
 
 interface MoveLearnViewProps {
@@ -75,11 +76,14 @@ export function MoveLearnView({
   const selectedSlot = selectedEntry?.slot ?? null
   const tms = settings.moveLearnTMs ?? []
 
-  const { learnset, loading: learnsetLoading, error: learnsetError } = usePokemonLearnset(
-    selectedSlot?.name ?? null,
-  )
+  const { learnset, loading: learnsetLoading, error: learnsetError } =
+    usePokemonLearnset(selectedSlot)
 
   const analysis = useMoveLearnOptions(selectedSlot, learnset, tms, versionGroup)
+
+  const learnDataVersionLabel =
+    OFFICIAL_VERSION_GROUPS.find((group) => group.id === analysis.learnDataVersionGroup)
+      ?.label ?? analysis.learnDataVersionGroup
 
   const sourceLabel = (source: 'tm' | 'relearn') =>
     source === 'tm' ? t('moveLearn.badgeTm') : t('moveLearn.badgeRelearn')
@@ -221,6 +225,13 @@ export function MoveLearnView({
                 <p className="muted">{t('moveLearn.loadingLearnset')}</p>
               )}
               {learnsetError && <p className="error-note">{learnsetError}</p>}
+              {analysis.learnDataUsedFallback && (
+                <p className="muted move-learn-version-fallback">
+                  {t('moveLearn.learnsetVersionFallback', {
+                    version: learnDataVersionLabel ?? '',
+                  })}
+                </p>
+              )}
 
               {!learnsetLoading && !learnsetError && (
                 <>

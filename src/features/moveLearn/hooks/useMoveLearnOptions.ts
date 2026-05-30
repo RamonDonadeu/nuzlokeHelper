@@ -3,6 +3,7 @@ import { canonicalMoveName } from '@/lib/localizedNames'
 import {
   canLearnViaTm,
   getRelearnMovesAtLevel,
+  resolveEffectiveLearnVersionGroup,
   type PokemonMoveLearnEntry,
 } from '@/lib/learnset'
 import type { PokemonSlot } from '@/types/profile'
@@ -21,6 +22,9 @@ export interface MoveLearnAnalysis {
   tmLearnable: MoveLearnOption[]
   relearnLearnable: MoveLearnOption[]
   tmUnavailable: string[]
+  /** PokeAPI version group used after fallback (if any). */
+  learnDataVersionGroup: string | null
+  learnDataUsedFallback: boolean
 }
 
 function uniqueMoves(names: string[]): string[] {
@@ -47,17 +51,20 @@ export function analyzeMoveLearn(
     tmLearnable: [],
     relearnLearnable: [],
     tmUnavailable: [],
+    learnDataVersionGroup: null,
+    learnDataUsedFallback: false,
   }
 
   if (!slot || !learnset) return empty
 
+  const { apiGroup, usedFallback } = resolveEffectiveLearnVersionGroup(learnset, versionGroup)
   const known = new Set((slot.moves ?? []).map((move) => canonicalMoveName(move).toLowerCase()))
   const tmNames = uniqueMoves(tms)
 
   const tmLearnable: MoveLearnOption[] = []
   const tmUnavailable: string[] = []
   for (const moveName of tmNames) {
-    if (canLearnViaTm(learnset, moveName, versionGroup)) {
+    if (canLearnViaTm(learnset, moveName, versionGroup, apiGroup)) {
       tmLearnable.push({
         moveName,
         source: 'tm',
@@ -68,7 +75,7 @@ export function analyzeMoveLearn(
     }
   }
 
-  const relearnLearnable = getRelearnMovesAtLevel(learnset, slot.level, versionGroup).map(
+  const relearnLearnable = getRelearnMovesAtLevel(learnset, slot.level, versionGroup, apiGroup).map(
     (entry) => {
       const moveName = canonicalMoveName(entry.moveName)
       return {
@@ -80,7 +87,13 @@ export function analyzeMoveLearn(
     },
   )
 
-  return { tmLearnable, relearnLearnable, tmUnavailable }
+  return {
+    tmLearnable,
+    relearnLearnable,
+    tmUnavailable,
+    learnDataVersionGroup: apiGroup,
+    learnDataUsedFallback: usedFallback,
+  }
 }
 
 export function useMoveLearnOptions(

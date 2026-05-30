@@ -533,6 +533,8 @@ export const en: TranslationKey = {
     slotLabel: 'Slot {{n}}',
     emptySlot: 'Empty',
     loadingLearnset: 'Loading learnset…',
+    learnsetVersionFallback:
+      'This species has no learnset for your game version; showing data from {{version}} instead.',
     tmResultsTitle: 'Can learn from your TMs',
     tmResultsEmpty: 'No TM moves in your list are teachable to this Pokémon.',
     relearnResultsTitle: 'Can relearn (level-up learnset)',

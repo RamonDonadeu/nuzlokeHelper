@@ -62,7 +62,7 @@ export const GENERATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const
 
 /** PokeAPI version groups in approximate release order (used to pick "latest" text). */
 
-const VERSION_GROUP_ORDER = [
+export const VERSION_GROUP_ORDER = [
 
   ...OFFICIAL_VERSION_GROUPS.map((group) => group.id),
 

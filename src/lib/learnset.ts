@@ -1,5 +1,10 @@
-import { canonicalMoveName } from '@/lib/localizedNames'
-import { getApiVersionGroup } from '@/lib/versionGroups'
+import { canonicalMoveName, resolveMoveSlug } from '@/lib/localizedNames'
+import {
+  compareVersionGroups,
+  getApiVersionGroup,
+  versionGroupToGeneration,
+  VERSION_GROUP_ORDER,
+} from '@/lib/versionGroups'
 import { pokemonSlugCandidates } from '@/lib/pokeapi'
 
 const POKEAPI_BASE = 'https://pokeapi.co/api/v2'
@@ -108,12 +113,81 @@ function detailsForVersionGroup(
   return entry.details.filter((detail) => detail.versionGroup === versionGroup)
 }
 
+function hasLearnDataForVersionGroup(
+  learnset: PokemonMoveLearnEntry[],
+  versionGroup: string,
+): boolean {
+  return learnset.some((entry) =>
+    entry.details.some(
+      (detail) =>
+        detail.versionGroup === versionGroup &&
+        (detail.method === 'level-up' || detail.method === 'machine' || detail.method === 'tutor'),
+    ),
+  )
+}
+
+export interface ResolvedLearnVersionGroup {
+  apiGroup: string
+  /** True when the profile game has no learn data and an older compatible group is used. */
+  usedFallback: boolean
+}
+
+/** Pick a PokeAPI version group that has learn data for this species. */
+export function resolveEffectiveLearnVersionGroup(
+  learnset: PokemonMoveLearnEntry[],
+  profileVersionGroup: string,
+): ResolvedLearnVersionGroup {
+  const target = getApiVersionGroup(profileVersionGroup)
+  if (hasLearnDataForVersionGroup(learnset, target)) {
+    return { apiGroup: target, usedFallback: false }
+  }
+
+  const profileGen = versionGroupToGeneration(
+    profileVersionGroup.startsWith('gen-') ? target : profileVersionGroup,
+  )
+
+  const targetIdx = VERSION_GROUP_ORDER.indexOf(target)
+  const startIdx = targetIdx === -1 ? VERSION_GROUP_ORDER.length - 1 : targetIdx
+
+  for (let i = startIdx; i >= 0; i--) {
+    const candidate = VERSION_GROUP_ORDER[i]
+    if (!candidate) continue
+    if (versionGroupToGeneration(candidate) > profileGen) continue
+    if (hasLearnDataForVersionGroup(learnset, candidate)) {
+      return { apiGroup: candidate, usedFallback: true }
+    }
+  }
+
+  let best: string | null = null
+  for (const entry of learnset) {
+    for (const detail of entry.details) {
+      if (detail.method !== 'level-up' && detail.method !== 'machine' && detail.method !== 'tutor') {
+        continue
+      }
+      if (versionGroupToGeneration(detail.versionGroup) > profileGen) continue
+      if (!best || compareVersionGroups(detail.versionGroup, best) > 0) {
+        best = detail.versionGroup
+      }
+    }
+  }
+
+  if (best) return { apiGroup: best, usedFallback: true }
+  return { apiGroup: target, usedFallback: false }
+}
+
+function moveNameToLearnsetSlug(moveInput: string): string | null {
+  const slug = resolveMoveSlug(moveInput)
+  if (slug) return slug
+  const canonical = canonicalMoveName(moveInput).trim().toLowerCase()
+  if (!canonical) return null
+  return canonical.replace(/\s+/g, '-')
+}
+
 export function findLearnEntry(
   learnset: PokemonMoveLearnEntry[],
   moveInput: string,
 ): PokemonMoveLearnEntry | undefined {
-  const canonical = canonicalMoveName(moveInput)
-  const slug = canonical.trim().toLowerCase().replace(/\s+/g, '-')
+  const slug = moveNameToLearnsetSlug(moveInput)
   if (!slug) return undefined
   return learnset.find((entry) => entry.moveName === slug)
 }
@@ -122,10 +196,12 @@ export function canLearnViaTm(
   learnset: PokemonMoveLearnEntry[],
   moveInput: string,
   profileVersionGroup: string,
+  resolvedApiGroup?: string,
 ): boolean {
   const entry = findLearnEntry(learnset, moveInput)
   if (!entry) return false
-  const apiGroup = getApiVersionGroup(profileVersionGroup)
+  const apiGroup =
+    resolvedApiGroup ?? resolveEffectiveLearnVersionGroup(learnset, profileVersionGroup).apiGroup
   return detailsForVersionGroup(entry, apiGroup).some((detail) => detail.method === 'machine')
 }
 
@@ -141,7 +217,7 @@ export function canRelearnAtLevel(
 ): boolean {
   const entry = findLearnEntry(learnset, moveInput)
   if (!entry) return false
-  const apiGroup = getApiVersionGroup(profileVersionGroup)
+  const { apiGroup } = resolveEffectiveLearnVersionGroup(learnset, profileVersionGroup)
   return detailsForVersionGroup(entry, apiGroup).some((detail) =>
     isRelearnableLevelUpDetail(detail, level),
   )
@@ -159,8 +235,10 @@ export function getRelearnMovesAtLevel(
   learnset: PokemonMoveLearnEntry[],
   level: number,
   profileVersionGroup: string,
+  resolvedApiGroup?: string,
 ): RelearnMoveEntry[] {
-  const apiGroup = getApiVersionGroup(profileVersionGroup)
+  const apiGroup =
+    resolvedApiGroup ?? resolveEffectiveLearnVersionGroup(learnset, profileVersionGroup).apiGroup
   const results: RelearnMoveEntry[] = []
 
   for (const entry of learnset) {

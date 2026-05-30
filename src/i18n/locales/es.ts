@@ -519,6 +519,8 @@ export const es: TranslationKey = {
     slotLabel: 'Espacio {{n}}',
     emptySlot: 'Vacío',
     loadingLearnset: 'Cargando movimientos aprendibles…',
+    learnsetVersionFallback:
+      'Esta especie no tiene movimientos en tu versión del juego; se muestran datos de {{version}}.',
     tmResultsTitle: 'Puede aprender con tus MTs',
     tmResultsEmpty: 'Ningún movimiento de tu lista de MTs es enseñable a este Pokémon.',
     relearnResultsTitle: 'Puede reaprender (tabla por nivel)',
