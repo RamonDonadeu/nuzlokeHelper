@@ -219,6 +219,9 @@ export function comparisonNatureForMember(member: { nature?: string }): string |
 
 const COMPARISON_MEMBER_DEFAULTS: StatCalcDefaults = { ivWhenUnset: 0, evWhenUnset: 0 }
 
+/** Searched candidates and evolutions at level cap when not imported (balanced vs wild/trainer mons). */
+const COMPARISON_CANDIDATE_DEFAULTS: StatCalcDefaults = { ivWhenUnset: 15, evWhenUnset: 0 }
+
 export function parseIvsFromShowdown(values: Partial<Record<keyof PokemonStats, number>>): Partial<PokemonStats> {
   return values
 }
@@ -243,10 +246,10 @@ export function comparisonStatsForMember(
   )
 }
 
-/** Searched candidates and evolutions at level cap with 31 IV / 0 EV / neutral nature when not imported. */
+/** Searched candidates and evolutions at the level cap with 15 IV / 0 EV / neutral nature when not imported. */
 export function comparisonStatsForCandidate(
   baseStats: PokemonStats,
   levelCap: number,
 ): PokemonStats {
-  return calculateAllStats(baseStats, levelCap)
+  return calculateAllStats(baseStats, levelCap, undefined, undefined, undefined, COMPARISON_CANDIDATE_DEFAULTS)
 }

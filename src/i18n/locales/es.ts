@@ -161,7 +161,7 @@ export const es: TranslationKey = {
     insightAboveStrongest: ' — por encima de {{name}} ({{total}}).',
     insightBelowStrongest: ' — aún por debajo de {{name}} ({{total}}).',
     scaledStatsHint:
-      'Todos los Pokémon se escalan al tope de nivel ({{level}}). IVs, EVs y naturaleza no neutra solo si los has configurado. El buscado y evoluciones usan 31 IVs y 0 EVs salvo importación Showdown.',
+      'Todos los Pokémon se escalan al tope de nivel ({{level}}). IVs, EVs y naturaleza no neutra solo si los has configurado. El buscado y evoluciones usan 15 IVs y 0 EVs salvo importación Showdown.',
     baseStatsHint: 'Stats base de la especie (BST), sin escalar al nivel.',
     scaledStatsHintLabel: 'Cómo se calculan las stats de comparación',
     candidateTotal: 'Total del candidato',

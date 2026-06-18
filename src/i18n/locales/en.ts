@@ -182,7 +182,7 @@ export const en: TranslationKey = {
     insightAboveStrongest: ' — above {{name}} ({{total}}).',
     insightBelowStrongest: ' — still below {{name}} ({{total}}).',
     scaledStatsHint:
-      'All Pokémon are scaled to the level cap ({{level}}). Custom IVs, EVs, and non-neutral nature apply only when you set them. Searched Pokémon and evolutions use 31 IVs and 0 EVs unless imported via Showdown.',
+      'All Pokémon are scaled to the level cap ({{level}}). Custom IVs, EVs, and non-neutral nature apply only when you set them. Searched Pokémon and evolutions use 15 IVs and 0 EVs unless imported via Showdown.',
     baseStatsHint: 'Species base stats (BST), not scaled to level.',
     scaledStatsHintLabel: 'How comparison stats are calculated',
     candidateTotal: 'Candidate total',
